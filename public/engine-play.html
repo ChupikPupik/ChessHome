@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Игра с движком — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    /* ── общие стили ─────────────────────────────────────────── */
+    .engine-page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    .engine-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: center;
+      background: var(--bg-secondary, #1e1e2e);
+      padding: 12px 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+    .engine-controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-secondary, #aaa);
+    }
+    .engine-controls select,
+    .engine-controls .tc-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border, rgba(255,255,255,0.15));
+      background: var(--bg-input, #2a2a3a);
+      color: var(--text, #eee);
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    .engine-controls .tc-btn {
+      background: var(--bg-secondary, #1e1e2e);
+      padding: 6px 14px;
+      font-weight: 600;
+    }
+    .engine-controls .tc-btn.selected {
+      background: var(--accent, #c9a84c);
+      color: #000;
+      border-color: var(--accent);
+    }
+    .engine-controls .tc-btn.color-btn.selected {
+      background: var(--accent);
+      color: #000;
+    }
+    .engine-controls .btn {
+      padding: 8px 20px;
+      font-weight: 700;
+    }
+    .game-layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .board-area {
+      flex: 0 0 auto;
+    }
+    .game-panel {
+      flex: 1;
+      min-width: 0;
+      border-left: 1px solid var(--border, rgba(255,255,255,0.08));
+      padding-left: 20px;
+    }
+    .game-panel .moves-list {
+      max-height: 300px;
+      overflow-y: auto;
+      background: var(--bg-secondary, #1e1e2e);
+      border-radius: 8px;
+      padding: 8px;
+    }
+    .game-panel .nav-btn-row {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .game-panel .nav-btn-row .btn {
+      font-size: 16px;
+      padding: 6px 10px;
+      min-width: 36px;
+    }
+    .game-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .game-actions .btn {
+      font-size: 13px;
+    }
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 4px;
+    }
+    .player-name { font-weight: 700; font-size: 15px; }
+    .player-rating { font-size: 12px; color: var(--text-muted, #888); }
+    .player-clock {
+      font-size: 22px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: var(--bg-secondary, #1e1e2e);
+      border: 2px solid transparent;
+      transition: 0.2s;
+      min-width: 80px;
+      text-align: center;
+      margin-left: auto;
+    }
+    .player-clock.active {
+      border-color: var(--accent, #c9a84c);
+      background: rgba(201,168,76,0.13);
+      color: #fff;
+    }
+    .player-clock.low { color: #e74c3c; animation: clock-pulse 1s infinite; }
+    @keyframes clock-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    .captured-pieces {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      min-width: 30px;
+    }
+    .captured-pieces img { width: 20px; height: 20px; }
+    .player-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--accent, #c9a84c);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #000;
+      font-size: 14px;
+    }
+    #engine-current-fen {
+      font-size: 11px;
+      color: var(--text-muted, #888);
+      word-break: break-all;
+      margin-top: 8px;
+    }
+    .square {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: filter 0.08s;
+    }
+    .square:hover { filter: brightness(1.12); }
+    .square.selected {
+      background-color: rgba(100,200,100,0.65) !important;
+      box-shadow: inset 0 0 0 3px rgba(50,180,50,0.9);
+    }
+    .square.last-move.light { background-color: rgba(205,210,106,0.75) !important; }
+    .square.last-move.dark  { background-color: rgba(170,162,58,0.75) !important; }
+    .square.in-check { background-color: rgba(220,50,50,0.75) !important; }
+    .square.legal-move::after {
+      content: '';
+      position: absolute;
+      width: 28%;
+      height: 28%;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.22);
+      pointer-events: none;
+    }
+    .square.legal-capture::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,0.28);
+      pointer-events: none;
+    }
+    .piece {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .piece img {
+      width: 82%;
+      height: 82%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45));
+      transition: transform 0.08s;
+    }
+    .piece img:hover { transform: scale(1.07); }
+    .move-cell {
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: background 0.12s;
+    }
+    .move-cell:hover { background: rgba(255,255,255,0.08); }
+    .move-cell.current {
+      background: var(--accent, #c9a84c) !important;
+      color: #1a1a2e !important;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+    .nav-btn-row .btn { font-size: 16px; padding: 6px 10px; min-width: 36px; }
+
+    @media (max-width: 768px) {
+      .game-layout { flex-direction: column; }
+      .game-panel { border-left: none; padding-left: 0; border-top: 1px solid var(--border); padding-top: 16px; }
+      .player-clock { font-size: 18px; min-width: 64px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="engine-page">
+  <div class="page-header">
+    <h1>🤖 Игра с движком</h1>
+    <p>Играйте против компьютера. Движок работает локально в браузере.</p>
+  </div>
+
+  <div class="engine-controls">
+    <label>
+      Движок:
+      <select id="engine-select">
+        <option value="random">Random Mover</option>
+        <!-- <option value="okval" disabled>Okval (скоро)</option> -->
+      </select>
+    </label>
+    <label>
+      Время:
+      <div class="time-control-select" style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="tc-btn" data-tc="1+0">1+0</button>
+        <button class="tc-btn" data-tc="3+0">3+0</button>
+        <button class="tc-btn" data-tc="5+0">5+0</button>
+        <button class="tc-btn selected" data-tc="10+0">10+0</button>
+        <button class="tc-btn" data-tc="15+10">15+10</button>
+        <button class="tc-btn" data-tc="30+0">30+0</button>
+      </div>
+    </label>
+    <label>
+      Цвет:
+      <div style="display:flex;gap:4px">
+        <button class="tc-btn color-btn selected" data-color="random">🎲</button>
+        <button class="tc-btn color-btn" data-color="white">♙</button>
+        <button class="tc-btn color-btn" data-color="black">♟</button>
+      </div>
+    </label>
+    <button class="btn btn-primary" id="btn-new-engine-game">♟ Новая игра</button>
+  </div>
+
+  <div class="game-layout">
+    <div class="board-area">
+      <div class="player-info" id="engine-top-info">
+        <div class="player-avatar" id="engine-avatar-top">♟</div>
+        <div>
+          <div class="player-name" id="engine-player-top-name">Движок</div>
+          <div class="player-rating" id="engine-rating-top">—</div>
+        </div>
+        <div class="captured-pieces" id="engine-captured-top"></div>
+        <div class="player-clock" id="engine-clock-black">10:00</div>
+      </div>
+
+      <div class="board-wrapper" id="engine-board-container">
+        <div id="engine-chess-board"></div>
+      </div>
+
+      <div class="player-info" id="engine-bottom-info">
+        <div class="player-avatar" id="engine-avatar-bottom">♙</div>
+        <div>
+          <div class="player-name" id="engine-player-bottom-name">Вы</div>
+          <div class="player-rating" id="engine-rating-bottom">—</div>
+        </div>
+        <div class="captured-pieces" id="engine-captured-bottom"></div>
+        <div class="player-clock" id="engine-clock-white">10:00</div>
+      </div>
+    </div>
+
+    <div class="game-panel">
+      <div class="moves-list">
+        <table class="moves-table">
+          <tbody id="engine-moves-table-body"></tbody>
+        </table>
+      </div>
+
+      <div class="nav-btn-row">
+        <button class="btn btn-ghost btn-sm" id="engine-btn-first">⏮</button>
+        <button class="btn btn-ghost btn-sm" id="engine-btn-prev">◀</button>
+        <button class="btn btn-ghost btn-sm" id="engine-btn-next">▶</button>
+        <button class="btn btn-ghost btn-sm" id="engine-btn-last">⏭</button>
+        <button class="btn btn-ghost btn-sm" id="engine-btn-flip">↕</button>
+      </div>
+
+      <div class="game-actions">
+        <button class="btn btn-secondary btn-sm" id="engine-btn-draw">🤝 Ничья</button>
+        <button class="btn btn-danger btn-sm" id="engine-btn-resign">🏳 Сдаться</button>
+      </div>
+
+      <div id="engine-current-fen" style="font-size:11px;color:var(--text-muted);word-break:break-all;margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Подключаем библиотеки ──────────────────────────────── -->
+<script src="/js/header.js"></script>
+<script src="/js/pieces.js"></script>
+<script src="/js/chess-engine.js"></script>
+<script src="/js/app.js"></script>
+
+<script>
+  (function() {
+    'use strict';
+
+    // ─── Рандомный движок ─────────────────────────────────────
+    const randomEngine = {
+      getMove: function(fen) {
+        try {
+          const st = ChessEngine.parseFEN(fen);
+          const moves = ChessEngine.allLegalMoves(st);
+          if (!moves.length) return null;
+          return moves[Math.floor(Math.random() * moves.length)];
+        } catch(e) {
+          console.warn('[RandomEngine] error:', e);
+          return null;
+        }
+      }
+    };
+
+    // ─── СОСТОЯНИЕ ДОСКИ ──────────────────────────────────────
+    let state = ChessEngine.parseFEN(ChessEngine.START_FEN);
+    let playerColor = 'w';        // 'w' или 'b'
+    let selectedSq = null;
+    let legalMovesCache = [];
+    let lastMove = null;
+    let gameId = null;
+    let historyStates = [ChessEngine.deepClone(state)];
+    let viewingMove = -1;         // -1 = последний ход
+
+    // Часы
+    let whiteTime = 600, blackTime = 600;
+    let clockInterval = null;
+    let clockRunning = false;
+    let activeColor = 'w';
+    let tcIncrement = 0;
+    let clockTickAt = null;       // момент последнего тика
+
+    // Режим
+    let gameMode = 'engine';
+    let isFlipped = false;
+    let engineType = 'random';
+    let engineThinking = false;
+    let gameOver = false;
+
+    // ─── DOM-ссылки ────────────────────────────────────────────
+    const boardEl = document.getElementById('engine-chess-board');
+    const movesTable = document.getElementById('engine-moves-table-body');
+    const clockWhite = document.getElementById('engine-clock-white');
+    const clockBlack = document.getElementById('engine-clock-black');
+    const capturedTop = document.getElementById('engine-captured-top');
+    const capturedBottom = document.getElementById('engine-captured-bottom');
+    const fenDisplay = document.getElementById('engine-current-fen');
+    const playerTopName = document.getElementById('engine-player-top-name');
+    const playerBottomName = document.getElementById('engine-player-bottom-name');
+
+    // ─── ФОРМАТ ВРЕМЕНИ ──────────────────────────────────────
+    function formatTime(sec) {
+      const totalSec = Math.max(0, Math.floor(sec));
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // ─── ОБНОВЛЕНИЕ ЧАСОВ ────────────────────────────────────
+    function updateClockDisplayValues(wTime, bTime) {
+      const myTime = playerColor === 'w' ? wTime : bTime;
+      const theirTime = playerColor === 'w' ? bTime : wTime;
+      const myTurn = activeColor === playerColor;
+
+      if (clockWhite) {
+        clockWhite.textContent = formatTime(myTime);
+        clockWhite.className = 'player-clock' +
+          (myTurn && clockRunning ? ' active' : '') +
+          (myTime < 30 ? ' low' : '');
+      }
+      if (clockBlack) {
+        clockBlack.textContent = formatTime(theirTime);
+        clockBlack.className = 'player-clock' +
+          (!myTurn && clockRunning ? ' active' : '') +
+          (theirTime < 30 ? ' low' : '');
+      }
+    }
+
+    function updateClockDisplay() {
+      const elapsed = (clockRunning && clockTickAt !== null) ? (Date.now() - clockTickAt) / 1000 : 0;
+      const displayWhite = activeColor === 'w' ? Math.max(0, whiteTime - elapsed) : whiteTime;
+      const displayBlack = activeColor === 'b' ? Math.max(0, blackTime - elapsed) : blackTime;
+      updateClockDisplayValues(displayWhite, displayBlack);
+    }
+
+    function clockTick_interval() {
+      if (!clockRunning || clockTickAt === null) return;
+      const now = Date.now();
+      const elapsed = (now - clockTickAt) / 1000;
+      const displayWhite = activeColor === 'w' ? Math.max(0, whiteTime - elapsed) : whiteTime;
+      const displayBlack = activeColor === 'b' ? Math.max(0, blackTime - elapsed) : blackTime;
+      updateClockDisplayValues(displayWhite, displayBlack);
+
+      if ((activeColor === 'w' && displayWhite <= 0) || (activeColor === 'b' && displayBlack <= 0)) {
+        const loser = activeColor;
+        if (loser === 'w') whiteTime = 0; else blackTime = 0;
+        stopClock();
+        const winner = loser === 'w' ? 'Чёрные' : 'Белые';
+        showGameResult(`${winner} победили!`, 'Время вышло');
+        gameOver = true;
+      }
+    }
+
+    function startClock(wTime, bTime, inc) {
+      whiteTime = wTime;
+      blackTime = bTime;
+      tcIncrement = inc || 0;
+      activeColor = 'w';
+      clockRunning = false;
+      clockTickAt = null;
+      clearInterval(clockInterval);
+      updateClockDisplay();
+      // Таймер стартует после первого хода (как в шахматах)
+    }
+
+    function tickClock() {
+      const now = Date.now();
+      const justMoved = state.turn === 'w' ? 'b' : 'w';
+
+      if (clockRunning && clockTickAt !== null) {
+        const elapsed = (now - clockTickAt) / 1000;
+        if (justMoved === 'w') whiteTime = Math.max(0, whiteTime - elapsed);
+        else blackTime = Math.max(0, blackTime - elapsed);
+      }
+
+      if (clockRunning && tcIncrement > 0) {
+        if (justMoved === 'w') whiteTime += tcIncrement;
+        else blackTime += tcIncrement;
+      }
+
+      activeColor = state.turn;
+      clockTickAt = now;
+
+      if (!clockRunning) {
+        const totalMoves = state.history ? state.history.length : 0;
+        if (totalMoves >= 1) {
+          clockRunning = true;
+          clockInterval = setInterval(clockTick_interval, 100);
+        }
+      }
+      updateClockDisplay();
+    }
+
+    function stopClock() {
+      if (clockRunning && clockTickAt !== null) {
+        const elapsed = (Date.now() - clockTickAt) / 1000;
+        if (activeColor === 'w') whiteTime = Math.max(0, whiteTime - elapsed);
+        else blackTime = Math.max(0, blackTime - elapsed);
+      }
+      clockRunning = false;
+      clockTickAt = null;
+      clearInterval(clockInterval);
+      updateClockDisplay();
+    }
+
+    // ─── ЗВУКИ ────────────────────────────────────────────────
+    function playSound(move) {
+      // простой звук, можно использовать Web Audio
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.frequency.value = move.enPassant || (state.board[move.to] !== null) ? 300 : 440;
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+      } catch(e) {}
+    }
+
+    // ─── РЕНДЕР ДОСКИ ─────────────────────────────────────────
+    function render() {
+      if (!boardEl) return;
+      const displayState = viewingMove >= 0 && viewingMove < historyStates.length
+        ? historyStates[viewingMove] : state;
+
+      const inCheckSq = findCheckSquare(displayState);
+      const rowOrder = isFlipped ? [0,1,2,3,4,5,6,7] : [7,6,5,4,3,2,1,0];
+      const fileOrder = isFlipped ? [7,6,5,4,3,2,1,0] : [0,1,2,3,4,5,6,7];
+
+      let html = '';
+      for (const r of rowOrder) {
+        for (const f of fileOrder) {
+          const sq = r * 8 + f;
+          const light = (r + f) % 2 !== 0;
+          const piece = displayState.board[sq];
+
+          let classes = `square ${light ? 'light' : 'dark'}`;
+          if (sq === selectedSq) classes += ' selected';
+          if (lastMove && (sq === lastMove.from || sq === lastMove.to)) classes += ' last-move';
+          if (inCheckSq === sq) classes += ' in-check';
+
+          const isLegal = legalMovesCache.some(m => m.to === sq);
+          const isCapture = isLegal && (piece || displayState.enPassant === sq);
+          if (isLegal) classes += isCapture ? ' legal-capture' : ' legal-move';
+
+          const isFirstFile = isFlipped ? f === 7 : f === 0;
+          const isLastRank = isFlipped ? r === 7 : r === 0;
+          const coordColor = light ? 'var(--board-dark, #b58863)' : 'var(--board-light, #f0d9b5)';
+          // всегда показываем координаты
+          const showCoords = true;
+          const showHints = true;
+
+          html += `<div class="${classes}" data-sq="${sq}"
+            onclick="window.engineBoard.handleClick(${sq})"
+            ondragover="event.preventDefault()"
+            ondrop="window.engineBoard.handleDrop(event,${sq})">
+            ${showCoords && isFirstFile ? `<span style="position:absolute;left:2px;top:2px;font-size:10px;font-weight:700;font-family:var(--font-mono);color:${coordColor};line-height:1;pointer-events:none">${r+1}</span>` : ''}
+            ${showCoords && isLastRank ? `<span style="position:absolute;right:2px;bottom:1px;font-size:10px;font-weight:700;font-family:var(--font-mono);color:${coordColor};line-height:1;pointer-events:none">${String.fromCharCode(97+f)}</span>` : ''}
+            ${piece ? `<div class="piece" draggable="true"
+              ondragstart="window.engineBoard.handleDragStart(event,${sq})"
+              ondragend="window.engineBoard.handleDragEnd(event)">
+              <img src="${PIECE_IMGS[piece.color+piece.type]}" alt="${piece.color}${piece.type}" draggable="false">
+            </div>` : ''}
+          </div>`;
+        }
+      }
+      boardEl.innerHTML = html;
+      renderMoveList();
+      updateCapturedPieces(displayState);
+      if (fenDisplay) fenDisplay.textContent = ChessEngine.toFEN(state);
+    }
+
+    function findCheckSquare(st) {
+      const kingSq = ChessEngine.findKing(st, st.turn);
+      if (kingSq === -1) return null;
+      return ChessEngine.isAttacked(st, kingSq, ChessEngine.opposite(st.turn)) ? kingSq : null;
+    }
+
+    // ─── СПИСОК ХОДОВ ─────────────────────────────────────────
+    function renderMoveList() {
+      if (!movesTable) return;
+      const moves = state.history;
+      let html = '';
+      for (let i = 0; i < moves.length; i += 2) {
+        const wMove = moves[i];
+        const bMove = moves[i+1];
+        const wIdx = i;
+        const bIdx = i+1;
+        const wCurrent = viewingMove === wIdx || (viewingMove === -1 && wIdx === moves.length - 1 && !bMove);
+        const bCurrent = viewingMove === bIdx || (viewingMove === -1 && bIdx === moves.length - 1);
+        html += `<tr>
+          <td>${Math.floor(i/2)+1}.</td>
+          <td class="move-cell ${wCurrent ? 'current' : ''}" onclick="window.engineBoard.gotoMove(${wIdx+1})">${wMove.san}</td>
+          <td class="move-cell ${bCurrent ? 'current' : ''}" onclick="window.engineBoard.gotoMove(${bIdx+1})">${bMove ? bMove.san : ''}</td>
+        </tr>`;
+      }
+      movesTable.innerHTML = html;
+      const movesDiv = movesTable.closest('.moves-list');
+      if (movesDiv) movesDiv.scrollTop = movesDiv.scrollHeight;
+    }
+
+    function updateCapturedPieces(st) {
+      const ORDER = ['Q','R','B','N','P'];
+      const renderCap = (pieces) => pieces
+        .sort((a,b) => ORDER.indexOf(a.type) - ORDER.indexOf(b.type))
+        .map(p => `<img src="${PIECE_IMGS[p.color+p.type]}" style="width:20px;height:20px">`)
+        .join('');
+      if (capturedTop) capturedTop.innerHTML = renderCap(playerColor === 'w' ? st.capturedBlack : st.capturedWhite);
+      if (capturedBottom) capturedBottom.innerHTML = renderCap(playerColor === 'w' ? st.capturedWhite : st.capturedBlack);
+    }
+
+    // ─── НАВИГАЦИЯ ────────────────────────────────────────────
+    function gotoMove(idx) {
+      if (idx >= historyStates.length) { viewingMove = -1; }
+      else { viewingMove = idx; }
+      render();
+    }
+
+    function gotoFirst() { viewingMove = 0; render(); }
+    function gotoPrev() {
+      const cur = viewingMove === -1 ? historyStates.length - 1 : viewingMove;
+      viewingMove = Math.max(0, cur - 1);
+      render();
+    }
+    function gotoNext() {
+      const cur = viewingMove === -1 ? historyStates.length - 1 : viewingMove;
+      const next = cur + 1;
+      if (next >= historyStates.length) { viewingMove = -1; }
+      else { viewingMove = next; }
+      render();
+    }
+    function gotoLast() { viewingMove = -1; render(); }
+
+    // ─── ИГРОВАЯ ЛОГИКА ──────────────────────────────────────
+    function isGameOver() {
+      const status = ChessEngine.getStatus(state);
+      return ['checkmate', 'stalemate', 'draw'].includes(status.status);
+    }
+
+    function showGameResult(title, subtitle) {
+      alert(title + ' — ' + subtitle);
+      // можно использовать модал, но для простоты alert
+    }
+
+    function checkGameStatus() {
+      const status = ChessEngine.getStatus(state);
+      if (status.status === 'checkmate') {
+        gameOver = true;
+        stopClock();
+        const winner = status.winner === 'w' ? 'Белые' : 'Чёрные';
+        setTimeout(() => showGameResult(`${winner} победили!`, 'Мат'), 100);
+        return true;
+      } else if (status.status === 'stalemate') {
+        gameOver = true;
+        stopClock();
+        setTimeout(() => showGameResult('Пат', 'Ничья'), 100);
+        return true;
+      } else if (status.status === 'draw') {
+        gameOver = true;
+        stopClock();
+        setTimeout(() => showGameResult('Ничья', status.reason || ''), 100);
+        return true;
+      }
+      return false;
+    }
+
+    function executeMove(move) {
+      if (gameOver) return;
+      const san = ChessEngine.toSAN(state, move);
+      const prevState = ChessEngine.deepClone(state);
+      state = ChessEngine.applyMove(state, move);
+      state.history = [...prevState.history, { ...move, san, fen: ChessEngine.toFEN(state) }];
+      historyStates.push(ChessEngine.deepClone(state));
+      viewingMove = -1;
+      lastMove = move;
+      selectedSq = null;
+      legalMovesCache = [];
+      playSound(move);
+      tickClock();
+      render();
+
+      if (checkGameStatus()) return;
+
+      // Если после нашего хода ход движка
+      if (gameMode === 'engine' && state.turn !== playerColor && !gameOver) {
+        setTimeout(() => engineMove(), 300);
+      }
+    }
+
+    // ─── ДВИЖОК ───────────────────────────────────────────────
+    function engineMove() {
+      if (engineThinking || gameOver) return;
+      if (state.turn === playerColor) return; // ход игрока
+      engineThinking = true;
+      try {
+        const fen = ChessEngine.toFEN(state);
+        let move = null;
+        if (engineType === 'random') {
+          move = randomEngine.getMove(fen);
+        }
+        // в будущем другие движки
+
+        if (!move) {
+          engineThinking = false;
+          checkGameStatus();
+          return;
+        }
+
+        // Применяем ход движка
+        const san = ChessEngine.toSAN(state, move);
+        const prevState = ChessEngine.deepClone(state);
+        state = ChessEngine.applyMove(state, move);
+        state.history = [...prevState.history, { ...move, san, fen: ChessEngine.toFEN(state) }];
+        historyStates.push(ChessEngine.deepClone(state));
+        viewingMove = -1;
+        lastMove = move;
+        playSound(move);
+        tickClock();
+        render();
+
+        if (checkGameStatus()) {
+          engineThinking = false;
+          return;
+        }
+
+        // Если снова ход движка (при ошибке) — повторяем
+        if (state.turn !== playerColor && !gameOver) {
+          setTimeout(() => engineMove(), 300);
+        }
+      } catch(e) {
+        console.error('[Engine] move error:', e);
+      } finally {
+        engineThinking = false;
+      }
+    }
+
+    // ─── ОБРАБОТЧИКИ КЛИКОВ И DRAG ──────────────────────────
+    function handleClick(sq) {
+      if (gameOver) return;
+      if (state.turn !== playerColor) return; // не наш ход
+
+      const piece = state.board[sq];
+
+      if (selectedSq === null) {
+        if (!piece || piece.color !== playerColor) return;
+        selectedSq = sq;
+        legalMovesCache = ChessEngine.legalMoves(state, sq);
+        render();
+        return;
+      }
+
+      if (sq === selectedSq) {
+        selectedSq = null; legalMovesCache = [];
+        render(); return;
+      }
+
+      if (piece && piece.color === playerColor) {
+        selectedSq = sq;
+        legalMovesCache = ChessEngine.legalMoves(state, sq);
+        render(); return;
+      }
+
+      const move = legalMovesCache.find(m => m.to === sq);
+      if (!move) { selectedSq = null; legalMovesCache = []; render(); return; }
+
+      // Проверка превращения
+      if (move.promotion) {
+        const promotions = legalMovesCache.filter(m => m.to === sq && m.promotion);
+        if (promotions.length > 1) {
+          showPromotionDialog(playerColor, (promo) => {
+            const pm = promotions.find(m => m.promotion === promo) || promotions[0];
+            executeMove(pm);
+          });
+          return;
+        }
+      }
+      executeMove(move);
+    }
+
+    let dragFromSq = null;
+    function handleDragStart(e, sq) {
+      if (gameOver) { e.preventDefault(); return; }
+      if (state.turn !== playerColor) { e.preventDefault(); return; }
+      const piece = state.board[sq];
+      if (!piece || piece.color !== playerColor) { e.preventDefault(); return; }
+      dragFromSq = sq;
+      selectedSq = sq;
+      legalMovesCache = ChessEngine.legalMoves(state, sq);
+      e.dataTransfer.setData('text/plain', sq);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => render(), 0);
+    }
+    function handleDragEnd(e) { dragFromSq = null; }
+    function handleDrop(e, sq) {
+      e.preventDefault();
+      const from = dragFromSq !== null ? dragFromSq : parseInt(e.dataTransfer.getData('text/plain'));
+      dragFromSq = null;
+      if (isNaN(from) || from === sq) { selectedSq = null; legalMovesCache = []; render(); return; }
+
+      const freshMoves = ChessEngine.legalMoves(state, from);
+      const move = freshMoves.find(m => m.to === sq);
+      if (!move) { selectedSq = null; legalMovesCache = []; render(); return; }
+
+      if (move.promotion) {
+        const promotions = freshMoves.filter(m => m.to === sq && m.promotion);
+        if (promotions.length > 1) {
+          showPromotionDialog(playerColor, (promo) => {
+            const pm = promotions.find(m => m.promotion === promo) || promotions[0];
+            executeMove(pm);
+          });
+          return;
+        }
+      }
+      executeMove(move);
+    }
+
+    // ─── ПРЕВРАЩЕНИЕ ──────────────────────────────────────────
+    function showPromotionDialog(color, callback) {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:var(--bg-card,#1e1e2e);border:2px solid var(--accent,#c9a84c);border-radius:16px;padding:24px;text-align:center;';
+      box.innerHTML = '<div style="font-size:16px;font-weight:700;margin-bottom:16px;">Превращение пешки</div>';
+      const btns = document.createElement('div');
+      btns.style.cssText = 'display:flex;gap:12px;justify-content:center;';
+      ['Q','R','B','N'].forEach(type => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.style.cssText = 'font-size:22px;min-width:64px;padding:10px 8px;cursor:pointer;';
+        const img = document.createElement('img');
+        img.src = PIECE_IMGS[color + type];
+        img.style.width = '40px';
+        btn.appendChild(img);
+        btn.onclick = () => { overlay.remove(); callback(type); };
+        btns.appendChild(btn);
+      });
+      box.appendChild(btns);
+      overlay.appendChild(box);
+      overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); selectedSq = null; legalMovesCache = []; render(); } };
+      document.body.appendChild(overlay);
+    }
+
+    // ─── ДЕЙСТВИЯ ─────────────────────────────────────────────
+    function flipBoard() { isFlipped = !isFlipped; render(); }
+
+    function resign() {
+      if (gameOver) return;
+      if (!confirm('Сдаться?')) return;
+      stopClock();
+      gameOver = true;
+      const winner = playerColor === 'w' ? 'Чёрные' : 'Белые';
+      showGameResult(`${winner} победили!`, 'Сдача');
+    }
+
+    function offerDraw() {
+      if (gameOver) return;
+      if (confirm('Предложить ничью?')) {
+        stopClock();
+        gameOver = true;
+        showGameResult('Ничья', 'По соглашению');
+      }
+    }
+
+    // ─── НОВАЯ ИГРА ────────────────────────────────────────────
+    function startNewGame() {
+      // Сброс
+      state = ChessEngine.parseFEN(ChessEngine.START_FEN);
+      historyStates = [ChessEngine.deepClone(state)];
+      viewingMove = -1;
+      lastMove = null;
+      selectedSq = null;
+      legalMovesCache = [];
+      gameOver = false;
+      engineThinking = false;
+
+      // Цвет
+      const colorBtn = document.querySelector('.color-btn.selected');
+      const colorVal = colorBtn ? colorBtn.dataset.color : 'random';
+      playerColor = colorVal === 'random' ? (Math.random() > 0.5 ? 'w' : 'b') : (colorVal === 'white' ? 'w' : 'b');
+      isFlipped = playerColor === 'b';
+
+      // Время
+      const tcBtn = document.querySelector('.tc-btn[data-tc].selected');
+      const tc = tcBtn ? tcBtn.dataset.tc : '10+0';
+      const [min, inc] = tc.split('+').map(Number);
+      const totalSec = min * 60;
+      tcIncrement = inc || 0;
+
+      // Движок
+      engineType = document.getElementById('engine-select').value;
+
+      // Обновляем имена
+      playerTopName.textContent = 'Движок' + (playerColor === 'w' ? ' ♟' : ' ♙');
+      playerBottomName.textContent = 'Вы' + (playerColor === 'w' ? ' ♙' : ' ♟');
+
+      // Запуск часов
+      whiteTime = totalSec;
+      blackTime = totalSec;
+      activeColor = 'w';
+      clockRunning = false;
+      clockTickAt = null;
+      clearInterval(clockInterval);
+      updateClockDisplay();
+
+      render();
+
+      // Если игрок играет чёрными — движок ходит первым
+      if (playerColor === 'b') {
+        setTimeout(() => engineMove(), 400);
+      }
+    }
+
+    // ─── ИНИЦИАЛИЗАЦИЯ ────────────────────────────────────────
+    // Навешиваем обработчики на кнопки управления
+    document.querySelectorAll('.tc-btn[data-tc]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tc-btn[data-tc]').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+    document.querySelectorAll('.color-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+        this.classList.add('selected');
+      });
+    });
+
+    document.getElementById('btn-new-engine-game').addEventListener('click', startNewGame);
+    document.getElementById('engine-btn-first').addEventListener('click', gotoFirst);
+    document.getElementById('engine-btn-prev').addEventListener('click', gotoPrev);
+    document.getElementById('engine-btn-next').addEventListener('click', gotoNext);
+    document.getElementById('engine-btn-last').addEventListener('click', gotoLast);
+    document.getElementById('engine-btn-flip').addEventListener('click', flipBoard);
+    document.getElementById('engine-btn-resign').addEventListener('click', resign);
+    document.getElementById('engine-btn-draw').addEventListener('click', offerDraw);
+
+    // Экспонируем объект в window для вызовов из onclick
+    window.engineBoard = {
+      handleClick,
+      handleDragStart,
+      handleDragEnd,
+      handleDrop,
+      gotoMove,
+      gotoFirst,
+      gotoPrev,
+      gotoNext,
+      gotoLast,
+      flipBoard,
+      resign,
+      offerDraw,
+      startNewGame,
+      render,
+      // для внутреннего использования
+      state: () => state,
+      playerColor: () => playerColor,
+    };
+
+    // Автозапуск первой игры
+    setTimeout(startNewGame, 100);
+  })();
+</script>
+
+</body>
+</html>

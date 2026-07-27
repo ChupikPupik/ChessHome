@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Home TV — Live Партии</title>
+  <meta name="description" content="Chess Home TV — смотри все активные шахматные партии в реальном времени">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<header id="header">
+  <a href="/" class="logo">
+    <span class="logo-icon">♚</span>
+    Chess Home
+  </a>
+
+  <nav>
+    <ul class="nav-links">
+      <li><a href="/lobby">🏆 Играть</a></li>
+      <li><a href="/tv" class="active">📺 TV</a></li>
+      <li><a href="/analysis">🔍 Анализ</a></li>
+      <li><a href="/editor">✏️ Редактор</a></li>
+    </ul>
+  </nav>
+
+  <div class="header-right" id="header-right"></div>
+
+  <div class="online-badge" style="margin-left:8px">
+    <div class="online-dot"></div>
+    <span id="online-count">0</span> онлайн
+  </div>
+</header>
+
+<!-- ── СТРАНИЦА TV ─────────────────────────────────────────────── -->
+<div id="app">
+  <div class="page active" id="page-tv">
+    <div class="tv-section">
+
+      <!-- Заголовок -->
+      <div class="tv-header">
+        <div class="tv-title">
+          📺 Chess<span>Home</span> TV
+          <div class="tv-live-badge">
+            <div class="tv-live-dot"></div>
+            LIVE
+          </div>
+        </div>
+        <div class="tv-controls">
+          <span style="font-size:13px;color:var(--text-muted)">
+            Активных: <strong id="tv-active-count" style="color:var(--accent)">—</strong>
+          </span>
+          <button class="btn btn-ghost btn-sm" onclick="ChessTV.refresh()">↻ Обновить</button>
+          <button class="btn btn-ghost btn-sm" id="tv-pause-btn" onclick="toggleTVPause()">⏸ Пауза</button>
+        </div>
+      </div>
+
+      <!-- Список партий -->
+      <div id="tv-game-list"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<!-- ── SCRIPTS ────────────────────────────────────────────────── -->
+<script src="/js/pieces.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/chess-engine.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/tv.js"></script>
+
+<script>
+// ── Инициализация TV страницы ──────────────────────────────────
+let tvPaused = false;
+
+function toggleTVPause() {
+  tvPaused = !tvPaused;
+  const btn = document.getElementById('tv-pause-btn');
+  if (tvPaused) {
+    ChessTV.pause();
+    if (btn) btn.textContent = '▶ Продолжить';
+  } else {
+    ChessTV.resume();
+    if (btn) btn.textContent = '⏸ Пауза';
+  }
+}
+
+// Запускаем TV как только приложение инициализировалось
+document.addEventListener('DOMContentLoaded', () => {
+  // Ждём пока app.js выполнит tryAutoLogin и connectSocket
+  const tryInit = () => {
+    if (typeof ChessTV !== 'undefined' && typeof ChessEngine !== 'undefined' && typeof PIECE_IMGS !== 'undefined') {
+      // socket может быть ещё null если пользователь не залогинен — это ок
+      ChessTV.init(typeof socket !== 'undefined' ? socket : null);
+    } else {
+      setTimeout(tryInit, 100);
+    }
+  };
+  setTimeout(tryInit, 300);
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Конфиденциальность — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+<link rel="icon" type="image/png" href="../img/logo/favicon.png">
+</head>
+<body>
+<!-- header injected by /js/header.js -->
+<div style="padding-top:56px">
+
+  <div style="padding:40px 24px;max-width:800px;margin:0 auto">
+    <div class="legal-content">
+      <h1>Политика конфиденциальности</h1>
+      <div class="last-updated">Последнее обновление: 12 июня 2026 года · Версия 1.1</div>
+
+      <h2>1. Введение</h2>
+      <p>Настоящая Политика конфиденциальности описывает, какие данные собирает, хранит и обрабатывает платформа Chess Home («Платформа», «мы», «наш сервис»), каким образом эти данные используются, как они защищаются и какие права есть у пользователя («вы», «пользователь») в отношении своих персональных данных.</p>
+      <p>Используя Chess Home, вы подтверждаете, что ознакомились с настоящей Политикой и соглашаетесь с порядком обработки данных, описанным в ней. Если вы не согласны с условиями — пожалуйста, прекратите использование платформы и обратитесь к нам для удаления аккаунта.</p>
+
+      <h2>2. Какие данные мы собираем</h2>
+
+      <h3>2.1 Данные, которые вы предоставляете явно</h3>
+      <ul>
+        <li><strong>Имя пользователя (никнейм):</strong> публичное имя, отображаемое в профиле, рейтинговых таблицах, чате и истории партий. Выбирается при регистрации, может быть изменено через поддержку.</li>
+        <li><strong>Адрес электронной почты:</strong> используется для идентификации аккаунта, восстановления доступа и технических уведомлений. Не отображается публично.</li>
+        <li><strong>Пароль:</strong> хранится исключительно в виде хэша (bcrypt, стоимость 12+). Оригинальный пароль нигде не сохраняется и не может быть восстановлен даже администраторами — только сброс.</li>
+      </ul>
+
+      <h3>2.2 Данные, генерируемые в процессе использования</h3>
+      <ul>
+        <li><strong>Игровые данные:</strong> все сыгранные партии сохраняются полностью в формате PGN, включая время каждого хода, итог партии и рейтинг обоих игроков на момент игры. История партий видна в профиле игрока.</li>
+        <li><strong>Рейтинг:</strong> текущий рейтинг Эло и его изменения хранятся в базе данных и отображаются публично.</li>
+        <li><strong>Статистика:</strong> количество сыгранных партий, побед, поражений и ничьих.</li>
+        <li><strong>Сообщения:</strong> личная переписка между пользователями хранится на сервере. Администрация может просматривать переписку при расследовании нарушений.</li>
+        <li><strong>Сообщения в форуме и чате:</strong> все публичные высказывания сохраняются в базе данных и видны всем пользователям.</li>
+      </ul>
+
+      <h3>2.3 Технические данные</h3>
+      <ul>
+        <li><strong>IP-адрес:</strong> фиксируется при каждом подключении. Используется для защиты от DDoS-атак, обнаружения мультиаккаунтинга и блокировки нарушителей.</li>
+        <li><strong>Тип браузера и операционная система:</strong> собираются автоматически для диагностики технических проблем.</li>
+        <li><strong>Время подключений и действий:</strong> логи хранятся в течение 90 дней.</li>
+        <li><strong>Токены авторизации:</strong> JWT-токен хранится в защищённой HttpOnly-cookie браузера (недоступной для JavaScript на странице). Срок действия токена — 7 дней, после чего требуется повторный вход.</li>
+      </ul>
+
+      <h2>3. Для чего мы используем данные</h2>
+      <ul>
+        <li><strong>Предоставление сервиса:</strong> без хранения данных аккаунта невозможно обеспечить онлайн-игру, рейтинг и историю партий.</li>
+        <li><strong>Аутентификация и безопасность:</strong> проверка личности при входе, защита от несанкционированного доступа к аккаунту.</li>
+        <li><strong>Борьба с читерством:</strong> анализ паттернов игры для выявления использования сторонних движков в рейтинговых партиях.</li>
+        <li><strong>Модерация:</strong> обеспечение соблюдения Пользовательского соглашения, работа с жалобами, расследование нарушений.</li>
+        <li><strong>Техническая поддержка:</strong> диагностика и устранение ошибок на основе технических логов.</li>
+        <li><strong>Развитие платформы:</strong> анализ агрегированной (обезличенной) статистики использования для улучшения функциональности.</li>
+      </ul>
+
+      <h2>4. Передача данных третьим лицам</h2>
+      <p>Мы не продаём, не арендуем и не передаём персональные данные пользователей третьим лицам в коммерческих целях. Передача данных возможна только в следующих случаях:</p>
+      <ul>
+        <li><strong>По требованию закона:</strong> при наличии законных требований со стороны правоохранительных органов Российской Федерации в установленном порядке.</li>
+        <li><strong>Технические подрядчики:</strong> хостинг-провайдеры и операторы серверной инфраструктуры, обеспечивающие работу платформы. Они обрабатывают данные исключительно по нашим инструкциям и обязаны обеспечивать их конфиденциальность.</li>
+        <li><strong>С вашего согласия:</strong> в любых иных случаях — только с явного письменного согласия пользователя.</li>
+      </ul>
+
+      <h2>5. Хранение и защита данных</h2>
+      <ul>
+        <li>Все соединения с сервером осуществляются по протоколу HTTPS/TLS. Данные в транзите зашифрованы.</li>
+        <li>Пароли хранятся в виде хэша bcrypt с солью — даже при компрометации базы данных оригинальный пароль не восстановить.</li>
+        <li>Доступ к базе данных имеет ограниченный круг администраторов. Все действия администраторов логируются.</li>
+        <li>Регулярное резервное копирование с хранением резервных копий в зашифрованном виде.</li>
+        <li>Мы проводим периодические проверки безопасности и устраняем уязвимости по мере их обнаружения.</li>
+      </ul>
+      <p>Несмотря на принятые меры защиты, ни одна система не может гарантировать абсолютную безопасность. В случае утечки данных мы уведомим затронутых пользователей в разумные сроки.</p>
+
+      <h2>6. Сроки хранения данных</h2>
+      <ul>
+        <li><strong>Данные аккаунта:</strong> хранятся бессрочно до момента удаления аккаунта.</li>
+        <li><strong>История партий:</strong> хранится бессрочно и является частью публичного профиля.</li>
+        <li><strong>Личные сообщения:</strong> хранятся до удаления аккаунта одного из участников диалога.</li>
+        <li><strong>Технические логи:</strong> 90 дней, после чего автоматически удаляются.</li>
+        <li><strong>После удаления аккаунта:</strong> персональные данные удаляются в течение 30 дней. Анонимизированная игровая статистика (без привязки к имени) может быть сохранена для общей статистики платформы.</li>
+      </ul>
+
+      <h2>7. Файлы cookie и localStorage</h2>
+      <p>Chess Home не использует сторонние cookies, рекламные трекеры или аналитические системы вроде Google Analytics. Мы используем только:</p>
+      <ul>
+        <li><strong>HttpOnly-cookie — токен авторизации:</strong> JWT-токен, позволяющий оставаться в системе без повторного ввода пароля. Хранится в защищённой cookie, недоступной для чтения из JavaScript (защита от кражи токена через XSS), и не передаётся третьим лицам.</li>
+        <li><strong>localStorage — настройки интерфейса:</strong> выбранная тема доски, включённые/отключённые звуки и другие настройки сохраняются локально в браузере. На сервер не передаются.</li>
+      </ul>
+
+      <h2>8. Права пользователя</h2>
+      <ul>
+        <li><strong>Право на доступ:</strong> вы можете в любой момент просмотреть свои данные через профиль и настройки аккаунта.</li>
+        <li><strong>Право на исправление:</strong> при обнаружении неточных данных обратитесь в поддержку.</li>
+        <li><strong>Право на удаление:</strong> вы можете запросить полное удаление аккаунта и связанных персональных данных. Запрос обрабатывается в течение 30 дней.</li>
+        <li><strong>Право на экспорт:</strong> по запросу мы предоставим историю ваших партий в формате PGN.</li>
+        <li><strong>Право на ограничение обработки:</strong> если вы считаете, что данные обрабатываются неправомерно, вы можете обратиться к нам с соответствующим запросом.</li>
+      </ul>
+
+      <h2>9. Несовершеннолетние</h2>
+      <p>Платформа рассчитана на пользователей старше 13 лет. Если вам меньше 13 лет, использование Chess Home не допускается. Если нам станет известно, что аккаунт был зарегистрирован пользователем младше 13 лет, такой аккаунт будет удалён.</p>
+      <p>Пользователям от 13 до 18 лет рекомендуется использовать платформу с ведома родителей или законных представителей.</p>
+
+      <h2>10. Изменения политики</h2>
+      <p>Мы оставляем за собой право обновлять настоящую Политику конфиденциальности. О существенных изменениях пользователи будут уведомлены через уведомление на сайте или по электронной почте не менее чем за 7 дней до вступления изменений в силу. Продолжение использования платформы после вступления изменений в силу означает принятие новых условий.</p>
+
+      <h2>11. Контакты</h2>
+      <p>По вопросам, связанным с обработкой персональных данных, обращайтесь к администрации через форум или личные сообщения. Укажите в теме обращения «Персональные данные».</p>
+    </div></div>
+</div>
+<div id="toast-container"></div>
+
+<!-- Баннер обновления политики -->
+<div id="policy-banner" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a2a3a;border:1px solid #3a5a7a;border-radius:12px;padding:16px 24px;max-width:480px;width:calc(100% - 48px);box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;flex-direction:column;gap:10px">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <span style="font-size:22px;flex-shrink:0">📋</span>
+    <div>
+      <div style="font-weight:700;color:#e0e0e0;margin-bottom:4px">Мы обновили документы</div>
+      <div style="color:#a0b8c8;font-size:13px;line-height:1.5">Пользовательское соглашение и политика конфиденциальности обновлены 12 июня 2026 года. Продолжая использовать Chess Home, вы принимаете новые условия.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <a href="/terms.html" style="font-size:13px;color:#7c9cbf;text-decoration:none;padding:6px 12px;border:1px solid #3a5a7a;border-radius:6px">Читать</a>
+    <button onclick="dismissPolicyBanner()" style="font-size:13px;background:#3a6a9a;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer">Понятно</button>
+  </div>
+</div>
+
+<script>
+// ── Policy update banner (one-time, cross-page via localStorage) ──
+const POLICY_VERSION = 'v1.1-2025-06-12';
+function dismissPolicyBanner() {
+  localStorage.setItem('ch_policy_seen', POLICY_VERSION);
+  const b = document.getElementById('policy-banner');
+  if (b) { b.style.transition='opacity 0.3s'; b.style.opacity='0'; setTimeout(()=>b.style.display='none',300); }
+}
+(function() {
+  if (localStorage.getItem('ch_policy_seen') !== POLICY_VERSION) {
+    const b = document.getElementById('policy-banner');
+    if (b) { b.style.display='flex'; }
+  }
+})();
+</script>
+<script>
+const API='/api';let currentUser=null;
+// Авторизация теперь через HttpOnly-cookie (ch_token) — не localStorage.
+function escapeHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function getSettings(){try{return JSON.parse(localStorage.getItem('ch_settings')||'{}');}catch{return{};}}
+function applySettings(){const s=getSettings();if(s.boardLight)document.documentElement.style.setProperty('--board-light',s.boardLight);if(s.boardDark)document.documentElement.style.setProperty('--board-dark',s.boardDark);}
+async function apiGet(path){const res=await fetch(API+path,{credentials:'include'});const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка');return data;}
+async function apiPost(path,body){const res=await fetch(API+path,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка');return data;}
+function toast(msg,type='info'){const c=document.getElementById('toast-container');const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;c.appendChild(el);setTimeout(()=>el.remove(),3000);}
+function updateHeaderUI() {
+  CH.setCurrentUser(currentUser);
+  
+}
+
+document.addEventListener('click',e=>{if(!e.target.closest('.user-menu'))document.getElementById('hdr-drop')?.classList.remove('open');});
+async function initHeader() {
+  CH.initHeader();
+  // Сервер сам читает токен из HttpOnly-cookie — просто спрашиваем /api/me.
+  try {
+    currentUser = await apiGet('/me');
+  } catch { currentUser = null; }
+  updateHeaderUI();
+  
+}
+initHeader();
+</script>
+<script src="/js/ping-widget.js"></script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Настройки — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♚</text></svg>">
+</head>
+<body>
+<div id="app" style="padding-top:56px">
+  <div style="padding:40px 24px;max-width:700px;margin:0 auto">
+
+    <div class="page-header">
+      <h1>⚙️ Настройки</h1>
+    </div>
+
+    <!-- ЭМОДЗИ -->
+    <div class="settings-section">
+      <div class="settings-title">😀 Эмодзи профиля</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-name">Ваш эмодзи</div>
+          <div class="settings-label-desc">Отображается в чате и профиле</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div id="current-emoji-preview"
+               style="font-size:32px;cursor:pointer;background:var(--bg-secondary);padding:4px 12px;border-radius:12px;min-width:52px;text-align:center;border:1px solid var(--border);transition:border-color .2s"
+               onclick="openEmojiPicker()"
+               title="Кликните, чтобы выбрать эмодзи">
+          </div>
+          <button id="btn-remove-emoji" class="btn btn-ghost btn-sm" onclick="removeEmoji()" style="display:none;font-size:12px">✕ Убрать</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);padding:4px 0 0 0">
+        Нажмите на превью, чтобы выбрать. Если не выбран — ничего не отображается.
+      </div>
+    </div>
+
+    <!-- ИГРА -->
+    <div class="settings-section">
+      <div class="settings-title">🎮 Игра</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-name">Звуковые эффекты</div>
+          <div class="settings-label-desc">Звуки ходов, взятий, шаха</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="set-sounds" onchange="saveSetting('sounds',this.checked)">
+          <div class="toggle-slider"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-name">Подсказки ходов</div>
+          <div class="settings-label-desc">Показывать возможные ходы</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="set-hints" onchange="saveSetting('hints',this.checked)">
+          <div class="toggle-slider"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-name">Координаты на доске</div>
+          <div class="settings-label-desc">Буквы и цифры по краям</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="set-coords" onchange="saveSetting('coords',this.checked)">
+          <div class="toggle-slider"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-name">Анимация ходов</div>
+          <div class="settings-label-desc">Плавное перемещение фигур</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="set-animation" onchange="saveSetting('animation',this.checked)">
+          <div class="toggle-slider"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- ДОСКА -->
+    <div class="settings-section">
+      <div class="settings-title">🎨 Доска</div>
+      <div class="settings-row">
+        <div class="settings-label">
+          <div class="settings-label-name">Тема доски</div>
+        </div>
+        <div class="color-options">
+          <div class="color-option" style="background:#f0d9b5;border:2px solid #b58863" title="Классическая" onclick="setBoardTheme('#f0d9b5','#b58863')"></div>
+          <div class="color-option" style="background:#dee3e6;border:2px solid #8ca2ad" title="Синяя"        onclick="setBoardTheme('#dee3e6','#8ca2ad')"></div>
+          <div class="color-option" style="background:#e8e9b7;border:2px solid #6e8149" title="Зелёная"     onclick="setBoardTheme('#e8e9b7','#6e8149')"></div>
+          <div class="color-option" style="background:#f1c79c;border:2px solid #c07030" title="Оранжевая"   onclick="setBoardTheme('#f1c79c','#c07030')"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- АККАУНТ -->
+    <div class="settings-section">
+      <div class="settings-title">👤 Аккаунт</div>
+      <div id="settings-account-info">
+        <div style="color:var(--text-secondary);font-size:14px" id="account-info-text">Войдите в аккаунт для управления профилем</div>
+      </div>
+    </div>
+
+    <!-- ИНФОРМАЦИЯ -->
+    <div class="settings-section">
+      <div class="settings-title">🔗 Информация</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn btn-ghost btn-sm" href="/about">О сайте</a>
+        <a class="btn btn-ghost btn-sm" href="/privacy">Конфиденциальность</a>
+        <a class="btn btn-ghost btn-sm" href="/terms">Соглашение</a>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">Chess Home v1.0.0 · Made with ♥ in Russia</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Модальное окно эмодзи -->
+<div id="modal-emoji" class="modal-overlay">
+  <div class="modal" style="max-width:520px">
+    <button class="modal-close" onclick="closeModalEmoji()">✕</button>
+    <h2>Выберите эмодзи</h2>
+    <div id="emoji-grid"
+         style="display:grid;grid-template-columns:repeat(8,1fr);gap:6px;font-size:26px;text-align:center;max-height:340px;overflow-y:auto;padding:8px;margin-top:8px">
+    </div>
+    <div style="margin-top:12px;text-align:center">
+      <button class="btn btn-ghost btn-sm" onclick="removeEmoji()">✕ Убрать эмодзи</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const API = '/api';
+let currentUser = null;
+// Токен — в HttpOnly-cookie ch_token, JS её не видит и не должен;
+// браузер сам прикладывает её к запросам на тот же origin.
+
+function toast(msg, type='info') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = '<span>' + ({success:'✓',error:'✗',info:'ℹ'}[type]||'ℹ') + '</span><span>' + msg + '</span>';
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 3000);
+}
+
+async function apiGet(path) {
+  const res = await fetch(API + path, { credentials: 'same-origin' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+
+async function apiPost(path, body) {
+  const res = await fetch(API + path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+
+function updateHeaderUI() { if (window.CH) CH.setCurrentUser(currentUser); }
+
+// ── Настройки игры ────────────────────────────────────────────
+function saveSetting(key, value) {
+  localStorage.setItem('ch_' + key, value ? '1' : '0');
+  toast('Сохранено', 'success');
+}
+
+function loadSettings() {
+  const defaults = { sounds: true, hints: true, coords: true, animation: true };
+  for (const [key, def] of Object.entries(defaults)) {
+    const stored = localStorage.getItem('ch_' + key);
+    const val = stored === null ? def : stored === '1';
+    const el = document.getElementById('set-' + key);
+    if (el) el.checked = val;
+  }
+}
+
+function setBoardTheme(light, dark) {
+  localStorage.setItem('ch_board_light', light);
+  localStorage.setItem('ch_board_dark', dark);
+  toast('Тема доски сохранена', 'success');
+}
+
+// ── Эмодзи ────────────────────────────────────────────────────
+const EMOJIS = [
+  '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰',
+  '😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏',
+  '😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠',
+  '😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥',
+  '😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐',
+  '🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','💩','👻','💀',
+  '☠️','👽','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','🙈','🙉','🙊',
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐒','🐔',
+  '🐧','🐦','🐤','🐣','🐥','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟',
+  '🦗','🕷️','🦂','🐢','🐍','🦎','🐙','🦑','🦐','🦞','🐠','🐟','🐡','🐬','🐳','🐋',
+  '🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃',
+  '🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🐇','🐁',
+  '🐀','🐿️','🦔','🐾','🐉','🐲','🌵','🎄','🌲','🌳','🌴','🌿','🍀','🍁','🍂','🍃',
+  '🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🥝','🍅',
+  '🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰','🍞',
+  '🥐','🥖','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪',
+  '🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘',
+  '🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦀',
+  '🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🥛','🍼',
+  '🥤','🧃','🧉','🧊','🍺','🍻','🥂','🥃','🥄','🍴','🍽️','🥢',
+  '⚽','🏀','🏈','⚾','🥎','🏐','🏉','🎾','🥏','🎳','🏆','🥇','🥈','🥉',
+  '🎮','🕹️','🎲','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎸','🎷','🎺','🎻',
+  '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','💕','💞','💓','💗','💖','💘','💝',
+  '✨','🌟','⭐','🌙','☀️','🌈','⚡','💫','☄️','❄️','☃️','⛄','🔥','💧','🌊','🌪️',
+  '🎁','🎀','🎊','🎉','🎈','🎃','🎄','🎋','🎆','🎇'
+];
+
+function closeModalEmoji() {
+  document.getElementById('modal-emoji').classList.remove('open');
+}
+
+function openEmojiPicker() {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = '';
+  for (const em of EMOJIS) {
+    const div = document.createElement('div');
+    div.textContent = em;
+    div.style.cssText = 'cursor:pointer;padding:4px;border-radius:6px;transition:background .1s,transform .1s';
+    div.onmouseenter = () => { div.style.background = 'var(--bg-card)'; div.style.transform = 'scale(1.15)'; };
+    div.onmouseleave = () => { div.style.background = ''; div.style.transform = ''; };
+    div.onclick = () => selectEmoji(em);
+    grid.appendChild(div);
+  }
+  document.getElementById('modal-emoji').classList.add('open');
+}
+
+async function selectEmoji(emoji) {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  try {
+    await apiPost('/user/emoji', { emoji });
+    if (currentUser) currentUser.emoji = emoji;
+    if (window.CH) CH.setCurrentUser(currentUser);
+    updateEmojiPreview(emoji);
+    closeModalEmoji();
+    toast('Эмодзи сохранён!', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function removeEmoji() {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  try {
+    await apiPost('/user/emoji', { emoji: '' });
+    if (currentUser) currentUser.emoji = '';
+    if (window.CH) CH.setCurrentUser(currentUser);
+    updateEmojiPreview('');
+    closeModalEmoji();
+    toast('Эмодзи убран', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+function updateEmojiPreview(emoji) {
+  const preview = document.getElementById('current-emoji-preview');
+  const removeBtn = document.getElementById('btn-remove-emoji');
+  if (preview) {
+    if (emoji) {
+      preview.textContent = emoji;
+      preview.title = 'Кликните, чтобы сменить эмодзи';
+    } else {
+      preview.innerHTML = '<span style="font-size:14px;color:var(--text-muted)">+</span>';
+      preview.title = 'Кликните, чтобы выбрать эмодзи';
+    }
+  }
+  if (removeBtn) removeBtn.style.display = emoji ? '' : 'none';
+}
+
+document.getElementById('modal-emoji').addEventListener('click', function(e) {
+  if (e.target === this) closeModalEmoji();
+});
+
+// ── Инициализация ─────────────────────────────────────────────
+async function init() {
+  if (window.CH) CH.initHeader();
+  // Кука ch_token уедет с запросом сама — просто спрашиваем сервер, кто мы.
+  try {
+    currentUser = await apiGet('/me');
+  } catch {
+    currentUser = null; // не авторизован — это ожидаемо
+  }
+  updateHeaderUI();
+  loadSettings();
+  updateEmojiPreview(currentUser?.emoji || '');
+
+  // Аккаунт-блок
+  if (currentUser) {
+    const infoEl = document.getElementById('account-info-text');
+    if (infoEl) {
+      infoEl.innerHTML =
+        '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">' +
+          '<a href="/profile/' + encodeURIComponent(currentUser.username) + '" class="btn btn-ghost btn-sm">\u{1F464} Мой профиль</a>' +
+          '<span style="font-size:14px;color:var(--text-secondary)">@' + currentUser.username + '</span>' +
+          '<span style="font-size:13px;color:var(--text-muted)">\u2605 ' + currentUser.rating + '</span>' +
+        '</div>';
+    }
+  }
+}
+init();
+</script>
+</body>
+</html>

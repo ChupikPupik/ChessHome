@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Home — Восстановление</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♚</text></svg>">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;1,400&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0f;
+      --gold:    #c9a84c;
+      --gold-dim:#7a6030;
+      --text:    #e8e0d0;
+      --muted:   #6b6575;
+      --red:     #c0392b;
+      --green:   #27ae60;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Crimson Text', Georgia, serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Шахматный фон */
+    .chess-bg {
+      position: fixed; inset: 0;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      opacity: 0.025;
+      pointer-events: none;
+    }
+    .chess-bg div:nth-child(odd) { background: #fff; }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 20%, #0a0a0f 80%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 40px 24px;
+      max-width: 620px;
+      width: 100%;
+    }
+
+    .piece {
+      font-size: 72px;
+      display: block;
+      animation: float 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 24px rgba(201,168,76,0.35));
+      margin-bottom: 4px;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0) rotate(-2deg); }
+      50%      { transform: translateY(-10px) rotate(2deg); }
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(26px, 5vw, 38px);
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      text-shadow: 0 0 30px rgba(201,168,76,0.4);
+      animation: fadein 0.8s ease both;
+    }
+
+    .ornament {
+      display: flex; align-items: center; gap: 10px; justify-content: center;
+      margin: 20px 0;
+    }
+    .ornament::before { content:''; flex:1; max-width:100px; height:1px; background: linear-gradient(90deg,transparent,var(--gold-dim)); }
+    .ornament::after  { content:''; flex:1; max-width:100px; height:1px; background: linear-gradient(90deg,var(--gold-dim),transparent); }
+    .diamond { width:7px; height:7px; background:var(--gold); transform:rotate(45deg); }
+
+    /* Блок с сообщением */
+    .card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 4px;
+      padding: 28px 32px;
+      margin-top: 8px;
+      text-align: left;
+      animation: fadein 0.8s 0.3s ease both;
+    }
+
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      color: var(--gold);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title::before {
+      content: '⚠';
+      font-size: 16px;
+    }
+
+    .card p {
+      font-size: 18px;
+      line-height: 1.75;
+      color: #c0b8a8;
+    }
+
+    .card p + p { margin-top: 10px; }
+
+    /* Статус-строки */
+    .status-list {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      animation: fadein 0.8s 0.5s ease both;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.green  { background: var(--green);  box-shadow: 0 0 8px var(--green); }
+    .dot.yellow { background: #f39c12;       box-shadow: 0 0 8px #f39c12; animation: pulse 2s infinite; }
+    .dot.red    { background: var(--red);    box-shadow: 0 0 8px var(--red); }
+
+    @keyframes pulse {
+      0%,100% { opacity:1; } 50% { opacity:0.3; }
+    }
+
+    /* Подпись модераторов */
+    .mod-note {
+      margin-top: 28px;
+      padding: 14px 20px;
+      border-left: 2px solid var(--gold-dim);
+      font-style: italic;
+      font-size: 16px;
+      color: var(--muted);
+      text-align: left;
+      animation: fadein 0.8s 0.7s ease both;
+    }
+
+    .footer {
+      margin-top: 36px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      color: #3a3545;
+      text-transform: uppercase;
+      animation: fadein 0.8s 0.9s ease both;
+    }
+
+    @keyframes fadein {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="chess-bg" id="bg"></div>
+
+<div class="container">
+  <span class="piece">♚</span>
+  <h1>Chess Home</h1>
+
+  <div class="ornament"><div class="diamond"></div></div>
+
+  <div class="card">
+    <div class="card-title">Сообщение команды</div>
+    <p>
+      Мы столкнулись с аппаратным сбоем на стороне хостинга, который затронул часть данных пользователей.
+    </p>
+    <p>
+      Нам удалось решить большую часть проблем и восстановить работу сервера. Сейчас мы занимаемся восстановлением аккаунтов — модераторы в курсе ситуации и работают над этим.
+    </p>
+    <p>
+      Приносим извинения за неудобства. Сайт будет открыт как только мы убедимся в стабильности.
+    </p>
+  </div>
+
+  <div class="status-list">
+    <div class="status-row"><div class="dot green"></div>Сервер — работает</div>
+    <div class="status-row"><div class="dot green"></div>База данных — восстановлена</div>
+    <div class="status-row"><div class="dot yellow"></div>Аккаунты пользователей — частично восстанавливаются</div>
+    <div class="status-row"><div class="dot yellow"></div>Доступ на сайт — временно закрыт</div>
+  </div>
+
+  <div class="mod-note">
+    «Модераторы уведомлены и следят за ситуацией. Если у вас есть вопросы — свяжитесь с нами в Discord или Telegram.»
+  </div>
+
+  <div class="footer">♟ chesshome.pro &nbsp;·&nbsp; скоро вернёмся</div>
+</div>
+
+<script>
+  const bg = document.getElementById('bg');
+  for (let i = 0; i < 64; i++) bg.appendChild(document.createElement('div'));
+</script>
+</body>
+</html>

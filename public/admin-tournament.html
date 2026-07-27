@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Управление турниром — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♚</text></svg>">
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); }
+    .page { max-width: 900px; margin: 0 auto; padding: 80px 20px 60px; }
+
+    .admin-hero {
+      background: linear-gradient(135deg, rgba(201,168,76,0.08), rgba(201,168,76,0.03));
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .admin-hero-icon { font-size: 36px; }
+    .admin-hero-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--accent); }
+    .admin-hero-sub   { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input, .form-select, .form-textarea {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 9px; color: var(--text-primary); font-family: var(--font-body);
+      font-size: 14px; padding: 10px 14px; transition: border-color 0.2s; width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+    .form-textarea { resize: vertical; min-height: 70px; }
+
+    .btn { padding: 10px 20px; border-radius: 9px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 7px; }
+    .btn-primary { background: linear-gradient(135deg,var(--accent),var(--accent-dark)); color: #000; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,.4); }
+    .btn-danger { background: rgba(224,85,85,.1); color: var(--red); border: 1px solid rgba(224,85,85,.3); }
+    .btn-danger:hover { background: rgba(224,85,85,.2); }
+    .btn-secondary { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
+
+    /* Blacklist управление */
+    .bl-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .bl-tag {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(224,85,85,.08); border: 1px solid rgba(224,85,85,.25);
+      border-radius: 8px; padding: 8px 14px; font-size: 13px; color: var(--red);
+      font-weight: 600; flex: 1;
+    }
+    .bl-remove { margin-left: auto; cursor: pointer; opacity: .7; font-size: 16px; }
+    .bl-remove:hover { opacity: 1; }
+    .bl-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
+
+    /* Participants */
+    .p-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .p-row:last-child { border-bottom: none; }
+    .p-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #000; flex-shrink: 0;
+    }
+    .p-banned { opacity: .4; }
+    .p-name { flex: 1; font-weight: 600; font-size: 14px; }
+    .p-score { font-size: 13px; color: var(--accent); font-weight: 700; margin-right: 8px; }
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+    .badge-red { background: rgba(224,85,85,.12); color: var(--red); border: 1px solid rgba(224,85,85,.25); }
+    .badge-green { background: rgba(76,175,114,.12); color: var(--green); border: 1px solid rgba(76,175,114,.25); }
+
+    /* Toast */
+    #toast-container { position: fixed; bottom: 28px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+    .toast { padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow); animation: slideRight .3s ease; pointer-events: all; }
+    .toast.success { border-color: var(--green); color: var(--green); }
+    .toast.error { border-color: var(--red); color: var(--red); }
+    @keyframes slideRight { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    @media(max-width:600px) { .form-grid{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+<header id="header">
+  <a href="/" class="logo"><span class="logo-icon">♟</span> Chess Home</a>
+  <nav><ul class="nav-links">
+    <li><a href="/lobby">🏆 Играть</a></li>
+    <li><a href="/tournaments">🎯 Турниры</a></li>
+    <li><a href="/forum">💬 Форум</a></li>
+  </ul></nav>
+  <div id="header-right" style="margin-left:auto;display:flex;align-items:center;gap:10px"></div>
+</header>
+
+<div class="page">
+  <div id="page-content">
+    <div style="text-align:center;padding:80px;color:var(--text-muted)">⏳ Загрузка...</div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const API   = '/api';
+const tId   = new URLSearchParams(location.search).get('id');
+let tData   = null;
+let currentUser = null;
+
+function renderHeader() {
+  const el = document.getElementById('header-right');
+  if (!el || !currentUser) return;
+  el.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'user-menu';
+  // Кнопка
+  const btn = document.createElement('button');
+  btn.className = 'user-btn';
+  btn.onclick = () => document.getElementById('hdr-drop')?.classList.toggle('open');
+  const av = document.createElement('div');
+  av.className = 'player-avatar';
+  av.style.cssText = 'width:28px;height:28px;font-size:13px';
+  av.textContent = currentUser.username[0].toUpperCase();
+  btn.appendChild(av);
+  const nameSpan = document.createElement('span');
+  nameSpan.style.cssText = 'font-size:14px;font-weight:600';
+  nameSpan.textContent = currentUser.username;
+  btn.appendChild(nameSpan);
+  const adminBadge = document.createElement('span');
+  adminBadge.style.cssText = 'color:var(--accent);font-size:11px;font-weight:700;margin-left:4px';
+  adminBadge.textContent = '🛡 ADMIN';
+  btn.appendChild(adminBadge);
+  const arrow = document.createElement('span');
+  arrow.style.cssText = 'color:var(--text-muted);font-size:12px;margin-left:2px';
+  arrow.textContent = '▾';
+  btn.appendChild(arrow);
+  wrap.appendChild(btn);
+  // Дропдаун
+  const drop = document.createElement('div');
+  drop.className = 'user-dropdown';
+  drop.id = 'hdr-drop';
+  [
+    { text: '👤 Мой профиль',  fn: () => location.href = '/profile/' + encodeURIComponent(currentUser.username) },
+    { text: '🛡 Панель Admin', fn: () => location.href = '/admin' },
+    { text: '⚙️ Настройки',    fn: () => location.href = '/settings' },
+  ].forEach(item => {
+    const d = document.createElement('div');
+    d.className = 'dropdown-item';
+    d.textContent = item.text;
+    d.onclick = item.fn;
+    drop.appendChild(d);
+  });
+  drop.appendChild(document.createElement('hr'));
+  const logoutEl = document.createElement('div');
+  logoutEl.className = 'dropdown-item danger';
+  logoutEl.textContent = '🚪 Выйти';
+  logoutEl.onclick = logout;
+  drop.appendChild(logoutEl);
+  wrap.appendChild(drop);
+  el.appendChild(wrap);
+}
+async function logout() {
+  // Токен в HttpOnly-cookie — localStorage.removeItem больше её не трогает,
+  // нужно попросить сервер очистить cookie через /api/logout.
+  try { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
+  location.href = '/';
+}
+document.addEventListener('click', e => { if (!e.target.closest('.user-menu')) document.getElementById('hdr-drop')?.classList.remove('open'); });
+
+async function init() {
+  // Токен теперь в HttpOnly-cookie — вместо decode JWT из localStorage
+  // просто спрашиваем сервер, кто мы, через /api/me.
+  try {
+    const r = await fetch(API + '/me', { credentials: 'same-origin' });
+    if (!r.ok) throw 1;
+    currentUser = await r.json();
+    if (currentUser.role !== 'admin') { location.href = '/'; return; }
+    renderHeader();
+  } catch { location.href = '/'; return; }
+
+  if (!tId) { location.href = '/tournaments'; return; }
+  await load();
+}
+
+async function load() {
+  try {
+    const r = await fetch(API + '/tournaments/' + tId, { credentials: 'same-origin' });
+    if (!r.ok) throw await r.json();
+    tData = await r.json();
+    render();
+  } catch (e) {
+    document.getElementById('page-content').innerHTML = `<div style="text-align:center;padding:80px;color:var(--red)">Ошибка: ${e.error || 'не найден'}</div>`;
+  }
+}
+
+function render() {
+  const status = tData.status;
+  const bl = tData.blacklist || [];
+  const parts = tData.participants || [];
+
+  document.getElementById('page-content').innerHTML = `
+    <div class="admin-hero">
+      <div class="admin-hero-icon">🛡</div>
+      <div>
+        <div class="admin-hero-title">Управление: ${escHtml(tData.name)}</div>
+        <div class="admin-hero-sub">Статус: ${status} · ID: ${tData.id}</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <a class="btn btn-secondary" href="/tournament/${tData.id}">👁 Смотреть</a>
+        ${status !== 'finished' ? `<button class="btn btn-danger" onclick="deleteTournament()">🗑 Удалить</button>` : ''}
+      </div>
+    </div>
+
+    <!-- EDIT FORM -->
+    ${status !== 'finished' ? `
+    <div class="card">
+      <div class="card-title">✏️ Редактировать турнир</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Название</label>
+          <input type="text" class="form-input" id="e-name" value="${escAttr(tData.name)}" maxlength="60">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Описание</label>
+          <textarea class="form-textarea" id="e-desc" maxlength="300">${escHtml(tData.description||'')}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Контроль времени</label>
+          <input type="text" class="form-input" id="e-tc" value="${escAttr(tData.timeControl)}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Длительность (мин)</label>
+          <input type="number" class="form-input" id="e-dur" value="${tData.durationMinutes}" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Дата начала</label>
+          <input type="datetime-local" class="form-input" id="e-starts" value="${new Date(tData.startsAt).toISOString().slice(0,16)}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Макс. участников (0 = без лимита)</label>
+          <input type="number" class="form-input" id="e-max" value="${tData.maxParticipants||0}" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Мин. рейтинг</label>
+          <input type="number" class="form-input" id="e-minr" value="${tData.minRating||0}" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Макс. рейтинг</label>
+          <input type="number" class="form-input" id="e-maxr" value="${tData.maxRating>=9999?'':tData.maxRating}" min="0" placeholder="∞">
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveEdit()">💾 Сохранить изменения</button>
+        <a class="btn btn-secondary" href="/tournament/${tId}">Отмена</a>
+      </div>
+    </div>` : ''}
+
+    <!-- BLACKLIST -->
+    <div class="card">
+      <div class="card-title">⛔ Blacklist — закрыт доступ</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" class="form-input" id="bl-add-input" placeholder="Ник игрока..." style="flex:1" onkeydown="if(event.key==='Enter')addToBlacklist()">
+        <button class="btn btn-danger" onclick="addToBlacklist()">+ Добавить</button>
+      </div>
+      <div id="bl-list">
+        ${bl.length === 0 ? `<div class="bl-empty">Blacklist пуст — все могут участвовать</div>` :
+          bl.map(u => `
+          <div class="bl-row">
+            <div class="bl-tag">
+              ⛔ ${escHtml(u)}
+              <span class="bl-remove" onclick="removeFromBlacklist('${escAttr(u)}')">✕</span>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- PARTICIPANTS -->
+    <div class="card">
+      <div class="card-title">👥 Участники (${parts.length})</div>
+      ${parts.length === 0 ? `<div class="bl-empty">Участников пока нет</div>` :
+        parts.map(p => `
+        <div class="p-row ${p.anticheatBanned ? 'p-banned' : ''}">
+          <div class="p-avatar">${p.username[0].toUpperCase()}</div>
+          <div class="p-name">
+            <a href="/profile/${encodeURIComponent(p.username)}" style="color:inherit;text-decoration:none">${escHtml(p.username)}</a>
+            ${p.anticheatBanned ? '<span class="badge badge-red" style="margin-left:6px">⚠️ АНТИЧИТ БАН</span>' : ''}
+            ${p.left && !p.anticheatBanned ? '<span class="badge" style="background:rgba(90,94,120,.15);color:var(--text-muted);border:1px solid var(--border);margin-left:6px">Покинул</span>' : ''}
+          </div>
+          <span class="p-score">${p.score} очков</span>
+          <span style="font-size:12px;color:var(--text-muted)">${p.wins}W / ${p.draws}D / ${p.losses}L</span>
+          ${!p.anticheatBanned && !p.left ? `<button class="btn btn-secondary" style="padding:5px 12px;font-size:12px" onclick="kickParticipant('${escAttr(p.username)}')">Исключить</button>` : ''}
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+// ── EDIT ──
+async function saveEdit() {
+  try {
+    const body = {
+      name:            document.getElementById('e-name').value.trim(),
+      description:     document.getElementById('e-desc').value.trim(),
+      timeControl:     document.getElementById('e-tc').value.trim(),
+      durationMinutes: parseInt(document.getElementById('e-dur').value) || 30,
+      startsAt:        new Date(document.getElementById('e-starts').value).toISOString(),
+      maxParticipants: parseInt(document.getElementById('e-max').value) || 0,
+      minRating:       parseInt(document.getElementById('e-minr').value) || 0,
+      maxRating:       parseInt(document.getElementById('e-maxr').value) || 9999,
+    };
+    const r = await fetch(API + '/tournaments/' + tId, {
+      method: 'PATCH',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast('Турнир обновлён ✅', 'success');
+    await load();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── BLACKLIST ──
+async function addToBlacklist() {
+  const input = document.getElementById('bl-add-input');
+  const uname = (input.value || '').trim();
+  if (!uname) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/blacklist', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: uname })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    input.value = '';
+    toast(uname + ' добавлен в blacklist', 'success');
+    await load();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function removeFromBlacklist(uname) {
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/blacklist/' + encodeURIComponent(uname), {
+      method: 'DELETE',
+      credentials: 'same-origin'
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast(uname + ' убран из blacklist', 'success');
+    await load();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── KICK ──
+async function kickParticipant(uname) {
+  if (!confirm('Исключить ' + uname + ' из турнира?')) return;
+  // Добавляем в blacklist (закрывает доступ и удаляет)
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/blacklist', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: uname })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error);
+    toast(uname + ' исключён и добавлен в blacklist', 'success');
+    await load();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── DELETE ──
+async function deleteTournament() {
+  if (!confirm('Удалить турнир безвозвратно?')) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId, {
+      method: 'DELETE',
+      credentials: 'same-origin'
+    });
+    if (!r.ok) throw new Error((await r.json()).error);
+    toast('Турнир удалён', 'success');
+    setTimeout(() => location.href = '/tournaments', 1200);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── UTILS ──
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+init();
+</script>
+</body>
+</html>

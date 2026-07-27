@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>О проекте — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♚</text></svg>">
+</head>
+<body>
+<!-- header injected by /js/header.js -->
+<div style="padding-top:56px">
+
+  <div style="padding:40px 24px;max-width:800px;margin:0 auto">
+    <div class="legal-content">
+      <h1>О Chess Home</h1>
+      <div class="last-updated">Версия 1.0.0 · 2025 год · Россия</div>
+
+      <h2>🏰 Что такое Chess Home</h2>
+      <p>Chess Home — это русскоязычная онлайн-платформа для игры в шахматы, анализа позиций и общения с другими шахматистами. Проект создавался как альтернатива зарубежным платформам: с понятным интерфейсом на русском языке, без навязчивой рекламы и платных подписок за базовые функции.</p>
+      <p>Платформа предназначена для игроков любого уровня — от начинающих, которые только учатся расставлять фигуры, до опытных шахматистов, которым нужен инструмент для глубокого анализа партий.</p>
+
+      <h2>⚡ Технологический стек</h2>
+      <p>Chess Home построен на современных открытых технологиях:</p>
+      <ul>
+        <li><strong>Движок анализа — Stockfish 16 (WebAssembly):</strong> один из сильнейших шахматных движков в мире, работающий прямо в браузере без передачи позиций на сервер. Глубина анализа — 25+ полуходов. Оценка позиции в пешках и процент выигрыша для каждой стороны.</li>
+        <li><strong>Серверная часть — Node.js + Socket.io:</strong> WebSocket-соединение обеспечивает мгновенную передачу ходов в онлайн-партиях без задержек. Задержка хода между игроками — менее 50 мс при нормальном интернет-соединении.</li>
+        <li><strong>Рейтинговая система — Эло:</strong> классическая система рейтинга, используемая ФИДЕ. При победе над более сильным соперником рейтинг растёт быстрее; при проигрыше менее сильному — падает значительнее. Стартовый рейтинг для новых игроков — 1200.</li>
+        <li><strong>Шахматная логика — собственный движок на JavaScript:</strong> полная реализация правил ФИДЕ, включая рокировку (короткую и длинную), взятие на проходе, превращение пешки в любую фигуру, правило 50 ходов, троекратное повторение позиции. Экспорт и импорт партий в формате PGN.</li>
+        <li><strong>Графика фигур — набор Cburnett:</strong> открытый SVG-набор шахматных фигур под лицензией Creative Commons, разработанный Колином Бёрнеттом и используемый в Lichess. Чёткое отображение на любом размере экрана.</li>
+        <li><strong>База данных:</strong> пользовательские данные, история партий и рейтинги хранятся в базе данных на сервере. Регулярное резервное копирование.</li>
+      </ul>
+
+      <h2>🎮 Возможности платформы</h2>
+
+      <h3>Онлайн-игра</h3>
+      <ul>
+        <li>Поиск партнёра в лобби по контролю времени: классика (30+ мин), рапид (10–25 мин), блиц (3–9 мин), пуля (1–2 мин)</li>
+        <li>Прямой вызов конкретного игрока через его профиль</li>
+        <li>Локальная игра вдвоём на одном устройстве</li>
+        <li>Сохранение всех сыгранных партий с возможностью просмотра</li>
+        <li>Индикация онлайн-статуса игроков в реальном времени</li>
+      </ul>
+
+      <h3>Анализ позиций</h3>
+      <ul>
+        <li>Полноценный анализ любой позиции движком Stockfish 16</li>
+        <li>Визуализация лучших ходов с числовой оценкой позиции</li>
+        <li>Ввод позиции вручную через FEN-строку</li>
+        <li>Просмотр и анализ сыгранных партий ход за ходом</li>
+        <li>Экспорт позиции и партии в форматах FEN и PGN</li>
+      </ul>
+
+      <h3>Редактор доски</h3>
+      <ul>
+        <li>Расстановка фигур вручную перетаскиванием</li>
+        <li>Поддержка всех стандартных позиций FEN</li>
+        <li>Передача позиции напрямую в анализатор</li>
+        <li>Сохранение пользовательских позиций</li>
+      </ul>
+
+      <h3>Сообщество</h3>
+      <ul>
+        <li>Форум с разделами по дебютам, тактике, эндшпилям, учёбе и свободному общению</li>
+        <li>Личные сообщения между игроками</li>
+        <li>Глобальный чат в лобби</li>
+        <li>Профили игроков с полной статистикой, историей партий и рейтинговой динамикой</li>
+        <li>Турниры с таблицей результатов</li>
+      </ul>
+
+      <h3>Настройки и персонализация</h3>
+      <ul>
+        <li>Выбор цветовой темы доски (классика, синяя, зелёная, оранжевая)</li>
+        <li>Включение/отключение звуковых эффектов ходов</li>
+        <li>Подсказки допустимых ходов при выборе фигуры</li>
+        <li>Отображение координат по краям доски</li>
+        <li>Анимация перемещения фигур</li>
+      </ul>
+
+      <h2>🔮 Планы развития</h2>
+      <ul>
+        <li><strong>Игра против компьютера</strong> — режим с регулируемым уровнем сложности от новичка до движка на полную мощность. Планируется несколько режимов: обучающий (с подсказками и объяснениями), тренировочный (без подсказок) и испытание (максимальная сила).</li>
+        <li><strong>Обучающий раздел</strong> — интерактивные курсы по дебютной теории, тактическим приёмам и эндшпильным техникам. Задачи с проверкой решений и подсчётом очков.</li>
+        <li><strong>Расширенные турниры</strong> — швейцарская и круговая системы, турниры с временны́м контролем, рейтинговые и нерейтинговые форматы.</li>
+        <li><strong>Рейтинговая история</strong> — график изменения рейтинга во времени в профиле каждого игрока.</li>
+        <li><strong>Мобильное приложение</strong> — нативные приложения для iOS и Android с полным набором функций платформы.</li>
+        <li><strong>Дебютная база</strong> — интеграция с базой дебютных вариантов для анализа партий и подготовки к соперникам.</li>
+      </ul>
+
+      <h2>📬 Связь и поддержка</h2>
+      <p>По всем вопросам, предложениям и сообщениям об ошибках обращайтесь через форум платформы или личные сообщения администраторам. Мы стараемся отвечать в течение 24 часов.</p>
+      <p>Если вы хотите сообщить об уязвимости безопасности — пишите напрямую администраторам, не публикуя информацию в открытом доступе.</p>
+    </div></div>
+</div>
+<div id="toast-container"></div>
+<script>
+const API='/api';let currentUser=null;
+function escapeHtml(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function getSettings(){try{return JSON.parse(localStorage.getItem('ch_settings')||'{}');}catch{return{};}}
+function applySettings(){const s=getSettings();if(s.boardLight)document.documentElement.style.setProperty('--board-light',s.boardLight);if(s.boardDark)document.documentElement.style.setProperty('--board-dark',s.boardDark);}
+// Токен теперь лежит в HttpOnly-cookie и отправляется браузером автоматически
+// (credentials: 'same-origin'), поэтому Authorization-заголовок больше не нужен.
+async function apiGet(path){const res=await fetch(API+path,{credentials:'same-origin'});const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка');return data;}
+async function apiPost(path,body){const res=await fetch(API+path,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка');return data;}
+function toast(msg,type='info'){const c=document.getElementById('toast-container');const el=document.createElement('div');el.className='toast '+type;el.textContent=msg;c.appendChild(el);setTimeout(()=>el.remove(),3000);}
+function updateHeaderUI() {
+  CH.setCurrentUser(currentUser);
+  CH.setActivePage('about');
+}
+
+document.addEventListener('click',e=>{if(!e.target.closest('.user-menu'))document.getElementById('hdr-drop')?.classList.remove('open');});
+async function initHeader() {
+  CH.initHeader();
+  // Раньше юзернейм доставали из JWT в localStorage. Токен теперь в HttpOnly-cookie
+  // и недоступен из JS, поэтому просто спрашиваем у сервера, кто мы — /api/me
+  // сам читает cookie и возвращает текущего пользователя (или 401, если гость).
+  try {
+    currentUser = await apiGet('/me');
+  } catch {
+    currentUser = null;
+  }
+  updateHeaderUI();
+  CH.setActivePage('about');
+}
+initHeader();
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "chesshome",
+  "version": "1.0.0",
+  "description": "Chess Home - шахматная платформа",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "setup": "node download-stockfish.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "chess.js": "^1.4.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "csv-parse": "^6.2.1",
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.4",
+    "pg": "^8.22.0",
+    "resend": "^6.18.0",
+    "socket.io": "^4.8.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Онлайн игроки — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+  <link rel="icon" href="/img/logo/favicon.png">
+  <style>
+    /* ─── PAGE LAYOUT ──────────────────────────────────────────── */
+    .online-page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: calc(var(--header-h) + 32px) 20px 60px;
+      min-height: 100vh;
+    }
+
+    /* ─── HERO HEADER ──────────────────────────────────────────── */
+    .online-hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .online-hero-left h1 {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .online-pulse-dot {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #3ecf8e;
+      box-shadow: 0 0 0 0 rgba(62,207,142,0.4);
+      animation: pulseDot 2s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulseDot {
+      0%   { box-shadow: 0 0 0 0 rgba(62,207,142,0.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(62,207,142,0); }
+      100% { box-shadow: 0 0 0 0 rgba(62,207,142,0); }
+    }
+
+    .online-hero-left p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .online-hero-left p strong {
+      color: #3ecf8e;
+      font-weight: 700;
+    }
+
+    .online-refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .online-refresh-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .online-refresh-btn.spinning svg {
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── SORT TABS ────────────────────────────────────────────── */
+    .sort-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .sort-tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 10px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .sort-tab:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+    .sort-tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border-color: var(--accent);
+      color: #000;
+    }
+    .sort-tab .tab-icon {
+      font-size: 14px;
+    }
+
+    /* ─── SEARCH ───────────────────────────────────────────────── */
+    .online-search-wrap {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .online-search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .online-search {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px 10px 38px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .online-search:focus { border-color: var(--accent); }
+    .online-search::placeholder { color: var(--text-muted); }
+
+    /* ─── GRID ─────────────────────────────────────────────────── */
+    .online-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    /* ─── PLAYER CARD ──────────────────────────────────────────── */
+    .player-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.18s;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      animation: cardIn 0.3s ease both;
+    }
+    .player-card:hover {
+      border-color: var(--accent);
+      background: var(--bg-card);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* rank ribbon for top 3 */
+    .player-card.rank-1::before,
+    .player-card.rank-2::before,
+    .player-card.rank-3::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 4px;
+      height: 100%;
+      border-radius: 14px 0 0 14px;
+    }
+    .player-card.rank-1::before { background: #fbbf24; }
+    .player-card.rank-2::before { background: #94a3b8; }
+    .player-card.rank-3::before { background: #c77c3c; }
+
+    .player-avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 700; color: #000;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .player-avatar .av-letter { line-height: 1; }
+
+    .player-avatar-online {
+      position: absolute;
+      bottom: 1px; right: 1px;
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      background: #3ecf8e;
+      box-shadow: 0 0 6px #3ecf8e;
+      border: 2px solid var(--bg-secondary);
+    }
+
+    .player-rank-badge {
+      position: absolute;
+      top: -4px; right: -4px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      border: 2px solid var(--bg-secondary);
+    }
+    .rank-1 .player-rank-badge { background: #fbbf24; color: #000; }
+    .rank-2 .player-rank-badge { background: #94a3b8; color: #000; }
+    .rank-3 .player-rank-badge { background: #c77c3c; color: #fff; }
+
+    .player-info { flex: 1; min-width: 0; }
+
+    .player-name {
+      font-weight: 700;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 3px;
+    }
+
+    .player-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .player-stat {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .player-stat .stat-val {
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .player-main-stat {
+      margin-left: auto;
+      flex-shrink: 0;
+      text-align: right;
+    }
+    .player-main-stat .main-val {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: var(--font-mono, monospace);
+      color: var(--accent);
+      line-height: 1;
+    }
+    .player-main-stat .main-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* ordinal rank number shown for sort tabs */
+    .player-pos {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .player-pos.top1 { color: #fbbf24; }
+    .player-pos.top2 { color: #94a3b8; }
+    .player-pos.top3 { color: #c77c3c; }
+
+    /* ─── EMPTY STATE ──────────────────────────────────────────── */
+    .online-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .online-empty .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+    .online-empty p { font-size: 14px; }
+
+    /* ─── SKELETON ─────────────────────────────────────────────── */
+    .skeleton-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .sk {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to   { background-position: -200% 0; }
+    }
+    .sk-circle { border-radius: 50%; }
+
+    /* ─── WRITE BTN on card ────────────────────────────────────── */
+    .card-msg-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.18s;
+      flex-shrink: 0;
+      display: none; /* shown on hover via JS */
+    }
+    .player-card:hover .card-msg-btn { display: flex; align-items: center; }
+    .card-msg-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(201,168,76,0.08);
+    }
+
+    /* ─── COUNTER BADGE ────────────────────────────────────────── */
+    .online-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(62,207,142,0.12);
+      border: 1px solid rgba(62,207,142,0.3);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #3ecf8e;
+    }
+
+    /* ─── MOBILE ───────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      .online-page { padding-top: calc(var(--header-h) + 20px); }
+      .online-hero h1 { font-size: 22px; }
+      .online-grid { grid-template-columns: 1fr; }
+      .sort-tabs { gap: 5px; }
+      .sort-tab { padding: 6px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- header injected by header.js -->
+
+<div class="online-page">
+
+  <!-- HERO -->
+  <div class="online-hero">
+    <div class="online-hero-left">
+      <h1>
+        <span class="online-pulse-dot"></span>
+        Сейчас онлайн
+      </h1>
+      <p>Всего игроков: <strong id="total-count">…</strong></p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="online-count-badge" id="hero-badge">
+        <span class="online-pulse-dot" style="width:8px;height:8px"></span>
+        <span id="badge-count">…</span> онлайн
+      </span>
+      <button class="online-refresh-btn" id="refresh-btn" onclick="refresh()">
+        <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Обновить
+      </button>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="online-search-wrap">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input class="online-search" id="search-input" placeholder="Поиск по нику..." oninput="onSearch(this.value)">
+  </div>
+
+  <!-- SORT TABS -->
+  <div class="sort-tabs" id="sort-tabs">
+    <button class="sort-tab active" data-sort="online" onclick="setSort('online', this)">
+      <span class="tab-icon">🟢</span> В сети
+    </button>
+    <button class="sort-tab" data-sort="rating" onclick="setSort('rating', this)">
+      <span class="tab-icon">⭐</span> Рейтинг
+    </button>
+    <button class="sort-tab" data-sort="puzzles_rating" onclick="setSort('puzzles_rating', this)">
+      <span class="tab-icon">🧩</span> По задачам
+    </button>
+    <button class="sort-tab" data-sort="games" onclick="setSort('games', this)">
+      <span class="tab-icon">♟</span> Кол-во партий
+    </button>
+    <button class="sort-tab" data-sort="puzzles_solved" onclick="setSort('puzzles_solved', this)">
+      <span class="tab-icon">✅</span> Решено задач
+    </button>
+  </div>
+
+  <!-- GRID -->
+  <div class="online-grid" id="players-grid">
+    <!-- skeletons -->
+    <div class="skeleton-card" id="sk1">
+      <div class="sk sk-circle" style="width:52px;height:52px;flex-shrink:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div class="sk" style="height:14px;width:60%"></div>
+        <div class="sk" style="height:11px;width:40%"></div>
+      </div>
+    </div>
+    <div class="skeleton-card" id="sk2">
+      <div class="sk sk-circle" style="width:52px;height:52px;flex-shrink:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div class="sk" style="height:14px;width:55%"></div>
+        <div class="sk" style="height:11px;width:35%"></div>
+      </div>
+    </div>
+    <div class="skeleton-card" id="sk3">
+      <div class="sk sk-circle" style="width:52px;height:52px;flex-shrink:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <div class="sk" style="height:14px;width:70%"></div>
+        <div class="sk" style="height:11px;width:45%"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SCRIPTS ──────────────────────────────────────────────── -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+//  Chess Home — Online Players Page  (/online)
+// ══════════════════════════════════════════════════════════════
+
+const API = '/api';
+let allUsers   = [];   // raw list from server
+let sortMode   = 'online';
+let searchVal  = '';
+let currentUser = null;
+// Авторизация теперь через HttpOnly-cookie (ch_token) — не localStorage.
+
+// ─── Auth ──────────────────────────────────────────────────────
+async function resolveCurrentUser() {
+  try {
+    currentUser = await apiFetch('/me');
+    if (window.CH) {
+      CH.setCurrentUser(currentUser);
+      CH.setActivePage('online');
+    }
+  } catch {}
+}
+
+function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  return fetch(API + path, { ...opts, headers, credentials: 'include' }).then(r => {
+    if (!r.ok) throw new Error(r.status);
+    return r.json();
+  });
+}
+
+// ─── Load users ────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    const users = await apiFetch('/online/users');
+    allUsers = Array.isArray(users) ? users : [];
+    updateCounts(allUsers.length);
+    render();
+  } catch (e) {
+    console.error('loadUsers:', e);
+    document.getElementById('players-grid').innerHTML = `
+      <div class="online-empty">
+        <div class="empty-icon">⚠️</div>
+        <p>Не удалось загрузить список. Попробуйте обновить страницу.</p>
+      </div>`;
+  }
+}
+
+function updateCounts(n) {
+  document.getElementById('total-count').textContent = n;
+  document.getElementById('badge-count').textContent = n;
+}
+
+// ─── Sort ──────────────────────────────────────────────────────
+function sortUsers(users, mode) {
+  const arr = [...users];
+  switch (mode) {
+    case 'online':
+      // just maintain server order (all are online); secondary: rating
+      return arr.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    case 'rating':
+      return arr.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    case 'puzzles_rating':
+      return arr.sort((a, b) => (b.puzzles_rating ?? 0) - (a.puzzles_rating ?? 0));
+    case 'games':
+      return arr.sort((a, b) => (b.games_played ?? b.games ?? 0) - (a.games_played ?? a.games ?? 0));
+    case 'puzzles_solved':
+      return arr.sort((a, b) => (b.puzzles_solved ?? 0) - (a.puzzles_solved ?? 0));
+    default:
+      return arr;
+  }
+}
+
+// ─── Render ────────────────────────────────────────────────────
+function render() {
+  const grid = document.getElementById('players-grid');
+
+  // filter by search
+  let filtered = allUsers;
+  if (searchVal) {
+    const q = searchVal.toLowerCase();
+    filtered = allUsers.filter(u => u.username.toLowerCase().includes(q));
+  }
+
+  // sort
+  const sorted = sortUsers(filtered, sortMode);
+
+  if (sorted.length === 0) {
+    grid.innerHTML = `
+      <div class="online-empty">
+        <div class="empty-icon">🔍</div>
+        <p>${searchVal ? 'Игрок не найден' : 'Сейчас никого нет онлайн'}</p>
+      </div>`;
+    return;
+  }
+
+  // build cards
+  const mainStatConfig = {
+    online:        { key: u => u.rating,                          label: 'Рейтинг',     symbol: '⭐' },
+    rating:        { key: u => u.rating,                          label: 'Рейтинг',     symbol: '⭐' },
+    puzzles_rating:{ key: u => u.puzzles_rating,                  label: 'Задачи ★',    symbol: '🧩' },
+    games:         { key: u => u.games_played ?? u.games,         label: 'Партий',      symbol: '♟' },
+    puzzles_solved:{ key: u => u.puzzles_solved,                  label: 'Решено',      symbol: '✅' },
+  };
+  const msc = mainStatConfig[sortMode] || mainStatConfig.rating;
+
+  grid.innerHTML = sorted.map((u, i) => {
+    const pos = i + 1;
+    const posClass = pos === 1 ? 'top1' : pos === 2 ? 'top2' : pos === 3 ? 'top3' : '';
+    const rankClass = pos <= 3 ? ` rank-${pos}` : '';
+    const letter = (u.username || '?')[0].toUpperCase();
+    const mainVal = msc.key(u);
+
+    // sub-stats row (always show rating + games)
+    const rating       = u.rating        != null ? u.rating        : '—';
+    const games        = u.games_played  != null ? u.games_played  : (u.games != null ? u.games : '—');
+    const puzzlesSolved= u.puzzles_solved != null ? u.puzzles_solved : '—';
+
+    const isMe = currentUser && currentUser.username === u.username;
+
+    return `
+      <div class="player-card${rankClass}" style="animation-delay:${Math.min(i * 40, 400)}ms"
+           onclick="goProfile('${escH(u.username)}')">
+        <span class="player-pos ${posClass}">${pos <= 3 ? ['🥇','🥈','🥉'][pos-1] : pos}</span>
+
+        <div class="player-avatar">
+          <span class="av-letter">${letter}</span>
+          <div class="player-avatar-online"></div>
+          ${pos <= 3 ? `<div class="player-rank-badge">${pos}</div>` : ''}
+        </div>
+
+        <div class="player-info">
+          <div class="player-name">${escH(u.username)}${isMe ? ' <span style="font-size:11px;color:var(--accent)">(вы)</span>' : ''}</div>
+          <div class="player-stats">
+            ${sortMode !== 'rating' ? `<span class="player-stat">⭐ <span class="stat-val">${rating}</span></span>` : ''}
+            ${sortMode !== 'games'  ? `<span class="player-stat">♟ <span class="stat-val">${games}</span></span>` : ''}
+            ${sortMode !== 'puzzles_solved' ? `<span class="player-stat">✅ <span class="stat-val">${puzzlesSolved}</span></span>` : ''}
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <div class="player-main-stat">
+            <div class="main-val">${mainVal != null ? mainVal : '—'}</div>
+            <div class="main-label">${msc.label}</div>
+          </div>
+          ${!isMe ? `
+          <button class="card-msg-btn"
+                  onclick="event.stopPropagation(); writeTo('${escH(u.username)}')"
+                  title="Написать сообщение">
+            ✉️
+          </button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── Actions ───────────────────────────────────────────────────
+function setSort(mode, btn) {
+  sortMode = mode;
+  document.querySelectorAll('.sort-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function onSearch(val) {
+  searchVal = val.trim();
+  render();
+}
+
+async function refresh() {
+  const btn = document.getElementById('refresh-btn');
+  const icon = document.getElementById('refresh-icon');
+  btn.disabled = true;
+  icon.parentElement.classList.add('spinning'); // the btn itself
+  btn.classList.add('spinning');
+  await loadUsers();
+  btn.classList.remove('spinning');
+  btn.disabled = false;
+}
+
+function goProfile(username) {
+  window.location.href = '/profile/' + encodeURIComponent(username);
+}
+
+function writeTo(username) {
+  if (!currentUser) { window.location.href = '/'; return; }
+  window.location.href = '/inbox/' + encodeURIComponent(username);
+}
+
+function escH(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+// ─── Socket: live updates ──────────────────────────────────────
+function connectSocket() {
+  if (typeof io !== 'function') return;
+  const sock = io({ transports: ['websocket','polling'], withCredentials: true });
+  sock.on('connect', () => {
+    sock.emit('auth');
+  });
+  sock.on('online_count', count => {
+    // re-fetch full list to keep names fresh
+    loadUsers();
+  });
+}
+
+// ─── Init ──────────────────────────────────────────────────────
+async function init() {
+  if (window.CH) CH.initHeader();
+
+  await resolveCurrentUser();
+
+  // remove skeletons, start loading
+  await loadUsers();
+
+  // live updates via socket
+  if (typeof io === 'function') {
+    connectSocket();
+  } else {
+    // wait for socket.io.js
+    let attempts = 0;
+    const iv = setInterval(() => {
+      if (typeof io === 'function') { clearInterval(iv); connectSocket(); }
+      if (++attempts > 40) clearInterval(iv);
+    }, 150);
+  }
+
+  // fallback polling every 15s
+  setInterval(loadUsers, 15000);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+
+<script src="/js/online-widget.js"></script>
+
+</body>
+</html>

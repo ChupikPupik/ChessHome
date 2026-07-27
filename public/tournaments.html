@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Турниры — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+<link rel="icon" type="image/png" href="../img/logo/favicon.png">
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); }
+
+    /* ── PAGE LAYOUT ── */
+    .tournaments-page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 20px 40px;
+    }
+
+    /* ── HEADER HERO ── */
+    .page-hero {
+      text-align: center;
+      padding: 40px 0 32px;
+      position: relative;
+    }
+    .page-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%; transform: translateX(-50%);
+      width: 400px; height: 200px;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .page-hero-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px; height: 56px;
+      border-radius: 16px;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid rgba(201,168,76,0.28);
+      font-size: 28px;
+      margin-bottom: 14px;
+    }
+    .page-hero h1 {
+      font-family: var(--font-display);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .page-hero h1 span { color: var(--accent); }
+    .page-hero p {
+      color: var(--text-secondary);
+      font-size: 16px;
+    }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 24px;
+      width: fit-content;
+    }
+    .tab-btn {
+      padding: 8px 22px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 3px 14px rgba(201,168,76,0.35);
+    }
+    .tab-btn:hover:not(.active) {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+    .tab-count {
+      background: rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .tab-btn.active .tab-count {
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* ── TOP BAR ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* ── ADMIN CREATE BUTTON ── */
+    .btn-create {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+      text-decoration: none;
+    }
+    .btn-create:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(201,168,76,0.45);
+    }
+
+    /* ── TOURNAMENT CARDS ── */
+    .tournaments-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .t-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      cursor: pointer;
+      transition: all 0.25s;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+    }
+    .t-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 4px 0 0 4px;
+    }
+    .t-card.status-active::before { background: var(--green); }
+    .t-card.status-upcoming::before { background: var(--accent); }
+    .t-card.status-finished::before { background: var(--text-muted); }
+
+    .t-card:hover {
+      border-color: var(--border-light);
+      background: var(--bg-hover);
+      transform: translateX(3px);
+    }
+
+    .t-card-icon {
+      width: 52px; height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .t-card.status-active .t-card-icon { background: rgba(76,175,114,0.15); }
+    .t-card.status-upcoming .t-card-icon { background: rgba(201,168,76,0.12); }
+    .t-card.status-finished .t-card-icon { background: rgba(90,94,120,0.2); }
+
+    .t-card-main { flex: 1; min-width: 0; }
+
+    .t-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .t-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .t-meta-item {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .t-user-badge {
+      color: var(--accent);
+      cursor: help;
+    }
+
+    .t-card-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-badge.active {
+      background: rgba(76,175,114,0.15);
+      color: var(--green);
+      border: 1px solid rgba(76,175,114,0.3);
+    }
+    .status-badge.upcoming {
+      background: rgba(201,168,76,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(201,168,76,0.3);
+    }
+    .status-badge.finished {
+      background: rgba(90,94,120,0.15);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .status-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .status-badge.active .dot {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse-dot 1.5s infinite;
+    }
+    .status-badge.upcoming .dot { background: var(--accent); }
+    .status-badge.finished .dot { background: var(--text-muted); }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    .t-participants {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .t-time-control {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state h3 { font-size: 18px; color: var(--text-secondary); margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── LOADING ── */
+    .loading-shimmer {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 14px;
+      height: 90px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* ── MODAL: CREATE TOURNAMENT ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 580px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 32px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08);
+      transform: scale(0.95) translateY(10px);
+      transition: transform 0.25s;
+    }
+    .modal-overlay.open .modal-box {
+      transform: scale(1) translateY(0);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .modal-close {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    /* ── FORM ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-input, .form-select, .form-textarea {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      padding: 10px 14px;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .form-textarea { resize: vertical; min-height: 70px; }
+    .form-select { cursor: pointer; }
+    .form-select option { background: var(--bg-card); }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Blacklist */
+    .blacklist-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    .blacklist-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .bl-tag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(224,85,85,0.12);
+      border: 1px solid rgba(224,85,85,0.3);
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 12px;
+      color: var(--red);
+      font-weight: 600;
+    }
+    .bl-tag-remove {
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .bl-tag-remove:hover { opacity: 1; }
+
+    .btn-add-bl {
+      padding: 8px 14px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .btn-add-bl:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .btn-cancel {
+      padding: 10px 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-cancel:hover {
+      border-color: var(--border-light);
+      color: var(--text-primary);
+    }
+    .btn-submit {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border: none;
+      border-radius: 9px;
+      color: #000;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+    }
+    .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(201,168,76,0.45);
+    }
+    .btn-submit:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── TOAST ── */
+    #toast-container {
+      position: fixed;
+      bottom: 28px; right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      animation: slideInRight 0.3s ease;
+      pointer-events: all;
+    }
+    .toast.success { border-color: var(--green); color: var(--green); }
+    .toast.error   { border-color: var(--red);   color: var(--red); }
+    @keyframes slideInRight {
+      from { transform: translateX(40px); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+
+    /* ── WINNER BADGE ── */
+    .winner-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .t-card { flex-wrap: wrap; gap: 12px; }
+      .t-card-right { flex-direction: row; align-items: center; }
+      .page-hero h1 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+<!-- header injected by /js/header.js -->
+
+  <div class="tournaments-page" style="padding-top:56px">
+    <!-- HERO -->
+    <div class="page-hero">
+      <div class="page-hero-badge">🏆</div>
+      <h1>Арена <span>Турниры</span></h1>
+      <p>Рейтинговые шахматные арены — поиск соперников в реальном времени</p>
+    </div>
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+      <!-- TABS -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="active" onclick="switchTab('active')">
+          <span>🟢</span> Идут сейчас <span class="tab-count" id="cnt-active">0</span>
+        </button>
+        <button class="tab-btn" data-tab="upcoming" onclick="switchTab('upcoming')">
+          <span>🕐</span> Предстоят <span class="tab-count" id="cnt-upcoming">0</span>
+        </button>
+        <button class="tab-btn" data-tab="finished" onclick="switchTab('finished')">
+          <span>🏁</span> Завершены <span class="tab-count" id="cnt-finished">0</span>
+        </button>
+      </div>
+
+      <!-- ADMIN: CREATE -->
+      <button class="btn-create" id="btn-create-tournament" style="display:none" onclick="openCreateModal()">
+        ✚ Создать турнир
+      </button>
+    </div>
+
+    <!-- LIST -->
+    <div class="tournaments-grid" id="tournaments-list">
+      <div class="loading-shimmer"></div>
+      <div class="loading-shimmer"></div>
+      <div class="loading-shimmer"></div>
+    </div>
+
+    <!-- TOP-10 POPULAR -->
+    <div id="popular-section" style="margin-top:40px;padding-top:32px;border-top:1px solid var(--border);display:none">
+      <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:16px;display:flex;align-items:center;gap:8px">🔥 Самые популярные арены</h2>
+      <div class="tournaments-grid" id="popular-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE TOURNAMENT -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-title">🏆 Новый турнир</div>
+        <button class="modal-close" onclick="closeCreateModal()">✕</button>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Название турнира *</label>
+          <input type="text" class="form-input" id="t-name" maxlength="60" placeholder="Воскресная арена · Блиц · и т.д.">
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label">Описание</label>
+          <textarea class="form-textarea" id="t-desc" maxlength="1000" placeholder="Краткое описание турнира..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Контроль времени *</label>
+          <select class="form-select" id="t-tc">
+            <option value="1+0">1+0 (Пуля)</option>
+            <option value="1+1">1+1 (Пуля)</option>
+            <option value="2+1">2+1 (Пуля)</option>
+            <option value="3+0">3+0 (Блиц)</option>
+            <option value="3+2" selected>3+2 (Блиц)</option>
+            <option value="5+0">5+0 (Блиц)</option>
+            <option value="5+3">5+3 (Блиц)</option>
+            <option value="10+0">10+0 (Рапид)</option>
+            <option value="10+5">10+5 (Рапид)</option>
+            <option value="15+10">15+10 (Рапид)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Длительность *</label>
+          <select class="form-select" id="t-duration">
+            <option value="20">20 минут</option>
+            <option value="30" selected>30 минут</option>
+            <option value="45">45 минут</option>
+            <option value="60">1 час</option>
+            <option value="90">1.5 часа</option>
+            <option value="120">2 часа</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Дата и время начала *</label>
+          <input type="datetime-local" class="form-input" id="t-starts-at">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Макс. участников</label>
+          <input type="number" class="form-input" id="t-max" min="0" max="500" placeholder="0 = без лимита">
+          <span class="form-hint">0 — без ограничений</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Мин. рейтинг</label>
+          <input type="number" class="form-input" id="t-min-rating" min="0" max="3000" placeholder="0 = без лимита">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Макс. рейтинг</label>
+          <input type="number" class="form-input" id="t-max-rating" min="0" max="3000" placeholder="0 = без лимита">
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label">⛔ Blacklist — кому закрыт вход</label>
+          <div class="blacklist-input-row">
+            <input type="text" class="form-input" id="t-bl-input" placeholder="Ник игрока..." onkeydown="if(event.key==='Enter')addToBlacklist()">
+            <button class="btn-add-bl" onclick="addToBlacklist()">Добавить</button>
+          </div>
+          <div class="blacklist-tags" id="bl-tags"></div>
+          <span class="form-hint">Эти игроки не смогут войти в турнир</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeCreateModal()">Отмена</button>
+        <button class="btn-submit" id="btn-create-submit" onclick="submitCreateTournament()">🏆 Создать турнир</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast-container"></div>
+
+  <script>
+    const API = '/api';
+    // Токен живёт только в HttpOnly-cookie ch_token — браузер шлёт её сам,
+    // читать/хранить в localStorage больше нечего (и нельзя).
+    let currentUser = null;
+    let allTournaments = { active: [], upcoming: [], finished: [] };
+
+    // ── ВКЛАДКА ПО URL ──
+    // /tournaments        → active
+    // /tournaments/active
+    // /tournaments/upcoming
+    // /tournaments/finished  (алиасы: ended, past — на случай, если кто-то так свяжет)
+    const TAB_ALIASES = { active: 'active', upcoming: 'upcoming', finished: 'finished', ended: 'finished', past: 'finished' };
+    function pathToTab(path) {
+      const seg = (path.replace(/^\/tournaments\/?/, '').split('/')[0] || '').toLowerCase();
+      return TAB_ALIASES[seg] || 'active';
+    }
+    function tabToPath(tab) {
+      return tab === 'active' ? '/tournaments' : '/tournaments/' + tab;
+    }
+
+    let currentTab = pathToTab(location.pathname);
+    let blacklist = [];
+
+    window.addEventListener('popstate', () => {
+      currentTab = pathToTab(location.pathname);
+      syncTabButtons();
+      renderList();
+    });
+
+    function syncTabButtons() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+    }
+
+    // ── AUTH ──
+    function escHtmlAttr(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    function logout() {
+      fetch(API + '/logout', { method: 'POST', credentials: 'same-origin' }).finally(() => location.href = '/');
+    }
+
+    async function init() {
+      CH.initHeader();
+      // Куку ch_token браузер отправит сам — просто спрашиваем сервер, кто мы.
+
+      try {
+        const r = await fetch(API + '/me', { credentials: 'same-origin' });
+        if (r.ok) {
+          currentUser = await r.json();
+          CH.setCurrentUser(currentUser);
+        }
+      } catch {}
+      CH.setActivePage('tournaments');
+      syncTabButtons();
+      if (currentUser) {
+        document.getElementById('btn-create-tournament').style.display = 'flex';
+      }
+      // Set default datetime
+      const dt = document.getElementById('t-starts-at');
+      if (dt) {
+        const now = new Date(Date.now() + 60 * 60 * 1000);
+        dt.value = now.toISOString().slice(0, 16);
+      }
+      await loadTournaments();
+      setInterval(loadTournaments, 15000);
+    }
+
+    // ── LOAD ──
+    async function loadTournaments() {
+      try {
+        const [data, popular] = await Promise.all([
+          fetch(API + '/tournaments').then(r => r.json()),
+          fetch(API + '/tournaments/popular').then(r => r.json()).catch(() => []),
+        ]);
+        allTournaments = { active: [], upcoming: [], finished: [] };
+        const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+        for (const t of data) {
+          if (t.status === 'finished' && t.endsAt < oneYearAgo) continue; // старше года — не показываем
+          if (t.status === 'active')   allTournaments.active.push(t);
+          else if (t.status === 'upcoming') allTournaments.upcoming.push(t);
+          else if (t.status === 'finished') allTournaments.finished.push(t);
+        }
+        document.getElementById('cnt-active').textContent   = allTournaments.active.length;
+        document.getElementById('cnt-upcoming').textContent = allTournaments.upcoming.length;
+        document.getElementById('cnt-finished').textContent = allTournaments.finished.length;
+        renderList();
+
+        // Топ популярных
+        const popSection = document.getElementById('popular-section');
+        const popList = document.getElementById('popular-list');
+        if (popular && popular.length > 0) {
+          popList.innerHTML = popular.map(t => renderCard(t)).join('');
+          popSection.style.display = '';
+        } else {
+          popSection.style.display = 'none';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // ── TABS ──
+    function switchTab(tab) {
+      if (tab === currentTab) return;
+      currentTab = tab;
+      syncTabButtons();
+      renderList();
+      history.pushState({ tab }, '', tabToPath(tab));
+    }
+
+    // ── RENDER ──
+    function renderList() {
+      const list = allTournaments[currentTab] || [];
+      const el = document.getElementById('tournaments-list');
+
+      if (!list.length) {
+        const msgs = {
+          active:   ['🎯', 'Активных турниров нет', 'Дождитесь начала запланированных арен'],
+          upcoming: ['🕐', 'Нет запланированных турниров', 'Скоро будут объявлены новые арены'],
+          finished: ['🏁', 'Нет завершённых турниров', 'Результаты турниров будут здесь'],
+        };
+        const [icon, title, sub] = msgs[currentTab];
+        el.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">${icon}</div>
+            <h3>${title}</h3>
+            <p>${sub}</p>
+          </div>`;
+        return;
+      }
+
+      // Sort: active по endsAt, upcoming по startsAt, finished по endsAt desc
+      const sorted = [...list].sort((a, b) => {
+        if (currentTab === 'finished') return b.endsAt - a.endsAt;
+        return a.startsAt - b.startsAt;
+      });
+
+      el.innerHTML = sorted.map(t => renderCard(t)).join('');
+    }
+
+    function renderCard(t) {
+      const statusLabels = { active: 'Идёт', upcoming: 'Скоро', finished: 'Завершён' };
+      const statusIcons  = { active: '🟢', upcoming: '🕐', finished: '🏁' };
+      const cardIcons    = { active: '⚡', upcoming: '🏆', finished: '🎖' };
+      const statusClass  = t.status;
+      const now = Date.now();
+
+      let timeInfo = '';
+      if (t.status === 'active') {
+        const left = Math.max(0, t.endsAt - now);
+        timeInfo = '⏱ Осталось ' + formatDuration(left);
+      } else if (t.status === 'upcoming') {
+        const until = t.startsAt - now;
+        timeInfo = '🕐 Начало через ' + formatDuration(until);
+      } else {
+        timeInfo = '🏁 ' + new Date(t.endsAt).toLocaleDateString('ru', { day:'numeric', month:'short', year:'numeric' });
+      }
+
+      const ratingInfo = t.minRating || (t.maxRating && t.maxRating < 9999)
+        ? `⭐ ${t.minRating || '0'}–${t.maxRating >= 9999 ? '∞' : t.maxRating}`
+        : '⭐ Любой рейтинг';
+
+      const winnerHtml = t.winner
+        ? `<div class="winner-badge">🥇 ${escHtml(t.winner)}</div>`
+        : '';
+
+      const participantsHtml = `<span class="t-participants">👥 ${t.participantsCount || 0}${t.maxParticipants ? '/' + t.maxParticipants : ''} уч.</span>`;
+
+      const userTournamentBadge = !t.createdByIsAdmin
+        ? `<span class="t-meta-item t-user-badge" title="Турнир создан пользователем. ChessHome не несёт ответственности за выплату призов, если они заявлены в этом турнире.">👤 От игрока</span>`
+        : '';
+
+      return `
+        <a class="t-card status-${statusClass}" href="/tournament/${t.id}">
+          <div class="t-card-icon">${cardIcons[t.status] || '🏆'}</div>
+          <div class="t-card-main">
+            <div class="t-card-title">${escHtml(t.name)}</div>
+            <div class="t-card-meta">
+              <span class="t-meta-item">${timeInfo}</span>
+              <span class="t-meta-item">${ratingInfo}</span>
+              <span class="t-meta-item">⏱ ${t.durationMinutes} мин</span>
+              ${userTournamentBadge}
+              ${t.description ? `<span class="t-meta-item" style="color:var(--text-muted);font-style:italic">${escHtml(t.description.slice(0,50))}${t.description.length>50?'…':''}</span>` : ''}
+            </div>
+          </div>
+          <div class="t-card-right">
+            <div class="status-badge ${statusClass}">
+              <span class="dot"></span>
+              ${statusLabels[t.status]}
+            </div>
+            <span class="t-time-control">${escHtml(t.timeControl)}</span>
+            ${participantsHtml}
+            ${winnerHtml}
+          </div>
+        </a>`;
+    }
+
+    // ── BLACKLIST ──
+    function addToBlacklist() {
+      const input = document.getElementById('t-bl-input');
+      const val = (input.value || '').trim();
+      if (!val || blacklist.includes(val.toLowerCase())) { input.value = ''; return; }
+      blacklist.push(val.toLowerCase());
+      input.value = '';
+      renderBlacklist();
+    }
+    function removeFromBlacklist(name) {
+      blacklist = blacklist.filter(b => b !== name);
+      renderBlacklist();
+    }
+    function renderBlacklist() {
+      const el = document.getElementById('bl-tags');
+      el.innerHTML = blacklist.map(n => `
+        <span class="bl-tag">
+          ${escHtml(n)}
+          <span class="bl-tag-remove" onclick="removeFromBlacklist('${escHtml(n)}')">✕</span>
+        </span>`).join('');
+    }
+
+    // ── CREATE MODAL ──
+    function openCreateModal() {
+      document.getElementById('create-modal').classList.add('open');
+      document.getElementById('t-name').focus();
+    }
+    function closeCreateModal() {
+      document.getElementById('create-modal').classList.remove('open');
+    }
+    document.getElementById('create-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('create-modal')) closeCreateModal();
+    });
+
+    async function submitCreateTournament() {
+      const btn = document.getElementById('btn-create-submit');
+      const name = document.getElementById('t-name').value.trim();
+      const desc = document.getElementById('t-desc').value.trim();
+      const tc   = document.getElementById('t-tc').value;
+      const dur  = document.getElementById('t-duration').value;
+      const startsAt = document.getElementById('t-starts-at').value;
+      const maxP = parseInt(document.getElementById('t-max').value) || 0;
+      const minR = parseInt(document.getElementById('t-min-rating').value) || 0;
+      const maxR = parseInt(document.getElementById('t-max-rating').value) || 0;
+
+      if (!name) { toast('Введите название', 'error'); return; }
+      if (!startsAt) { toast('Укажите дату начала', 'error'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Создаём...';
+      try {
+        const res = await fetch(API + '/tournaments', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name, description: desc, timeControl: tc,
+            durationMinutes: parseInt(dur),
+            startsAt: new Date(startsAt).toISOString(),
+            maxParticipants: maxP, minRating: minR,
+            maxRating: maxR || 9999,
+            blacklist: blacklist,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Ошибка');
+        toast('Турнир создан! 🏆', 'success');
+        closeCreateModal();
+        // Reset form
+        ['t-name','t-desc','t-bl-input'].forEach(id => document.getElementById(id).value = '');
+        blacklist = [];
+        renderBlacklist();
+        await loadTournaments();
+        // Switch to upcoming
+        if (new Date(startsAt) > new Date()) switchTab('upcoming');
+        else switchTab('active');
+        window.location.href = '/tournament/' + data.id;
+      } catch (e) {
+        toast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🏆 Создать турнир';
+      }
+    }
+
+    // ── UTILS ──
+    function formatDuration(ms) {
+      if (ms <= 0) return '0 сек';
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      const h = Math.floor(m / 60);
+      if (h > 0) return h + 'ч ' + (m % 60) + 'м';
+      if (m > 0) return m + 'м';
+      return s + 'с';
+    }
+    function escHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function toast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    init();
+  </script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+</body>
+</html>

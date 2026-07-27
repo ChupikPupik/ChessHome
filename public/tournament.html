@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Турнир — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+<link rel="icon" type="image/png" href="../img/logo/favicon.png">
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); }
+
+    .t-page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+
+    /* ── HERO BANNER ── */
+    .t-hero {
+      position: relative;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #1a1c26 0%, #1e2030 40%, #1a1e2c 100%);
+      border: 1px solid var(--border-light);
+      overflow: hidden;
+      padding: 36px 40px;
+      margin-bottom: 28px;
+    }
+    .t-hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .t-hero-bg-text {
+      position: absolute;
+      right: 30px; bottom: -20px;
+      font-size: 160px;
+      opacity: 0.03;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .t-hero-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .t-hero-icon {
+      width: 64px; height: 64px;
+      border-radius: 16px;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid rgba(201,168,76,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+    .t-hero-info { flex: 1; }
+    .t-hero-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .t-hero-status.active {
+      background: rgba(76,175,114,0.15);
+      color: var(--green);
+      border: 1px solid rgba(76,175,114,0.3);
+    }
+    .t-hero-status.upcoming {
+      background: rgba(201,168,76,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(201,168,76,0.3);
+    }
+    .t-hero-status.finished {
+      background: rgba(90,94,120,0.15);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .active .status-dot {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulseDot 1.5s infinite;
+    }
+    .upcoming .status-dot { background: var(--accent); }
+    .finished .status-dot { background: var(--text-muted); }
+    @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+
+    .t-hero-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .t-hero-desc {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .t-hero-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px 12px;
+      margin-bottom: 10px;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+    .t-hero-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .t-hero-meta-item b,
+    .t-hero-meta-item a {
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .t-hero-meta-item a:hover { color: var(--accent); }
+    .t-hero-meta-item b.admin-name { color: var(--accent); }
+    .t-hero-meta-icon { font-size: 12px; opacity: 0.85; }
+    .t-hero-meta-sep { opacity: 0.35; }
+    .t-back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .t-back-link:hover {
+      color: var(--accent);
+      background: rgba(201,168,76,0.08);
+    }
+    .t-hero-disclaimer {
+      color: var(--accent);
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.25);
+    }
+
+    .t-hero-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .t-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      min-width: 96px;
+      cursor: default;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .t-stat:hover {
+      border-color: var(--border-light);
+      background: rgba(255,255,255,0.04);
+    }
+    .t-stat-label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+    .t-stat-icon { font-size: 12px; opacity: 0.9; }
+    .t-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .t-stat-value.accent { color: var(--accent); }
+    .t-stat-value.green  { color: var(--green); }
+
+    .t-hero-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    /* ── TIMER ── */
+    .countdown-block {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .countdown-label { color: var(--text-secondary); font-size: 13px; font-weight: 600; }
+    .countdown-timer {
+      font-size: 22px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+    .countdown-timer.red { color: var(--red); animation: timerPulse 1s infinite; }
+    @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    .progress-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-card);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+      transition: width 1s linear;
+    }
+
+    /* ── TABS ── */
+    .section-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .section-tab {
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      margin-bottom: -1px;
+    }
+    .section-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .section-tab:hover:not(.active) {
+      color: var(--text-primary);
+    }
+
+    /* ── LEADERBOARD ── */
+    .leaderboard {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .lb-row {
+      display: grid;
+      grid-template-columns: 48px 1fr 70px 70px 70px 70px 100px;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      gap: 8px;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-row.header {
+      background: var(--bg-secondary);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .lb-row:not(.header):hover { background: var(--bg-hover); }
+    .lb-row.me { background: rgba(201,168,76,0.06); }
+    .lb-row.top1 { background: linear-gradient(90deg, rgba(201,168,76,0.08), transparent); }
+    .lb-row.top2 { background: linear-gradient(90deg, rgba(192,192,192,0.05), transparent); }
+    .lb-row.top3 { background: linear-gradient(90deg, rgba(205,127,50,0.05), transparent); }
+    .lb-row.banned-player { opacity: 0.35; text-decoration: line-through; display: none; }
+
+    .lb-rank {
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+    }
+    .lb-rank.r1 { color: #ffd700; }
+    .lb-rank.r2 { color: #c0c0c0; }
+    .lb-rank.r3 { color: #cd7f32; }
+
+    .lb-player {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lb-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #000;
+      flex-shrink: 0;
+    }
+    .lb-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+    .lb-name a {
+      color: inherit;
+      text-decoration: none;
+    }
+    .lb-name a:hover { color: var(--accent); }
+    .lb-rating {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .lb-score {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--accent);
+      text-align: center;
+    }
+    .lb-num {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .flame-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 14px;
+      animation: flicker 0.8s infinite alternate;
+    }
+    @keyframes flicker { 0%{opacity:.8;transform:scale(1)} 100%{opacity:1;transform:scale(1.15)} }
+
+    /* playing / waiting indicators */
+    .lb-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .lb-status.playing { color: var(--green); }
+    .lb-status.waiting { color: var(--accent); }
+    .lb-status.idle    { color: var(--text-muted); }
+
+    /* ── GAMES LIST ── */
+    .games-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .game-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .game-item:hover {
+      border-color: var(--border-light);
+      background: var(--bg-hover);
+    }
+    .game-item.live {
+      border-color: rgba(76,175,114,0.3);
+      background: rgba(76,175,114,0.04);
+    }
+    .game-player {
+      flex: 1;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .game-result {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+    }
+    .game-result .vs { color: var(--text-muted); font-size: 11px; }
+    .win  { color: var(--green); }
+    .loss { color: var(--red); }
+    .draw { color: var(--text-secondary); }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(76,175,114,0.15);
+      color: var(--green);
+      border: 1px solid rgba(76,175,114,0.3);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .live-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulseDot 1s infinite;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 10px 22px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #000;
+      box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(201,168,76,0.45);
+    }
+    .btn-danger {
+      background: rgba(224,85,85,0.12);
+      color: var(--red);
+      border: 1px solid rgba(224,85,85,0.3);
+    }
+    .btn-danger:hover {
+      background: rgba(224,85,85,0.2);
+    }
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-light);
+      color: var(--text-primary);
+    }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ── WINNER MODAL ── */
+    .winner-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(6px);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+    }
+    .winner-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .winner-box {
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      border-radius: 24px;
+      padding: 48px;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 0 80px rgba(201,168,76,0.3);
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.7); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .winner-trophy { font-size: 64px; display: block; margin-bottom: 16px; }
+    .winner-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .winner-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+    }
+
+    /* ── ANTICHEAT BANNER ── */
+    .anticheat-banned {
+      background: rgba(224,85,85,0.08);
+      border: 1px solid rgba(224,85,85,0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: var(--red);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── TOAST ── */
+    #toast-container {
+      position: fixed; bottom: 28px; right: 24px;
+      z-index: 9999;
+      display: flex; flex-direction: column; gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      background: var(--bg-card); border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      animation: slideRight 0.3s ease;
+      pointer-events: all;
+    }
+    .toast.success { border-color: var(--green); color: var(--green); }
+    .toast.error   { border-color: var(--red);   color: var(--red); }
+    @keyframes slideRight { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+    /* ── ADMIN PANEL ── */
+    .admin-panel {
+      background: rgba(201,168,76,0.05);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .admin-panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .admin-panel-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    @keyframes tSpin { to { transform: rotate(360deg); } }
+    .section-content { display: none; }
+    .section-content.active { display: block; }
+
+    @media (max-width: 700px) {
+      .lb-row { grid-template-columns: 36px 1fr 55px 55px; }
+      .lb-row .lb-num:nth-child(5),
+      .lb-row .lb-num:nth-child(6),
+      .lb-row .lb-status { display: none; }
+      .t-hero { padding: 24px 20px; }
+      .t-hero-title { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<script src="/js/header.js"></script>
+
+<div class="t-page">
+
+  <!-- BACK -->
+  <a href="/tournaments" class="t-back-link">
+    ← Все турниры
+  </a>
+
+  <div id="t-content">
+    <!-- Loading -->
+    <div id="t-loading" style="text-align:center;padding:80px 0;color:var(--text-muted)">
+      <div style="font-size:48px;margin-bottom:16px">⏳</div>
+      <div>Загружаем турнир...</div>
+    </div>
+  </div>
+</div>
+
+<!-- WINNER MODAL -->
+<div class="winner-overlay" id="winner-overlay">
+  <div class="winner-box">
+    <span class="winner-trophy">🏆</span>
+    <div class="winner-title">Победитель турнира!</div>
+    <div class="winner-name" id="winner-name-display">—</div>
+    <button class="btn btn-primary" onclick="document.getElementById('winner-overlay').classList.remove('show')">
+      🎉 Отлично!
+    </button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const API    = '/api';
+// Токен живёт только в HttpOnly-cookie ch_token — браузер шлёт её сам,
+// читать/хранить в localStorage больше нечего (и нельзя).
+const tId    = location.pathname.split('/').pop();
+let socket   = null;
+let tData    = null;
+let currentUser = null;
+let countdownInterval = null;
+let currentSection = 'leaderboard';
+
+// ── AUTH ──
+// Хедер (логотип, меню, юзер-меню, счётчик онлайна) теперь полностью
+// рисует /js/header.js — здесь только сообщаем ему, кто мы и какая страница активна.
+async function init() {
+  // Куку ch_token браузер отправит сам — просто спрашиваем сервер, кто мы.
+  try {
+    const r = await fetch(API + '/me', { credentials: 'same-origin' });
+    if (r.ok) currentUser = await r.json();
+  } catch {}
+
+  if (window.CH) {
+    if (currentUser) CH.setCurrentUser(currentUser);
+    CH.setActivePage('tournaments');
+  }
+
+  await loadTournament();
+  connectSocket();
+}
+
+async function loadTournament() {
+  try {
+    const r = await fetch(API + '/tournaments/' + tId);
+    if (!r.ok) {
+      document.getElementById('t-content').innerHTML = '<div style="text-align:center;padding:80px 0;color:var(--text-muted)"><div style="font-size:48px">🔍</div><div style="margin-top:12px">Турнир не найден</div></div>';
+      return;
+    }
+    tData = await r.json();
+    render();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+// ── SOCKET ──
+// ── Запуск турнирной партии — сразу на доску ─────────────────
+let _tCdInterval = null; // оставляем для совместимости с clearInterval
+function launchTournamentGame(data) {
+  // Убираем старый оверлей если есть
+  document.getElementById('t-cd-overlay')?.remove();
+  clearInterval(_tCdInterval);
+  // Кладём данные в sessionStorage — app.js подхватит и запустит игру
+  try { sessionStorage.setItem('ch_launch_game', JSON.stringify(data)); } catch(e) {}
+  window.location.href = '/';
+}
+
+// ── Баннер статуса ────────────────────────────────────────────
+function updateMyStatusBanner() {
+  const me = currentUser && currentUser.username;
+  if (!me || !tData || tData.status !== 'active') {
+    const b = document.getElementById('my-status-banner');
+    if (b) b.style.display = 'none';
+    return;
+  }
+  const myPart = tData.participants && tData.participants.find(function(p){ return p.username === me; });
+  if (!myPart || myPart.left || myPart.anticheatBanned) {
+    const b = document.getElementById('my-status-banner');
+    if (b) b.style.display = 'none';
+    return;
+  }
+
+  let banner = document.getElementById('my-status-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'my-status-banner';
+    const tabs = document.querySelector('.section-tabs');
+    if (tabs) tabs.parentNode.insertBefore(banner, tabs);
+    else document.getElementById('t-content') && document.getElementById('t-content').prepend(banner);
+  }
+
+  const BASE = 'border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;font-size:14px;font-weight:600;border:1px solid ';
+
+  const isReallyPlaying = myPart.currentGameId &&
+    tData.participants.some(function(o){ return o.username !== me && o.currentGameId === myPart.currentGameId; });
+
+  if (isReallyPlaying) {
+    banner.style.cssText = BASE + 'rgba(76,175,114,0.35);background:rgba(76,175,114,0.08)';
+    banner.innerHTML = '<span style="font-size:22px">⚡</span><div style="flex:1"><div style="color:var(--green)">Вы сейчас играете</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Партия идёт</div></div><a href="/game/' + myPart.currentGameId + '" class="btn btn-primary" style="font-size:12px;padding:7px 14px">♟ Перейти</a>';
+  } else if (myPart.waiting) {
+    banner.style.cssText = BASE + 'rgba(201,168,76,0.3);background:rgba(201,168,76,0.07)';
+    banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">Ищем соперника...</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Ожидаем подходящего игрока</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">⏸ Пауза</button>';
+  } else {
+    banner.style.cssText = BASE + 'var(--border);background:var(--bg-secondary)';
+    const pauseLabel = myPart.paused
+      ? '<div style="color:var(--text-secondary)">Партия завершена</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите ▶ Играть когда будете готовы</div>'
+      : '<div style="color:var(--text-secondary)">На паузе</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите чтобы возобновить поиск</div>';
+    banner.innerHTML = '<span style="font-size:22px">⏸</span><div style="flex:1">' + pauseLabel + '</div><button onclick="resumeTournament()" class="btn btn-primary" style="font-size:12px;padding:7px 14px">▶ Играть</button>';
+  }
+  banner.style.display = 'flex';
+}
+
+// pendingResume: если игрок нажал "Играть" до auth_ok — запомним и выполним после
+let _pendingResume = false;
+
+function pauseTournament()  {
+  if (socket && socket.connected) socket.emit('tournament_unseek', tId);
+}
+function resumeTournament() {
+  if (socket && socket.username) {
+    // сокет авторизован — сразу шлём
+    socket.emit('tournament_waiting', { tournamentId: tId });
+  } else if (socket && socket.connected) {
+    // подключён но ещё не прошёл auth — запомним, отправим в auth_ok
+    _pendingResume = true;
+  }
+}
+
+function connectSocket() {
+  socket = io(); // кука ch_token уедет вместе с handshake автоматически (тот же origin)
+
+  socket.on('connect', function () {
+    // Сервер всё равно читает токен только из HttpOnly-cookie handshake,
+    // а не из этого аргумента — но событие 'auth' обязательно нужно прислать,
+    // чтобы сервер начал сессию.
+    socket.emit('auth', null);
+  });
+
+  socket.on('auth_ok', function () {
+    socket.emit('join_tournament_room', tId);
+    if (tData && tData.status === 'active') {
+      const me = currentUser && currentUser.username;
+      const myPart = me && tData.participants && tData.participants.find(function(p){ return p.username === me; });
+      if (myPart && !myPart.left && !myPart.anticheatBanned) {
+        if (myPart.currentGameId) {
+          // Пара уже создана на сервере, но клиент мог не успеть получить game_start — запросим явно
+          socket.emit('tournament_rejoin', { tournamentId: tId, gameId: myPart.currentGameId });
+        } else if (_pendingResume) {
+          // Игрок нажал "Играть" пока авторизация ещё шла
+          _pendingResume = false;
+          socket.emit('tournament_waiting', { tournamentId: tId });
+        } else if (myPart.waiting && !myPart.paused) {
+          // Восстанавливаем seek после реконнекта
+          socket.emit('tournament_waiting', { tournamentId: tId });
+        }
+        // Если paused=true — игрок сам нажмёт "Играть" (не форсируем)
+      }
+    }
+  });
+
+  // game_start — сразу на доску
+  socket.on('game_start', function (data) {
+    if (!data.tournamentId || data.tournamentId !== tId) return;
+    if (data.moves && data.moves.length > 0) {
+      // Реджойн — сохраняем и переходим на главную
+      try { sessionStorage.setItem('ch_launch_game', JSON.stringify(data)); } catch(e) {}
+      window.location.href = '/';
+      return;
+    }
+    launchTournamentGame(data);
+  });
+
+  socket.on('tournament_update', function (data) {
+    const me = currentUser && currentUser.username;
+    const prevPart = tData && tData.participants && tData.participants.find(function(p){ return p.username === me; });
+    const prevGameId = prevPart ? prevPart.currentGameId : null;
+    tData = data;
+    renderLeaderboard();
+    renderGames();
+    updateHeroStats();
+    updateMyStatusBanner();
+
+    // Если у нас появилась новая партия (currentGameId), но клиент не получил game_start
+    // (например, socket не успел авторизоваться к моменту спаринга на сервере) — запрашиваем старт партии вручную
+    const myPart = me && data.participants && data.participants.find(function(p){ return p.username === me; });
+    if (myPart && myPart.currentGameId && myPart.currentGameId !== prevGameId && socket && socket.username) {
+      socket.emit('tournament_rejoin', { tournamentId: tId, gameId: myPart.currentGameId });
+    }
+  });
+
+  socket.on('tournament_finished', function (data) {
+    if ((data.tournament && data.tournament.id === tId) || data.winner) {
+      tData = data.tournament || tData;
+      if (tData && tData.winner) showWinner(tData.winner);
+      render();
+    }
+  });
+
+  socket.on('anticheat_ban', function (data) {
+    toast('⚠️ ' + data.username + ' — заблокирован за читерство', 'error');
+    loadTournament();
+  });
+}
+
+// ── MAIN RENDER ──
+function render() {
+  if (!tData) return;
+  const status = tData.status;
+  const isAdmin = currentUser?.role === 'admin';
+  const me = currentUser?.username;
+  const myPart = tData.participants?.find(p => p.username === me);
+  const isInTournament = !!myPart && !myPart.left;
+  const canJoin = currentUser && !isInTournament && status !== 'finished';
+
+  // Check blacklist
+  const isBlacklisted = tData.blacklist?.includes(me?.toLowerCase());
+
+  // Rating check
+  const myRating = currentUser?.rating || 0;
+  const ratingOk = (!tData.minRating || myRating >= tData.minRating) &&
+                   (!tData.maxRating || tData.maxRating >= 9999 || myRating <= tData.maxRating);
+
+  document.getElementById('t-loading').style.display = 'none';
+  document.getElementById('t-content').innerHTML = buildHTML(status, isAdmin, myPart, canJoin && !isBlacklisted && ratingOk);
+
+  startCountdown(status);
+
+  if (tData.winner && status === 'finished') {
+    setTimeout(() => showWinner(tData.winner), 500);
+  }
+
+  document.querySelectorAll('.section-tab').forEach(t => {
+    t.addEventListener('click', () => switchSection(t.dataset.section));
+  });
+
+  switchSection(currentSection);
+  setTimeout(updateMyStatusBanner, 0);
+}
+
+function buildHTML(status, isAdmin, myPart, canJoin) {
+  const statusLabel = { active:'Идёт', upcoming:'Скоро', finished:'Завершён' }[status] || status;
+  const statusIcon  = { active:'⚡', upcoming:'🕐', finished:'🏁' }[status];
+  const parts = tData.participants || [];
+  const activeParts = parts.filter(p => !p.anticheatBanned);
+
+  // ── Организатор турнира ──
+  // Бэкенд помечает турниры, созданные администрацией, флагом createdByIsAdmin.
+  // Ник создателя может приходить в разных полях в зависимости от версии API —
+  // берём первое, что есть.
+  const creatorName = tData.createdBy || tData.creatorUsername || tData.organizer || tData.ownerUsername;
+  const organizerHtml = tData.createdByIsAdmin
+    ? `<div class="t-hero-meta-item" title="Турнир организован администрацией ChessHome">
+         <span class="t-hero-meta-icon">🛡</span>Организатор: <b class="admin-name">Администрация ChessHome</b>
+       </div>`
+    : creatorName
+      ? `<div class="t-hero-meta-item" title="Кто создал этот турнир">
+           <span class="t-hero-meta-icon">👤</span>Организатор:
+           <a href="/profile/${encodeURIComponent(creatorName)}">${escHtml(creatorName)}</a>
+         </div>`
+      : '';
+
+  const startsAtStr = tData.startsAt ? new Date(tData.startsAt).toLocaleString('ru-RU', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+  }) : '';
+  const startsAtHtml = startsAtStr
+    ? `<div class="t-hero-meta-item" title="Дата и время начала турнира">
+         <span class="t-hero-meta-icon">📅</span>${status === 'finished' ? 'Начался' : 'Начало'}: <b>${escHtml(startsAtStr)}</b>
+       </div>`
+    : '';
+
+  return `
+    <!-- HERO -->
+    <div class="t-hero">
+      <div class="t-hero-bg-text">♛</div>
+      <div class="t-hero-top">
+        <div class="t-hero-icon">🏆</div>
+        <div class="t-hero-info">
+          <div class="t-hero-status ${status}">
+            <span class="status-dot"></span>
+            ${statusIcon} ${statusLabel}
+          </div>
+          <div class="t-hero-title">${escHtml(tData.name)}</div>
+          ${(organizerHtml || startsAtHtml) ? `<div class="t-hero-meta">${organizerHtml}${organizerHtml && startsAtHtml ? '<span class="t-hero-meta-sep">·</span>' : ''}${startsAtHtml}</div>` : ''}
+          ${tData.description ? `<div class="t-hero-desc">${escHtml(tData.description)}</div>` : ''}
+          ${!tData.createdByIsAdmin ? `<div class="t-hero-disclaimer">⚠ Этот турнир создан пользователем, а не администрацией. Если в описании турнира заявлены призы — ChessHome не организует и не несёт ответственности за их выплату. Все договорённости о призах — личная ответственность организатора турнира.</div>` : ''}
+        </div>
+      </div>
+
+      <div class="t-hero-stats">
+        <div class="t-stat" title="Контроль времени: минуты на партию + добавление секунд за ход">
+          <div class="t-stat-label"><span class="t-stat-icon">⏱</span>Контроль</div>
+          <div class="t-stat-value accent" style="font-family:var(--font-mono)">${escHtml(tData.timeControl)}</div>
+        </div>
+        <div class="t-stat" title="Сколько игроков сейчас в турнире (из максимума, если задан)">
+          <div class="t-stat-label"><span class="t-stat-icon">👥</span>Участников</div>
+          <div class="t-stat-value" id="stat-participants">${activeParts.length}${tData.maxParticipants ? '/' + tData.maxParticipants : ''}</div>
+        </div>
+        <div class="t-stat" title="Всего партий сыграно в этом турнире">
+          <div class="t-stat-label"><span class="t-stat-icon">♟</span>Партий сыграно</div>
+          <div class="t-stat-value" id="stat-games">${(tData.games||[]).length}</div>
+        </div>
+        ${tData.minRating || (tData.maxRating && tData.maxRating < 9999) ? `
+        <div class="t-stat" title="Ограничение по рейтингу для участия">
+          <div class="t-stat-label"><span class="t-stat-icon">⭐</span>Рейтинг</div>
+          <div class="t-stat-value">${tData.minRating||0}–${tData.maxRating>=9999?'∞':tData.maxRating}</div>
+        </div>` : ''}
+        ${tData.winner ? `
+        <div class="t-stat" title="Победитель турнира">
+          <div class="t-stat-label"><span class="t-stat-icon">🏆</span>Победитель</div>
+          <div class="t-stat-value" style="color:var(--accent)">🥇 ${escHtml(tData.winner)}</div>
+        </div>` : ''}
+      </div>
+
+      <div class="t-hero-actions">
+        ${canJoin && status !== 'finished' ? `<button class="btn btn-primary" id="btn-join" onclick="joinTournament()">⚡ Участвовать</button>` : ''}
+        ${myPart && !myPart.left && status !== 'finished' ? `<button class="btn btn-danger" id="btn-leave" onclick="leaveTournament()">↩ Покинуть</button>` : ''}
+        ${myPart?.currentGameId ? `<a class="btn btn-primary" href="/game/${myPart.currentGameId}">♟ Перейти к партии</a>` : ''}
+      </div>
+    </div>
+
+    <!-- COUNTDOWN -->
+    ${status !== 'finished' ? `
+    <div class="countdown-block" id="countdown-block">
+      <span class="countdown-label">${status === 'active' ? 'Осталось времени' : 'Начало через'}</span>
+      <span class="countdown-timer" id="countdown-timer">--:--:--</span>
+      ${status === 'active' ? `
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- ADMIN PANEL -->
+    ${isAdmin ? `
+    <div class="admin-panel">
+      <div class="admin-panel-title">🛡 Управление турниром</div>
+      <div class="admin-panel-row">
+        ${status === 'upcoming' ? `<button class="btn btn-secondary" onclick="adminDeleteTournament()">🗑 Удалить</button>` : ''}
+        ${status !== 'finished' ? `<button class="btn btn-secondary" onclick="adminEditTournament()">✏️ Редактировать</button>` : ''}
+        <a class="btn btn-secondary" href="/admin-tournament?id=${tId}">⚙️ Полное управление</a>
+      </div>
+    </div>` : ''}
+
+    <!-- SECTION TABS -->
+    <div class="section-tabs">
+      <button class="section-tab active" data-section="leaderboard">🏅 Таблица лидеров</button>
+      <button class="section-tab" data-section="games">♟ Партии (${(tData.games||[]).length})</button>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="section-content active" id="section-leaderboard">
+      ${buildLeaderboard()}
+    </div>
+
+    <!-- GAMES -->
+    <div class="section-content" id="section-games">
+      ${buildGames()}
+    </div>
+  `;
+}
+
+function buildLeaderboard() {
+  const parts = [...(tData.participants || [])].filter(p => !p.anticheatBanned);
+  if (!parts.length) {
+    return `<div style="text-align:center;padding:48px;color:var(--text-muted)">
+      <div style="font-size:40px;margin-bottom:12px">👥</div>
+      <div>Участников пока нет</div>
+    </div>`;
+  }
+  parts.sort((a,b) => b.score - a.score || b.wins - a.wins || a.losses - b.losses);
+  const me = currentUser?.username;
+  const isAdmin = currentUser?.role === 'admin';
+
+  const rows = parts.map((p, i) => {
+    const rank = i + 1;
+    const rankDisplay = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+    const rankClass = rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : '';
+    const rowClass = [
+      rank<=3 ? 'top'+rank : '',
+      p.username === me ? 'me' : '',
+    ].filter(Boolean).join(' ');
+
+    const statusHtml = p.currentGameId
+      ? `<span class="lb-status playing">⚡ Играет</span>`
+      : p.waiting
+        ? `<span class="lb-status waiting">⏳ Ждёт</span>`
+        : p.left
+          ? `<span class="lb-status idle">Покинул</span>`
+          : p.paused
+            ? `<span class="lb-status idle">⏸ Пауза</span>`
+            : `<span class="lb-status idle">—</span>`;
+
+    const adminBanBtn = isAdmin && p.username !== me
+      ? `<button onclick="adminBanFromTournament('${escHtml(p.username)}')" class="btn btn-danger" style="font-size:10px;padding:2px 7px;margin-left:6px;border-radius:6px" title="Забанить в турнире">🚫</button>`
+      : '';
+
+    return `
+      <div class="lb-row ${rowClass}">
+        <div class="lb-rank ${rankClass}">${rankDisplay}</div>
+        <div class="lb-player">
+          <div class="lb-avatar">${p.username[0].toUpperCase()}</div>
+          <div>
+            <div class="lb-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+              <a href="/profile/${encodeURIComponent(p.username)}">${escHtml(p.username)}</a>
+              ${p.flame ? '<span class="flame-badge">🔥</span>' : ''}
+              ${p.username === me ? '<span style="font-size:10px;color:var(--accent)">ВЫ</span>' : ''}
+              ${adminBanBtn}
+            </div>
+            <div class="lb-rating">★ ${p.rating || '?'}</div>
+          </div>
+        </div>
+        <div class="lb-score">${p.score}</div>
+        <div class="lb-num" style="color:var(--green)">${p.wins}</div>
+        <div class="lb-num" style="color:var(--text-muted)">${p.draws}</div>
+        <div class="lb-num" style="color:var(--red)">${p.losses}</div>
+        ${statusHtml}
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="leaderboard">
+      <div class="lb-row header">
+        <div style="text-align:center">#</div>
+        <div>Игрок</div>
+        <div style="text-align:center">Очки</div>
+        <div style="text-align:center">Победы</div>
+        <div style="text-align:center">Ничьи</div>
+        <div style="text-align:center">Поражения</div>
+        <div>Статус</div>
+      </div>
+      ${rows}
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--text-muted);text-align:center">
+      Победа = 2 очка · Ничья = 1 очко · Поражение = 0 очков
+    </div>`;
+}
+
+function buildGames() {
+  const games = [...(tData.games || [])].reverse();
+  // Also show active tournament games
+  const liveGames = (tData.participants || [])
+    .filter(p => p.currentGameId)
+    .map(p => ({ id: p.currentGameId, live: true, white: '?', black: p.username }));
+
+  if (!games.length && !liveGames.length) {
+    return `<div style="text-align:center;padding:48px;color:var(--text-muted)">
+      <div style="font-size:40px;margin-bottom:12px">♟</div>
+      <div>Партии ещё не начались</div>
+    </div>`;
+  }
+
+  // Live games first
+  const liveHTML = liveGames.map(g => `
+    <a class="game-item live" href="/game/${g.id}">
+      <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+      <span class="game-player">Идёт партия</span>
+      <span style="font-size:12px;color:var(--green)">Наблюдать →</span>
+    </a>`).join('');
+
+  const gamesHTML = games.slice(0, 50).map(g => {
+    const res = g.result === 'white' ? ['win','','loss'] :
+                g.result === 'black' ? ['loss','','win'] :
+                g.result === 'draw'  ? ['draw','','draw'] : ['','vs',''];
+    const banned = g.anticheatBanned;
+    return `
+      <a class="game-item" href="/game/${g.id}">
+        <span class="game-player ${res[0]}">${escHtml(g.white)}</span>
+        <span class="game-result">
+          <span class="${res[0]}">${g.result==='white'?'1':g.result==='draw'?'½':'0'}</span>
+          <span class="vs">—</span>
+          <span class="${res[2]}">${g.result==='black'?'1':g.result==='draw'?'½':'0'}</span>
+        </span>
+        <span class="game-player ${res[2]}" style="text-align:right">${escHtml(g.black)}</span>
+        ${banned ? '<span style="color:var(--red);font-size:11px">⚠️ Античит</span>' : ''}
+      </a>`;
+  }).join('');
+
+  return `<div class="games-list">${liveHTML}${gamesHTML}</div>`;
+}
+
+// ── UPDATE PARTS (without full re-render) ──
+function renderLeaderboard() {
+  const el = document.getElementById('section-leaderboard');
+  if (el) el.innerHTML = buildLeaderboard();
+  updateHeroStats();
+}
+function renderGames() {
+  const el = document.getElementById('section-games');
+  if (el) el.innerHTML = buildGames();
+  // update tab count
+  const tab = document.querySelector('[data-section="games"]');
+  if (tab) tab.textContent = `♟ Партии (${(tData.games||[]).length})`;
+}
+function updateHeroStats() {
+  const activeParts = (tData.participants||[]).filter(p=>!p.anticheatBanned);
+  const sp = document.getElementById('stat-participants');
+  const sg = document.getElementById('stat-games');
+  if (sp) sp.textContent = activeParts.length + (tData.maxParticipants ? '/' + tData.maxParticipants : '');
+  if (sg) sg.textContent = (tData.games||[]).length;
+}
+
+// ── SECTION SWITCH ──
+function switchSection(name) {
+  currentSection = name;
+  document.querySelectorAll('.section-tab').forEach(t => t.classList.toggle('active', t.dataset.section === name));
+  document.querySelectorAll('.section-content').forEach(c => c.classList.toggle('active', c.id === 'section-' + name));
+}
+
+// ── COUNTDOWN ──
+function startCountdown(status) {
+  clearInterval(countdownInterval);
+  if (status === 'finished') return;
+  const el = document.getElementById('countdown-timer');
+  const fill = document.getElementById('progress-fill');
+  if (!el) return;
+
+  countdownInterval = setInterval(() => {
+    const now = Date.now();
+    let ms, total;
+    if (status === 'active') {
+      ms = Math.max(0, tData.endsAt - now);
+      total = tData.durationMinutes * 60000;
+      const pct = Math.max(0, Math.min(100, 100 - (ms / total * 100)));
+      if (fill) fill.style.width = pct + '%';
+    } else {
+      ms = Math.max(0, tData.startsAt - now);
+    }
+    el.textContent = formatMs(ms);
+    el.className = 'countdown-timer' + (ms < 60000 ? ' red' : '');
+    if (ms <= 0) {
+      clearInterval(countdownInterval);
+      setTimeout(loadTournament, 2000);
+    }
+  }, 1000);
+}
+
+function formatMs(ms) {
+  if (ms <= 0) return '00:00:00';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+// ── JOIN / LEAVE ──
+async function joinTournament() {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  const btn = document.getElementById('btn-join');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/join', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+    toast('Вы в турнире! 🎉 Ждите начала', 'success');
+    await loadTournament();
+  } catch (e) {
+    toast(e.message, 'error');
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function leaveTournament() {
+  if (!confirm('Покинуть турнир?')) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/leave', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+    toast('Вы покинули турнир', 'success');
+    await loadTournament();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── ADMIN ──
+async function adminDeleteTournament() {
+  if (!confirm('Удалить турнир безвозвратно?')) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId, {
+      method: 'DELETE',
+      credentials: 'same-origin'
+    });
+    if (!r.ok) throw new Error((await r.json()).error);
+    toast('Турнир удалён', 'success');
+    setTimeout(() => window.location.href = '/tournaments', 1200);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// Замените старую adminEditTournament
+function adminEditTournament() {
+  if (!tData) return;
+  // Заполняем форму текущими данными
+  document.getElementById('edit-name').value = tData.name || '';
+  document.getElementById('edit-desc').value = tData.description || '';
+  document.getElementById('edit-tc').value = tData.timeControl || '3+2';
+  document.getElementById('edit-duration').value = tData.durationMinutes || 30;
+  // Дата начала — преобразуем в формат datetime-local
+  if (tData.startsAt) {
+    const d = new Date(tData.startsAt);
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    document.getElementById('edit-starts-at').value = local.toISOString().slice(0, 16);
+  }
+  document.getElementById('edit-max').value = tData.maxParticipants || 0;
+  document.getElementById('edit-min-rating').value = tData.minRating || 0;
+  document.getElementById('edit-max-rating').value = (tData.maxRating && tData.maxRating < 9999) ? tData.maxRating : 0;
+  // Blacklist
+  editBlacklist = (tData.blacklist || []).slice();
+  renderEditBlacklist();
+
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+}
+
+// Blacklist для редактирования
+let editBlacklist = [];
+
+function addEditBlacklist() {
+  const input = document.getElementById('edit-bl-input');
+  const val = input.value.trim();
+  if (!val || editBlacklist.includes(val.toLowerCase())) { input.value = ''; return; }
+  editBlacklist.push(val.toLowerCase());
+  input.value = '';
+  renderEditBlacklist();
+}
+function removeEditBlacklist(name) {
+  editBlacklist = editBlacklist.filter(b => b !== name);
+  renderEditBlacklist();
+}
+function renderEditBlacklist() {
+  const el = document.getElementById('edit-bl-tags');
+  el.innerHTML = editBlacklist.map(n => `
+    <span class="bl-tag">
+      ${escHtml(n)}
+      <span class="bl-tag-remove" onclick="removeEditBlacklist('${escHtml(n)}')">✕</span>
+    </span>`).join('');
+}
+
+async function submitEditTournament() {
+  const btn = document.getElementById('btn-edit-submit');
+  btn.disabled = true;
+  btn.textContent = 'Сохранение...';
+
+  const payload = {
+    name: document.getElementById('edit-name').value.trim(),
+    description: document.getElementById('edit-desc').value.trim(),
+    timeControl: document.getElementById('edit-tc').value,
+    durationMinutes: parseInt(document.getElementById('edit-duration').value),
+    startsAt: document.getElementById('edit-starts-at').value,
+    maxParticipants: parseInt(document.getElementById('edit-max').value) || 0,
+    minRating: parseInt(document.getElementById('edit-min-rating').value) || 0,
+    maxRating: parseInt(document.getElementById('edit-max-rating').value) || 9999,
+    blacklist: editBlacklist,
+  };
+
+  if (!payload.name) { toast('Название обязательно', 'error'); btn.disabled = false; btn.textContent = '💾 Сохранить'; return; }
+  if (!payload.startsAt) { toast('Укажите дату начала', 'error'); btn.disabled = false; btn.textContent = '💾 Сохранить'; return; }
+
+  try {
+    const res = await fetch(API + '/tournaments/' + tId, {
+      method: 'PATCH',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка обновления');
+    toast('Турнир обновлён ✅', 'success');
+    closeEditModal();
+    await loadTournament(); // перезагружаем данные
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Сохранить';
+  }
+}
+
+async function adminBanFromTournament(username) {
+  if (!confirm(`Забанить ${username} в этом турнире? Все их партии будут аннулированы.`)) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/anticheat-ban', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+    toast(`${username} забанен в турнире`, 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── WINNER ──
+function showWinner(username) {
+  document.getElementById('winner-name-display').textContent = username;
+  document.getElementById('winner-overlay').classList.add('show');
+}
+
+// ── UTILS ──
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+document.getElementById('edit-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+
+init();
+</script>
+<script src="/js/ping-widget.js"></script>
+
+<!-- MODAL: EDIT TOURNAMENT -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box" style="max-width: 600px;">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Редактировать турнир</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Название *</label>
+        <input type="text" class="form-input" id="edit-name" maxlength="60">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Описание</label>
+        <textarea class="form-textarea" id="edit-desc" maxlength="1000" style="min-height:80px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Контроль времени</label>
+        <select class="form-select" id="edit-tc">
+          <option value="1+0">1+0</option><option value="1+1">1+1</option>
+          <option value="2+1">2+1</option><option value="3+0">3+0</option>
+          <option value="3+2">3+2</option><option value="5+0">5+0</option>
+          <option value="5+3">5+3</option><option value="10+0">10+0</option>
+          <option value="10+5">10+5</option><option value="15+10">15+10</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Длительность (мин)</label>
+        <select class="form-select" id="edit-duration">
+          <option value="20">20</option><option value="30">30</option>
+          <option value="45">45</option><option value="60">60</option>
+          <option value="90">90</option><option value="120">120</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Дата начала *</label>
+        <input type="datetime-local" class="form-input" id="edit-starts-at">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Макс. участников</label>
+        <input type="number" class="form-input" id="edit-max" min="0" max="500" placeholder="0 = без лимита">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Мин. рейтинг</label>
+        <input type="number" class="form-input" id="edit-min-rating" min="0" max="3000" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Макс. рейтинг</label>
+        <input type="number" class="form-input" id="edit-max-rating" min="0" max="3000" placeholder="0 = ∞">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">⛔ Blacklist</label>
+        <div class="blacklist-input-row">
+          <input type="text" class="form-input" id="edit-bl-input" placeholder="Ник..." onkeydown="if(event.key==='Enter')addEditBlacklist()">
+          <button class="btn-add-bl" onclick="addEditBlacklist()">Добавить</button>
+        </div>
+        <div class="blacklist-tags" id="edit-bl-tags"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+      <button class="btn-submit" id="btn-edit-submit" onclick="submitEditTournament()">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* MODAL OVERLAY (копия из tournaments.html) */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08);
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.25s;
+}
+.modal-overlay.open .modal-box {
+  transform: scale(1) translateY(0);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.form-group.full { grid-column: 1 / -1; }
+.form-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.form-input, .form-select, .form-textarea {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 14px;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.form-textarea { resize: vertical; }
+.form-select { cursor: pointer; }
+.blacklist-input-row {
+  display: flex;
+  gap: 8px;
+}
+.blacklist-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.bl-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(224,85,85,0.12);
+  border: 1px solid rgba(224,85,85,0.3);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: var(--red);
+  font-weight: 600;
+}
+.bl-tag-remove {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
+}
+.bl-tag-remove:hover { opacity: 1; }
+.btn-add-bl {
+  padding: 8px 14px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.btn-add-bl:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.btn-cancel {
+  padding: 10px 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-cancel:hover {
+  border-color: var(--border-light);
+  color: var(--text-primary);
+}
+.btn-submit {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border: none;
+  border-radius: 9px;
+  color: #000;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+}
+.btn-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(201,168,76,0.45);
+}
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+@media (max-width: 600px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</body>
+</html>

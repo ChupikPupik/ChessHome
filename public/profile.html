@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Профиль — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+    <link rel="icon" type="image/png" href="../img/logo/favicon.png">
+
+  <style>
+    * { box-sizing: border-box; }
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: 'Nunito', sans-serif; }
+    .profile-hero { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 32px; text-align: center; margin-bottom: 20px; }
+    .profile-tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 20px; overflow-x: auto; }
+    .profile-tab { padding: 10px 18px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .profile-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; text-align: center; margin-bottom: 20px; }
+    @media(max-width:600px){ .stat-grid { grid-template-columns: repeat(2,1fr); } }
+    .stat-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 8px; }
+    .stat-card .num { font-size: 26px; font-weight: 700; font-family: monospace; }
+    .stat-card .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th, .data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+    .sparkline-wrap { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .activity-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .game-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .result-badge { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+    .winrate-bar-wrap { background: var(--bg-secondary); border-radius: 6px; overflow: hidden; height: 8px; margin-top: 14px; }
+    .winrate-bar-fill { height: 100%; background: var(--green); width: 0%; transition: width .5s; }
+    .section-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+    .section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
+    .delta-pos { color: var(--green); font-weight: 700; }
+    .delta-neg { color: var(--red); font-weight: 700; }
+    .profile-follow-stats { display: flex; gap: 24px; justify-content: center; margin: 12px 0; }
+    .profile-follow-stats div { cursor: pointer; font-size: 14px; background: var(--bg-secondary); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); }
+    .games-load-more { text-align: center; margin-top: 16px; }
+
+    /* ── Описание профиля и внешние рейтинги ─────────────────── */
+    .profile-bio { max-width: 560px; margin: 14px auto 4px; font-size: 14px; line-height: 1.5; color: var(--text-secondary); white-space: pre-wrap; word-break: break-word; }
+    .profile-bio.empty { color: var(--text-muted); font-style: italic; }
+    .ext-ratings { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 10px 0 2px; }
+    .ext-rating-chip { display: flex; align-items: center; gap: 6px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px 5px 10px; font-size: 13px; }
+    .ext-rating-chip .flag { font-size: 15px; }
+    .ext-rating-chip .val { font-family: monospace; font-weight: 700; color: var(--text-primary); }
+    .ext-rating-chip .lbl { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .3px; }
+    #btn-edit-profile { margin-top: 10px; }
+
+    /* ── Модалка редактирования профиля ──────────────────────── */
+    #modal-edit-profile textarea.form-input { resize: vertical; min-height: 90px; font-family: inherit; }
+    .edit-profile-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media(max-width:480px){ .edit-profile-row { grid-template-columns: 1fr; } }
+    .char-counter { text-align: right; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .char-counter.warn { color: var(--red); }
+
+    /* ── Динамика рейтинга: lichess-style brush ──────────────── */
+    .rating-chart-toolbar { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .rating-range-label { font-family: monospace; }
+    .rating-brush-wrap { margin-top: 10px; position: relative; height: 34px; user-select: none; touch-action: none; }
+    .rating-brush-wrap svg { width: 100%; height: 100%; display: block; }
+    .rating-brush-window { fill: var(--accent); fill-opacity: .18; stroke: var(--accent); stroke-width: 1.5; cursor: grab; }
+    .rating-brush-window:active { cursor: grabbing; }
+    .rating-brush-handle { fill: var(--accent); cursor: ew-resize; }
+    .rating-brush-hint { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  </style>
+</head>
+<body>
+<div id="app" style="padding-top:56px">
+  <div style="padding:40px 24px;max-width:760px;margin:0 auto" id="profile-content">
+    <div id="profile-loading" style="text-align:center;padding:60px"><div class="spinner" style="margin:0 auto 16px"></div><div>Загрузка...</div></div>
+    <div id="profile-data" style="display:none">
+      <div class="profile-hero">
+        <div class="player-avatar" style="width:80px;height:80px;font-size:36px;margin:0 auto 14px" id="profile-avatar">?</div>
+        <h2 id="profile-name" style="font-family:var(--font-display);font-size:26px;margin:0 0 6px">—</h2>
+        <div id="profile-rating" style="color:var(--accent);font-size:22px;font-family:monospace;margin-bottom:6px">—</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0">
+          <div id="profile-emoji" style="font-size:36px;cursor:pointer;min-width:44px;text-align:center" onclick="openEmojiPickerFromProfile()"></div>
+          <button id="btn-remove-emoji" class="btn btn-ghost btn-sm" onclick="removeEmojiProfile()" style="display:none;font-size:12px">✕ Убрать</button>
+        </div>
+        <div class="ext-ratings" id="ext-ratings"></div>
+        <div class="profile-bio" id="profile-bio"></div>
+        <div class="profile-follow-stats"><div id="followers-count">Подписчиков: 0</div><div id="following-count">Подписок: 0</div></div>
+        <div id="profile-joined" style="color:var(--text-muted);font-size:13px"></div>
+        <div id="profile-online" style="margin-top:6px;font-size:13px"></div>
+        <div id="profile-badge" style="margin-top:10px"></div>
+        <div id="profile-follow-btn" style="margin-top:12px"></div>
+        <div id="profile-actions" style="display:none;margin-top:16px;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="btn-challenge" style="display:none">⚔️ Вызвать</button>
+          <button class="btn btn-secondary btn-sm" id="btn-message" style="display:none">✉️ Написать</button>
+          <button class="btn btn-danger btn-sm" id="btn-ban" style="display:none">🚫 Бан</button>
+          <button class="btn btn-secondary btn-sm" id="btn-unban" style="display:none">✅ Разбан</button>
+        </div>
+        <div id="btn-edit-profile" style="display:none">
+          <button class="btn btn-ghost btn-sm" onclick="openEditProfileModal()">✏️ Редактировать профиль</button>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="stat-games">0</div><div class="lbl">Партий</div></div>
+        <div class="stat-card"><div class="num" id="stat-wins" style="color:var(--green)">0</div><div class="lbl">Побед</div></div>
+        <div class="stat-card"><div class="num" id="stat-losses" style="color:var(--red)">0</div><div class="lbl">Поражений</div></div>
+        <div class="stat-card"><div class="num" id="stat-draws" style="color:var(--text-secondary)">0</div><div class="lbl">Ничьих</div></div>
+      </div>
+      <div class="profile-tabs">
+        <div class="profile-tab active" data-tab="overview">📊 Обзор</div>
+        <div class="profile-tab" data-tab="games">🕹 Партии</div>
+        <div class="profile-tab" data-tab="activity">📅 Активность</div>
+      </div>
+      <div class="tab-panel active" id="tab-overview">
+        <div class="sparkline-wrap">
+          <div class="rating-chart-toolbar">
+            <span>📈 Динамика рейтинга</span>
+            <span class="rating-range-label" id="rating-range-label"></span>
+          </div>
+          <svg id="rating-svg" viewBox="0 0 500 120" preserveAspectRatio="none"><text id="rating-svg-empty" x="250" y="65" text-anchor="middle" fill="var(--text-muted)" font-size="14">Нет данных</text></svg>
+          <div class="rating-brush-wrap" id="rating-brush-wrap" style="display:none">
+            <svg id="rating-brush-svg" viewBox="0 0 500 34" preserveAspectRatio="none"></svg>
+          </div>
+          <div class="rating-brush-hint" id="rating-brush-hint" style="display:none">потяните окно, чтобы посмотреть другой period · тяните края, чтобы изменить масштаб</div>
+        </div>
+        <div class="section-card"><div class="section-title">📉 Таблица колебаний рейтинга</div><div style="overflow-x:auto"><table class="data-table" id="rating-table"><thead><tr><th>#</th><th>Соперник</th><th>Контроль</th><th>Результат</th><th>Δ</th><th>Итого</th><th>Дата</th></tr></thead><tbody id="rating-table-body"><tr><td colspan="7" style="text-align:center">Загрузка...</td></tr></tbody></table></div></div>
+        <div class="section-card"><div class="section-title">🧩 Задачи</div><div class="stat-grid" style="grid-template-columns:repeat(3,1fr)"><div class="stat-card"><div class="num" id="stat-puzzle-rating">—</div><div class="lbl">Рейтинг</div></div><div class="stat-card"><div class="num" id="stat-puzzle-solved">0</div><div class="lbl">Решено</div></div><div class="stat-card"><div class="num" id="stat-puzzle-acc">0%</div><div class="lbl">Точность</div></div></div></div>
+        <div class="section-card"><div class="section-title">🎯 Винрейт</div><div class="winrate-bar-wrap"><div class="winrate-bar-fill" id="winrate-bar"></div></div><div style="text-align:center;font-size:12px;margin-top:8px" id="winrate-text"></div></div>
+      </div>
+      <div class="tab-panel" id="tab-games"><div class="section-card" style="padding:0"><div id="profile-games-list" style="padding:8px 16px">Загрузка...</div><div class="games-load-more" style="display:none"><button class="btn btn-ghost btn-sm" id="btn-load-more">Загрузить ещё</button></div></div></div>
+      <div class="tab-panel" id="tab-activity"><div class="section-card"><div class="section-title">📅 Активность за 7 дней</div><div id="activity-blocks" class="stat-grid" style="grid-template-columns:repeat(3,1fr)"></div><div class="section-title" style="margin-top:4px">Лента событий</div><div id="activity-list">Загрузка...</div></div></div>
+    </div>
+    <div id="profile-notfound" style="display:none;text-align:center;padding:60px"><div style="font-size:48px">🔍</div><h2>Пользователь не найден</h2><a href="/" class="btn btn-primary">На главную</a></div>
+    <div id="profile-auth-required" style="display:none;text-align:center;padding:60px"><div style="font-size:48px">🔒</div><h2>Войдите в аккаунт</h2><button class="btn btn-primary" onclick="openLoginModal()">Войти</button></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-login"><div class="modal"><button class="modal-close" onclick="closeModal()">✕</button><h2>♚ Вход</h2><form onsubmit="handleLogin(event)"><div class="form-group"><label>Имя</label><input class="form-input" id="login-username"></div><div class="form-group"><label>Пароль</label><input class="form-input" id="login-password" type="password"></div><div class="form-error" id="login-error"></div><div class="form-actions"><button type="submit" class="btn btn-primary">Войти</button></div></form></div></div>
+<div id="toast-container"></div>
+
+<!-- Модальное окно выбора эмодзи -->
+<div id="modal-emoji" class="modal-overlay">
+  <div class="modal" style="max-width:500px">
+    <button class="modal-close" onclick="closeModal('modal-emoji')">✕</button>
+    <h2>Выберите эмодзи</h2>
+    <div id="emoji-grid" style="display:grid; grid-template-columns:repeat(8,1fr); gap:8px; font-size:28px; text-align:center; max-height:300px; overflow-y:auto; padding:8px"></div>
+  </div>
+</div>
+
+<!-- Модальное окно редактирования профиля -->
+<div id="modal-edit-profile" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <button class="modal-close" onclick="closeModal('modal-edit-profile')">✕</button>
+    <h2>✏️ Редактировать профиль</h2>
+    <form onsubmit="saveProfileEdits(event)">
+      <div class="form-group">
+        <label>О себе</label>
+        <textarea class="form-input" id="edit-bio" maxlength="400" placeholder="Расскажите немного о себе: стиль игры, любимые дебюты, цели..." oninput="updateBioCounter()"></textarea>
+        <div class="char-counter" id="bio-counter">0 / 400</div>
+      </div>
+      <div class="edit-profile-row">
+        <div class="form-group">
+          <label>Рейтинг ФШР</label>
+          <input class="form-input" id="edit-fshr" type="number" min="0" max="4000" placeholder="напр. 1850">
+        </div>
+        <div class="form-group">
+          <label>Рейтинг FIDE</label>
+          <input class="form-input" id="edit-fide" type="number" min="0" max="4000" placeholder="напр. 1900">
+        </div>
+      </div>
+      <div class="form-error" id="edit-profile-error"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-edit-profile')">Отмена</button>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let currentUser = null;
+let profileUserData = null; // данные профиля, который сейчас просматривается (для формы редактирования)
+
+// Токен и device id теперь живут только в HttpOnly-cookie (ch_token, ch_device_id),
+// которую браузер сам прикладывает к запросам на тот же origin — никакого JS-доступа
+// к ним больше нет, поэтому localStorage/заголовки авторизации на клиенте не нужны.
+
+async function safeJson(res) {
+  // Если сервер вместо JSON вернул HTML (например, страницу ошибки от
+  // прокси/хостинга, когда метод DELETE/PATCH заблокирован), res.json()
+  // падает с криптичным "JSON.parse: unexpected character at line 1 column 1".
+  // Показываем вместо этого понятную ошибку.
+  try { return await res.json(); }
+  catch { throw new Error('Сервер вернул некорректный ответ (код ' + res.status + '). Попробуйте ещё раз.'); }
+}
+async function apiGet(path) {
+  const sep = path.includes('?') ? '&' : '?';
+  const url = API + path + sep + '_=' + Date.now();
+  const res = await fetch(url, { credentials: 'same-origin' });
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+async function apiPost(path, body) {
+  const res = await fetch(API + path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+async function apiDelete(path) {
+  const res = await fetch(API + path, { method: 'DELETE', credentials: 'same-origin' });
+  const data = await safeJson(res);
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+
+function escapeHtml(s) { if(!s) return ''; return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]); }
+function toast(msg, type='info') { const c=document.getElementById('toast-container'); if(!c) return; const el=document.createElement('div'); el.className='toast '+type; el.innerHTML='<span>'+msg+'</span>'; c.appendChild(el); setTimeout(()=>el.remove(),3000); }
+function updateHeaderUI() { if(window.CH) CH.setCurrentUser(currentUser); }
+function closeModal(id) { const modal = document.getElementById(id); if(modal) modal.classList.remove('open'); }
+function openModal(id) { const modal = document.getElementById(id); if(modal) modal.classList.add('open'); }
+function openLoginModal() { openModal('modal-login'); }
+async function handleLogin(e) {
+  e.preventDefault();
+  const username=document.getElementById('login-username').value.trim();
+  const password=document.getElementById('login-password').value;
+  try {
+    const data=await apiPost('/login',{username,password});
+    // Токен больше не приходит в теле ответа — сервер положил его в HttpOnly-cookie сам.
+    currentUser=data.user;
+    closeModal('modal-login');
+    updateHeaderUI();
+    toast('Добро пожаловать, '+username+'!','success');
+    setTimeout(()=>location.reload(),500);
+  } catch(err) { document.getElementById('login-error').textContent=err.message; }
+}
+
+// вкладки
+document.querySelectorAll('.profile-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.profile-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+function show(id){ document.getElementById(id).style.display=''; }
+function hide(id){ document.getElementById(id).style.display='none'; }
+
+// график
+let ratingChartData=[];
+let ratingFullHistory=[];  // полная история рейтинга (старые → новые)
+let ratingWindowStart=0;   // индекс начала окна просмотра
+let ratingWindowLen=0;     // длина окна просмотра
+const RATING_BRUSH_THRESHOLD=20; // если точек больше — включаем полосу прокрутки/зума
+
+// Инициализация графика: если данных много — включаем полосу-брейзер снизу (как на lichess),
+// иначе показываем весь график целиком без брейзера.
+function initRatingChart(fullHist){
+  ratingFullHistory=fullHist;
+  const total=fullHist.length;
+  const brushWrap=document.getElementById('rating-brush-wrap');
+  const brushHint=document.getElementById('rating-brush-hint');
+  if(total>RATING_BRUSH_THRESHOLD){
+    ratingWindowLen=RATING_BRUSH_THRESHOLD;
+    ratingWindowStart=total-ratingWindowLen;
+    if(brushWrap) brushWrap.style.display='block';
+    if(brushHint) brushHint.style.display='block';
+    drawBrush();
+  }else{
+    ratingWindowStart=0;
+    ratingWindowLen=total;
+    if(brushWrap) brushWrap.style.display='none';
+    if(brushHint) brushHint.style.display='none';
+  }
+  renderRatingWindow();
+}
+
+function renderRatingWindow(){
+  const slice=ratingFullHistory.slice(ratingWindowStart, ratingWindowStart+ratingWindowLen);
+  drawRatingChart(slice);
+  const label=document.getElementById('rating-range-label');
+  if(label){
+    label.textContent = ratingFullHistory.length>ratingWindowLen
+      ? `партии ${ratingWindowStart+1}–${ratingWindowStart+ratingWindowLen} из ${ratingFullHistory.length}`
+      : '';
+  }
+}
+
+// Мини-обзорная полоса снизу графика с перетаскиваемым окном (пан) и краями для изменения масштаба (зум)
+function drawBrush(){
+  const svg=document.getElementById('rating-brush-svg');
+  if(!svg) return;
+  const total=ratingFullHistory.length;
+  const W=500,H=34;
+  const mn=Math.min(...ratingFullHistory)-10, mx=Math.max(...ratingFullHistory)+10;
+  const pts=ratingFullHistory.map((r,i)=>({x:(i/(total-1))*W, y:H-((r-mn)/(mx-mn||1))*H}));
+  const lineD=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(' ');
+  const areaD=lineD+` L${pts[pts.length-1].x},${H} L0,${H} Z`;
+  const winX=(ratingWindowStart/total)*W, winW=(ratingWindowLen/total)*W;
+  svg.innerHTML=`
+    <path d="${areaD}" fill="var(--text-muted)" fill-opacity=".22"/>
+    <path d="${lineD}" fill="none" stroke="var(--text-muted)" stroke-width="1"/>
+    <rect class="rating-brush-window" id="brush-window-rect" x="${winX}" y="0.5" width="${winW}" height="${H-1}" rx="3"/>
+    <rect class="rating-brush-handle" data-handle="left" x="${winX-2}" y="0.5" width="4" height="${H-1}" rx="1.5"/>
+    <rect class="rating-brush-handle" data-handle="right" x="${winX+winW-2}" y="0.5" width="4" height="${H-1}" rx="1.5"/>
+  `;
+  attachBrushEvents(svg,total,W);
+}
+
+function attachBrushEvents(svg,total,W){
+  const winRect=svg.querySelector('#brush-window-rect');
+  const leftHandle=svg.querySelector('[data-handle="left"]');
+  const rightHandle=svg.querySelector('[data-handle="right"]');
+  const minLen=Math.max(3, Math.min(6,total));
+
+  function clientX(e){ return e.touches ? e.touches[0].clientX : e.clientX; }
+  function toSvgDx(dxClient){
+    const bcr=svg.getBoundingClientRect();
+    return dxClient*(W/bcr.width);
+  }
+  function updateRectDom(){
+    const winX=(ratingWindowStart/total)*W, winW=(ratingWindowLen/total)*W;
+    winRect.setAttribute('x',winX); winRect.setAttribute('width',winW);
+    leftHandle.setAttribute('x',winX-2);
+    rightHandle.setAttribute('x',winX+winW-2);
+  }
+  function startDrag(mode){
+    return function(e){
+      e.preventDefault();
+      const startX=clientX(e);
+      const startWS=ratingWindowStart, startWL=ratingWindowLen;
+      function move(ev){
+        const dxSvg=toSvgDx(clientX(ev)-startX);
+        const dIdx=Math.round((dxSvg/W)*total);
+        if(mode==='pan'){
+          ratingWindowStart=Math.max(0, Math.min(total-startWL, startWS+dIdx));
+        }else if(mode==='left'){
+          const ns=Math.max(0, Math.min(startWS+startWL-minLen, startWS+dIdx));
+          ratingWindowLen=startWS+startWL-ns;
+          ratingWindowStart=ns;
+        }else if(mode==='right'){
+          ratingWindowLen=Math.max(minLen, Math.min(total-startWS, startWL+dIdx));
+        }
+        updateRectDom();
+        renderRatingWindow();
+      }
+      function up(){
+        document.removeEventListener('mousemove',move);
+        document.removeEventListener('mouseup',up);
+        document.removeEventListener('touchmove',move);
+        document.removeEventListener('touchend',up);
+      }
+      document.addEventListener('mousemove',move);
+      document.addEventListener('mouseup',up);
+      document.addEventListener('touchmove',move,{passive:false});
+      document.addEventListener('touchend',up);
+    };
+  }
+  winRect.addEventListener('mousedown',startDrag('pan'));
+  winRect.addEventListener('touchstart',startDrag('pan'),{passive:false});
+  leftHandle.addEventListener('mousedown',startDrag('left'));
+  leftHandle.addEventListener('touchstart',startDrag('left'),{passive:false});
+  rightHandle.addEventListener('mousedown',startDrag('right'));
+  rightHandle.addEventListener('touchstart',startDrag('right'),{passive:false});
+}
+
+function drawRatingChart(ratings){
+  const svg=document.getElementById('rating-svg');
+  if(!ratings||ratings.length<2) return;
+  const empty=document.getElementById('rating-svg-empty');
+  if(empty) empty.style.display='none';
+  const W=500,H=120,PAD=16;
+  const mn=Math.min(...ratings)-20, mx=Math.max(...ratings)+20;
+  const pts=ratings.map((r,i)=>({x:PAD+(i/(ratings.length-1))*(W-PAD*2), y:PAD+(1-(r-mn)/(mx-mn))*(H-PAD*2), val:r}));
+  const lineD=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(' ');
+  const areaD=lineD+` L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`;
+  svg.innerHTML=`<defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+    <path d="${areaD}" fill="url(#rg)"/><path d="${lineD}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+    ${pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="5" fill="var(--bg-secondary)" stroke="var(--accent)" stroke-width="2" data-val="${p.val}" onmouseenter="showTooltip(event,this)" onmouseleave="hideTooltip()"/>`).join('')}
+    <text x="${pts[pts.length-1].x}" y="${pts[pts.length-1].y-10}" text-anchor="middle" fill="var(--accent)" font-size="12" font-weight="700">${ratings[ratings.length-1]}</text>`;
+}
+function showTooltip(e,el){
+  let tooltip=document.getElementById('rtooltip');
+  if(!tooltip){ tooltip=document.createElement('div'); tooltip.id='rtooltip'; tooltip.style.cssText='position:absolute;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:4px 8px;font-size:12px;pointer-events:none;z-index:100;display:none'; document.body.appendChild(tooltip); }
+  tooltip.innerHTML='★ '+el.dataset.val;
+  tooltip.style.display='block';
+  const rect=el.closest('svg').getBoundingClientRect();
+  const cx=parseFloat(el.getAttribute('cx')), cy=parseFloat(el.getAttribute('cy'));
+  const svgW=rect.width;
+  const left=rect.left+(cx/500)*svgW+window.scrollX;
+  const top=rect.top+(cy/120)*rect.height-32+window.scrollY;
+  tooltip.style.left=left+'px'; tooltip.style.top=top+'px';
+}
+function hideTooltip(){ const t=document.getElementById('rtooltip'); if(t) t.style.display='none'; }
+
+// таблица рейтинга
+function buildRatingTable(games,username,currentRating){
+  const tbody=document.getElementById('rating-table-body');
+  if(!games.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center">Партий пока нет</td></tr>'; return; }
+  const K=32;
+  let r=currentRating;
+  const rows=[];
+  const sorted=[...games].sort((a,b)=>(b.endedAt||0)-(a.endedAt||0));
+  sorted.forEach(g=>{
+    const isWhite=g.white===username;
+    const score=g.result==='draw'?0.5:g.result===(isWhite?'white':'black')?1:0;
+    const oppR=r+(score===1?-20:score===0?20:0);
+    const exp=1/(1+Math.pow(10,(oppR-r)/400));
+    const delta=Math.round(K*(score-exp));
+    rows.push({g,opponent:isWhite?g.black:g.white,resultText:g.result==='draw'?'Ничья':(score===1?'Победа':'Поражение'),delta,ratingNow:r,date:g.endedAt?new Date(g.endedAt).toLocaleDateString('ru',{day:'2-digit',month:'2-digit'}):'—'});
+    r=Math.max(100,r-delta);
+  });
+  tbody.innerHTML=rows.slice(0,20).map((row,i)=>`<tr style="cursor:pointer" onclick="location.href='/game/' + encodeURIComponent(row.g.id)"><td>${i+1}<td><a href="/profile/${encodeURIComponent(row.opponent)}" style="color:var(--accent)" onclick="event.stopPropagation()">${escapeHtml(row.opponent)}</a><td>${escapeHtml(row.g.timeControl||'?')}<td style="color:${row.resultText==='Победа'?'var(--green)':row.resultText==='Поражение'?'var(--red)':'var(--text-secondary)'}">${row.resultText}<td class="${row.delta>0?'delta-pos':row.delta<0?'delta-neg':''}">${row.delta>0?'+'+row.delta:row.delta}<td style="font-family:monospace">${row.ratingNow}<td>${row.date}`).join('');
+}
+
+// игры
+let gamesOffset=0, allGames=[];
+async function loadGames(username, limit=20, append=false){
+  if(!append){ gamesOffset=0; allGames=[]; }
+  const games=await apiGet('/users/'+encodeURIComponent(username)+'/games?limit='+limit);
+  allGames=append?[...allGames,...games]:games;
+  const listEl=document.getElementById('profile-games-list');
+  if(!append) listEl.innerHTML='';
+  games.forEach(g=>{
+    const isWhite=g.white===username;
+    const opponent=isWhite?g.black:g.white;
+    let resultIcon,resultColor,resultText;
+    if(g.result==='draw'){ resultIcon='½'; resultColor='var(--text-secondary)'; resultText='Ничья'; }
+    else if(g.result===(isWhite?'white':'black')){ resultIcon='✓'; resultColor='var(--green)'; resultText='Победа'; }
+    else{ resultIcon='✗'; resultColor='var(--red)'; resultText='Поражение'; }
+    const date=g.endedAt?new Date(g.endedAt).toLocaleDateString('ru'):'—';
+    const moves=g.moves?Math.floor(g.moves.length/2):0;
+    const row=document.createElement('div');
+    row.className='game-row';
+    row.innerHTML=`<div class="result-badge" style="background:${resultColor}22;color:${resultColor}">${resultIcon}</div>
+      <div style="flex:1"><div style="font-weight:600">${escapeHtml(isWhite?'♙ ':'♟ ')}${escapeHtml(username)} <span style="color:var(--text-muted)">vs</span> <a href="/profile/${encodeURIComponent(opponent)}" style="color:var(--accent)" onclick="event.stopPropagation()">${escapeHtml(opponent)}</a></div>
+      <div style="font-size:12px;color:var(--text-muted)">${escapeHtml(g.timeControl||'?')} · ${moves} ходов · ${date}</div></div>
+      <div style="font-size:12px;font-weight:600;color:${resultColor}">${resultText}</div><div style="color:var(--text-muted);font-size:16px">›</div>`;
+    row.addEventListener('click',()=>location.href='/game/' + g.id);
+    listEl.appendChild(row);
+  });
+  const moreDiv=document.querySelector('.games-load-more');
+  if(moreDiv) moreDiv.style.display=games.length>=limit?'block':'none';
+  return games;
+}
+//function openGameAnalysis(g){ if(typeof g==='string') try{g=JSON.parse(g);}catch(e){} localStorage.setItem('ch_analysis_game',JSON.stringify(g)); window.location='/analysis'; }
+
+// активность
+async function loadActivity(username,games,user){
+  const listEl=document.getElementById('activity-list');
+  const blocksEl=document.getElementById('activity-blocks');
+  const since=Date.now()-7*24*60*60*1000;
+  const recentGames=games.filter(g=>(g.endedAt||0)>since);
+  const wins=recentGames.filter(g=>{const w=g.white===username; return g.result===(w?'white':'black');}).length;
+  const puzzleSolved=user?.puzzle_solved||0;
+  let forumPosts=0,blogPosts=0,chatMsgs=0;
+  try{ const t=await fetch('/api/forum/threads?limit=200').then(r=>r.json()); if(t.threads) forumPosts=t.threads.filter(t=>t.author===username&&(t.createdAt||0)>since).length; }catch(e){}
+  try{ const b=await fetch('/api/blog?limit=200').then(r=>r.json()); if(b.posts) blogPosts=b.posts.filter(p=>p.author===username&&(p.createdAt||0)>since).length; }catch(e){}
+  try{ const c=await fetch('/api/chat?limit=500').then(r=>r.json()); if(Array.isArray(c)) chatMsgs=c.filter(m=>m.username===username&&m.timestamp>since).length; }catch(e){}
+  const items=[
+    {icon:'♟',label:'Партий',value:recentGames.length,color:'var(--accent)'},
+    {icon:'🏆',label:'Побед',value:wins,color:'var(--green)'},
+    {icon:'💬',label:'Сообщений',value:chatMsgs,color:'#7c9cbf'},
+    {icon:'📰',label:'Блог-постов',value:blogPosts,color:'#c9a84c'},
+    {icon:'💡',label:'Тем форума',value:forumPosts,color:'#8bc4a0'},
+    {icon:'🧩',label:'Задач решено',value:puzzleSolved,color:'var(--text-muted)'}
+  ];
+  blocksEl.innerHTML=items.map(i=>`<div class="stat-card"><div style="font-size:20px">${i.icon}</div><div class="num" style="font-size:20px;color:${i.color}">${i.value}</div><div class="lbl">${i.label}</div></div>`).join('');
+  const events=recentGames.map(g=>{
+    const isWhite=g.white===username;
+    const result=g.result==='draw'?'Ничья':g.result===(isWhite?'white':'black')?'Победа':'Поражение';
+    return {ts:g.endedAt||0,html:`<div class="activity-item" onclick="location.href='/game/' + ${g.id}"><div class="activity-icon">♟</div><div style="flex:1"><div style="font-size:13px">Партия против <b>${escapeHtml(isWhite?g.black:g.white)}</b> — <b>${result}</b></div><div class="activity-meta">${escapeHtml(g.timeControl||'')} · ${Math.floor((g.moves?.length||0)/2)} ходов</div></div></div>`};
+  }).sort((a,b)=>b.ts-a.ts);
+  listEl.innerHTML=events.length?events.slice(0,30).map(e=>e.html).join(''):'<div style="text-align:center;padding:24px">Нет активности за 7 дней</div>';
+}
+
+// подписки
+async function loadFollowStats(username){
+  try{
+    const stats=await apiGet('/follow/counts/'+encodeURIComponent(username));
+    document.getElementById('followers-count').innerHTML=`Подписчиков: ${stats.followers}`;
+    document.getElementById('following-count').innerHTML=`Подписок: ${stats.following}`;
+    document.getElementById('followers-count').onclick=()=>window.location='/followers/'+encodeURIComponent(username);
+    document.getElementById('following-count').onclick=()=>window.location='/following/'+encodeURIComponent(username);
+  }catch(e){ console.warn(e); }
+}
+async function loadFollowButton(username){
+  if(!currentUser || currentUser.username===username){ document.getElementById('profile-follow-btn').innerHTML=''; return; }
+  try{
+    const check=await apiGet('/follow/check/'+encodeURIComponent(username));
+    const btnDiv=document.getElementById('profile-follow-btn');
+    if(check.following){
+      btnDiv.innerHTML=`<button class="btn btn-secondary btn-sm" id="unfollow-btn">Отписаться</button>`;
+      document.getElementById('unfollow-btn').onclick=async()=>{
+        try {
+          // POST вместо DELETE — хостинг/прокси блокирует метод DELETE, из-за
+          // чего сервер отвечал HTML-страницей ошибки вместо JSON, и кнопка
+          // "молча" не срабатывала. Используем резервный POST-эндпоинт.
+          await apiPost('/follow/'+encodeURIComponent(username)+'/unfollow',{});
+          toast('Вы отписались','success');
+          await loadFollowButton(username);
+          await loadFollowStats(username);
+        } catch(e) { toast('Ошибка: ' + e.message, 'error'); }
+      };
+    }else{
+      btnDiv.innerHTML=`<button class="btn btn-primary btn-sm" id="follow-btn">Подписаться</button>`;
+      document.getElementById('follow-btn').onclick=async()=>{
+        try {
+          await apiPost('/follow/'+encodeURIComponent(username),{});
+          toast('Вы подписались','success');
+          await loadFollowButton(username);
+          await loadFollowStats(username);
+        } catch(e) { toast('Ошибка: ' + e.message, 'error'); }
+      };
+    }
+  }catch(e){ console.warn(e); }
+}
+
+// ── Эмодзи (без LGBT/трансгендер флагов) ──────────────────────
+const EMOJIS = [
+  '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰',
+  '😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏',
+  '😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠',
+  '😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥',
+  '😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐',
+  '🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','💩','👻','💀',
+  '☠️','👽','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','🙈','🙉','🙊',
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐒','🐔',
+  '🐧','🐦','🐤','🐣','🐥','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟',
+  '🦗','🕷️','🦂','🐢','🐍','🦎','🐙','🦑','🦐','🦞','🐠','🐟','🐡','🐬','🐳','🐋',
+  '🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃',
+  '🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🐇','🐁',
+  '🐀','🐿️','🦔','🐾','🐉','🐲','🌵','🎄','🌲','🌳','🌴','🌿','🍀','🍁','🍂','🍃',
+  '🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🥝','🍅',
+  '🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰','🍞',
+  '🥐','🥖','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪',
+  '🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘',
+  '🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦀',
+  '🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🥛','🍼',
+  '🥤','🧃','🧉','🧊','🍺','🍻','🥂','🥃','🥄','🍴','🍽️','🥢',
+  '⚽','🏀','🏈','⚾','🥎','🏐','🏉','🎾','🥏','🎳','🏆','🥇','🥈','🥉',
+  '🎮','🕹️','🎲','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎸','🎷','🎺','🎻',
+  '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','💕','💞','💓','💗','💖','💘','💝',
+  '✨','🌟','⭐','🌙','☀️','🌈','⚡','💫','☄️','❄️','☃️','⛄','🔥','💧','🌊','🌪️',
+  '🎁','🎀','🎊','🎉','🎈','🎃','🎄','🎋','🎆','🎇', '🛋️'
+];
+
+function openEmojiPicker() {
+  const grid = document.getElementById('emoji-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (const em of EMOJIS) {
+    const div = document.createElement('div');
+    div.textContent = em;
+    div.style.cssText = 'cursor:pointer; font-size:28px; padding:4px; transition:transform 0.1s';
+    div.onmouseenter = () => div.style.transform = 'scale(1.1)';
+    div.onmouseleave = () => div.style.transform = 'scale(1)';
+    div.onclick = () => selectEmoji(em);
+    grid.appendChild(div);
+  }
+  openModal('modal-emoji');
+}
+
+function openEmojiPickerFromProfile() {
+  if (!currentUser) { toast('Войдите, чтобы сменить эмодзи', 'info'); return; }
+  // Если смотришь чужой профиль — переходи на свои настройки
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const profileUser = pathParts[1] ? decodeURIComponent(pathParts[1]) : null;
+  if (profileUser && profileUser !== currentUser.username) {
+    window.location = '/settings';
+    return;
+  }
+  openEmojiPicker();
+}
+
+async function removeEmojiProfile() {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  try {
+    await apiPost('/user/emoji', { emoji: '' });
+    if (currentUser) currentUser.emoji = '';
+    if (window.CH) CH.setCurrentUser(currentUser);
+    const emojiEl = document.getElementById('profile-emoji');
+    if (emojiEl) emojiEl.textContent = '';
+    const removeBtn = document.getElementById('btn-remove-emoji');
+    if (removeBtn) removeBtn.style.display = 'none';
+    if (typeof initGlobalChat === 'function') initGlobalChat();
+    toast('Эмодзи убран', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function selectEmoji(emoji) {
+  if (!currentUser) {
+    toast('Войдите, чтобы сменить эмодзи', 'info');
+    return;
+  }
+  try {
+    await apiPost('/user/emoji', { emoji });
+    if (currentUser) currentUser.emoji = emoji;
+    updateHeaderUI();
+    const emojiEl = document.getElementById('profile-emoji');
+    if (emojiEl) emojiEl.textContent = emoji || '';
+    const removeBtnAfter = document.getElementById('btn-remove-emoji');
+    if (removeBtnAfter) removeBtnAfter.style.display = emoji ? '' : 'none';
+    closeModal('modal-emoji');
+    toast('Эмодзи сохранён!', 'success');
+    if (typeof initGlobalChat === 'function') initGlobalChat();
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+// ── Редактирование профиля (описание + рейтинги ФШР/FIDE) ─────
+function openEditProfileModal() {
+  if (!currentUser) { toast('Войдите, чтобы редактировать профиль', 'info'); return; }
+  if (!profileUserData || profileUserData.username !== currentUser.username) {
+    toast('Можно редактировать только свой профиль', 'error');
+    return;
+  }
+  document.getElementById('edit-bio').value = profileUserData.bio || '';
+  document.getElementById('edit-fshr').value = profileUserData.fshrRating ?? '';
+  document.getElementById('edit-fide').value = profileUserData.fideRating ?? '';
+  document.getElementById('edit-profile-error').textContent = '';
+  updateBioCounter();
+  openModal('modal-edit-profile');
+}
+
+function updateBioCounter() {
+  const ta = document.getElementById('edit-bio');
+  const counter = document.getElementById('bio-counter');
+  if (!ta || !counter) return;
+  const len = ta.value.length;
+  counter.textContent = len + ' / 400';
+  counter.classList.toggle('warn', len > 380);
+}
+
+async function saveProfileEdits(e) {
+  e.preventDefault();
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  const errEl = document.getElementById('edit-profile-error');
+  errEl.textContent = '';
+
+  const bio = document.getElementById('edit-bio').value;
+  const fshrRaw = document.getElementById('edit-fshr').value.trim();
+  const fideRaw = document.getElementById('edit-fide').value.trim();
+
+  // Лёгкая проверка на клиенте (сервер всё равно проверяет и является источником истины)
+  for (const [label, raw] of [['ФШР', fshrRaw], ['FIDE', fideRaw]]) {
+    if (raw !== '' && (!/^\d+$/.test(raw) || Number(raw) < 0 || Number(raw) > 4000)) {
+      errEl.textContent = `Рейтинг ${label} должен быть числом от 0 до 4000`;
+      return;
+    }
+  }
+
+  try {
+    const data = await apiPost('/user/profile', {
+      bio,
+      fshrRating: fshrRaw === '' ? null : Number(fshrRaw),
+      fideRating: fideRaw === '' ? null : Number(fideRaw),
+    });
+    if (profileUserData) {
+      profileUserData.bio = data.bio;
+      profileUserData.fshrRating = data.fshrRating;
+      profileUserData.fideRating = data.fideRating;
+    }
+    // Обновляем UI без перезагрузки страницы
+    const bioEl = document.getElementById('profile-bio');
+    if (bioEl) {
+      if (data.bio && data.bio.trim()) { bioEl.textContent = data.bio; bioEl.classList.remove('empty'); }
+      else { bioEl.textContent = 'Добавьте описание профиля, нажав «Редактировать профиль» ниже'; bioEl.classList.add('empty'); }
+    }
+    const extRatingsEl = document.getElementById('ext-ratings');
+    if (extRatingsEl) {
+      let chips = '';
+      if (data.fshrRating) chips += '<div class="ext-rating-chip"><span class="flag">🇷🇺</span><span class="lbl">ФШР</span><span class="val">' + escapeHtml(String(data.fshrRating)) + '</span></div>';
+      if (data.fideRating) chips += '<div class="ext-rating-chip"><span class="flag">🌍</span><span class="lbl">FIDE</span><span class="val">' + escapeHtml(String(data.fideRating)) + '</span></div>';
+      extRatingsEl.innerHTML = chips;
+    }
+    closeModal('modal-edit-profile');
+    toast('Профиль обновлён!', 'success');
+  } catch (err) {
+    errEl.textContent = err.message;
+  }
+}
+
+// ОСНОВНОЙ ЗАГРУЗЧИК
+async function loadProfile(username){
+  // currentUser уже определяется в init() через /api/me (кука ch_token отправляется браузером сама).
+  try{
+    const user = await apiGet('/users/'+encodeURIComponent(username));
+    hide('profile-loading');
+    show('profile-data');
+
+    const isMe = !!(currentUser && currentUser.username === user.username);
+
+    document.getElementById('profile-avatar').innerText = user.username[0].toUpperCase();
+    document.getElementById('profile-name').innerText = user.username;
+    document.getElementById('profile-rating').innerText = '★ ' + user.rating;
+    document.getElementById('profile-joined').innerText = 'На сайте с ' + new Date(user.createdAt).toLocaleDateString('ru');
+    document.title = user.username + ' — Chess Home';
+    document.getElementById('profile-online').innerHTML = user.online ? '<span style="color:var(--green)">● онлайн сейчас</span>' : '<span style="color:var(--text-muted)">● оффлайн</span>';
+
+    // Описание профиля (bio) — textContent исключает любую возможность XSS
+    profileUserData = user;
+    const bioEl = document.getElementById('profile-bio');
+    if (bioEl) {
+      if (user.bio && user.bio.trim()) {
+        bioEl.textContent = user.bio;
+        bioEl.classList.remove('empty');
+      } else if (isMe) {
+        bioEl.textContent = 'Добавьте описание профиля, нажав «Редактировать профиль» ниже';
+        bioEl.classList.add('empty');
+      } else {
+        bioEl.textContent = '';
+        bioEl.classList.add('empty');
+      }
+    }
+    // Внешние рейтинги (ФШР / FIDE)
+    const extRatingsEl = document.getElementById('ext-ratings');
+    if (extRatingsEl) {
+      let chips = '';
+      if (user.fshrRating) chips += '<div class="ext-rating-chip"><span class="flag">🇷🇺</span><span class="lbl">ФШР</span><span class="val">' + escapeHtml(String(user.fshrRating)) + '</span></div>';
+      if (user.fideRating) chips += '<div class="ext-rating-chip"><span class="flag">🌍</span><span class="lbl">FIDE</span><span class="val">' + escapeHtml(String(user.fideRating)) + '</span></div>';
+      extRatingsEl.innerHTML = chips;
+    }
+    // Кнопка редактирования — видна только владельцу профиля
+    const editBtnWrap = document.getElementById('btn-edit-profile');
+    if (editBtnWrap) editBtnWrap.style.display = isMe ? 'block' : 'none';
+    
+    // Эмодзи
+    const emojiEl = document.getElementById('profile-emoji');
+    if (emojiEl) emojiEl.textContent = user.emoji || '';
+    // Кнопка "Убрать" — только если это мой профиль и эмодзи установлен
+    const removeBtnEl = document.getElementById('btn-remove-emoji');
+    if (removeBtnEl) {
+      const isMyProfile = currentUser && currentUser.username === user.username;
+      removeBtnEl.style.display = (isMyProfile && user.emoji) ? '' : 'none';
+    }
+    
+    let badgeHtml = '';
+    if (user.banned) badgeHtml += '<span style="background:var(--red);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px">🚫 Заблокирован</span> ';
+    if (user.role === 'admin') badgeHtml += '<span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px">⚙️ Администратор</span>';
+    document.getElementById('profile-badge').innerHTML = badgeHtml;
+
+    document.getElementById('stat-games').innerText = user.gamesPlayed || 0;
+    document.getElementById('stat-wins').innerText = user.wins || 0;
+    document.getElementById('stat-losses').innerText = user.losses || 0;
+    document.getElementById('stat-draws').innerText = user.draws || 0;
+    
+    const winPct = user.gamesPlayed ? Math.round(user.wins / user.gamesPlayed * 100) : 0;
+    document.getElementById('winrate-bar').style.width = winPct + '%';
+    document.getElementById('winrate-text').innerText = `Винрейт: ${winPct}% (${user.wins||0}П / ${user.losses||0}П / ${user.draws||0}Н)`;
+    
+    document.getElementById('stat-puzzle-rating').innerText = user.puzzle_rating || 1200;
+    document.getElementById('stat-puzzle-solved').innerText = user.puzzle_solved || 0;
+    const acc = user.puzzle_attempted ? Math.round((user.puzzle_solved||0) / user.puzzle_attempted * 100) : 0;
+    document.getElementById('stat-puzzle-acc').innerText = acc + '%';
+
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    const actionsDiv = document.getElementById('profile-actions');
+    if (!isMe && currentUser && actionsDiv) {
+      actionsDiv.style.display = 'flex';
+      const msgBtn = document.getElementById('btn-message');
+      if (msgBtn) {
+        msgBtn.style.display = '';
+        msgBtn.onclick = () => window.location = '/inbox/' + encodeURIComponent(user.username);
+      }
+      const chalBtn = document.getElementById('btn-challenge');
+      if (chalBtn) {
+        chalBtn.style.display = user.online ? '' : 'none';
+        chalBtn.onclick = () => {
+          localStorage.setItem('ch_pending_challenge', user.username);
+          window.location = '/lobby';
+        };
+      }
+      if (isAdmin) {
+        const banBtn = document.getElementById('btn-ban');
+        const unbanBtn = document.getElementById('btn-unban');
+        if (user.banned) {
+          if (unbanBtn) {
+            unbanBtn.style.display = '';
+            unbanBtn.onclick = async () => {
+              await apiPost('/admin/unban', { username: user.username });
+              toast('Разблокирован', 'success');
+              setTimeout(() => location.reload(), 1000);
+            };
+          }
+        } else {
+          if (banBtn) {
+            banBtn.style.display = '';
+            banBtn.onclick = async () => {
+              const reason = prompt('Причина бана:', 'Нарушение правил');
+              if (!reason) return;
+              await apiPost('/admin/ban', { username: user.username, reason });
+              toast('Заблокирован', 'success');
+              setTimeout(() => location.reload(), 1000);
+            };
+          }
+        }
+      } 
+    }
+
+    const games = await loadGames(user.username, 100);
+    if (games.length > 1) {
+      let r = user.rating;
+      const hist = [r];
+      const sorted = [...games].sort((a,b)=>(b.endedAt||0)-(a.endedAt||0));
+      sorted.slice(0,99).forEach(g => {
+        const isWhite = g.white === user.username;
+        const score = g.result === 'draw' ? 0.5 : (g.result === (isWhite ? 'white' : 'black') ? 1 : 0);
+        const oppR = r + (score === 1 ? -20 : score === 0 ? 20 : 0);
+        const exp = 1 / (1 + Math.pow(10, (oppR - r) / 400));
+        const delta = Math.round(32 * (score - exp));
+        r = Math.max(100, r - delta);
+        hist.unshift(r);
+      });
+      initRatingChart(hist);
+    }
+    
+    buildRatingTable(games.slice(0,20), user.username, user.rating);
+    await loadActivity(user.username, games, user);
+    await loadFollowStats(user.username);
+    await loadFollowButton(user.username);
+    
+    setTimeout(() => {
+      const btnDiv = document.getElementById('profile-follow-btn');
+      if (btnDiv && !btnDiv.innerHTML.trim()) {
+        console.log('Повторный вызов loadFollowButton для', user.username);
+        loadFollowButton(user.username);
+        loadFollowStats(user.username);
+      }
+    }, 300);
+    
+    const moreBtn = document.getElementById('btn-load-more');
+    if (moreBtn) {
+      moreBtn.onclick = async () => {
+        await loadGames(user.username, 20, true);
+      };
+    }
+    
+    setTimeout(() => {
+      apiGet('/users/' + encodeURIComponent(user.username))
+        .then(u => {
+          const el = document.getElementById('profile-online');
+          if (el) el.innerHTML = u.online ? '<span style="color:var(--green)">● онлайн сейчас</span>' : '<span style="color:var(--text-muted)">● оффлайн</span>';
+        })
+        .catch(() => {});
+    }, 800);
+    
+  } catch(e) {
+    console.error(e);
+    hide('profile-loading');
+    show('profile-notfound');
+  }
+}
+
+// ИНИЦИАЛИЗАЦИЯ
+async function init() {
+  if (window.CH) CH.initHeader();
+
+  // Токен лежит в HttpOnly-cookie — прочитать его в JS нельзя (и не нужно).
+  // Браузер сам отправит cookie вместе с запросом, /api/me проверит её на сервере.
+  try {
+    currentUser = await apiGet('/me');
+  } catch(e) {
+    currentUser = null; // не авторизован — это ожидаемо, не ошибка
+  }
+  updateHeaderUI();
+
+  const path = location.pathname;
+  const parts = path.split('/').filter(Boolean);
+  let targetUsername = parts[1] ? decodeURIComponent(parts[1]) : null;
+
+  if (!targetUsername) {
+    if (currentUser) {
+      window.location.href = '/profile/' + encodeURIComponent(currentUser.username);
+      return;
+    } else {
+      hide('profile-loading');
+      show('profile-auth-required');
+      return;
+    }
+  }
+
+  await loadProfile(targetUsername);
+}
+init();
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+</body>
+</html>

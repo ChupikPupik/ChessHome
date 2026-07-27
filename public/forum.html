@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Форум — Chess Home</title>
+  <script src="/js/header.js"></script>
+  <link rel="icon" href="/img/logo/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0e0f13;--bg2:#161820;--bg3:#1e2028;--bg4:#262830;
+  --border:#2e3040;--border2:#3a3d50;
+  --text:#e8e9f0;--text2:#8a8ea8;--text3:#5a5e78;
+  --accent:#c9a84c;--accent-d:#a07830;--accent-l:#e8c870;
+  --green:#4caf72;--red:#e05555;
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 4px 20px rgba(0,0,0,.4);
+  --hh:60px;
+  --font:'Nunito',sans-serif;
+  --font-d:'Playfair Display',serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+::selection{background:var(--accent);color:#000}
+a{color:inherit;text-decoration:none}
+#header{position:fixed;top:0;left:0;right:0;height:var(--hh);background:rgba(14,15,19,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;z-index:1000;gap:16px}
+.logo{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:8px}
+.nav-links{display:flex;gap:4px;margin-left:16px;list-style:none}
+.nav-links a{color:var(--text2);padding:6px 14px;border-radius:8px;font-size:14px;font-weight:600;transition:all .2s}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:var(--bg4)}
+.nav-links a.active{color:var(--accent)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.online-badge{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:13px;color:var(--text2)}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:8px;border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--accent);color:#0e0f13;box-shadow:0 2px 12px rgba(201,168,76,.3)}
+.btn-primary:hover{background:var(--accent-l);box-shadow:0 4px 20px rgba(201,168,76,.5);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+.btn-sm{padding:5px 14px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.user-menu{position:relative}
+.user-btn{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--text);transition:all .2s}
+.user-btn:hover{border-color:var(--border2)}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px;min-width:180px;z-index:100;box-shadow:var(--shadow);display:none}
+.user-dropdown.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:14px;color:var(--text2);transition:all .15s}
+.dropdown-item:hover{background:var(--bg4);color:var(--text)}
+.dropdown-item.danger:hover{color:var(--red)}
+.player-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-d));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#000;flex-shrink:0}
+.rating-pill{background:rgba(201,168,76,.15);color:var(--accent);font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px}
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:9000;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;font-size:14px;color:var(--text);box-shadow:var(--shadow);animation:toastIn .3s ease;display:flex;align-items:center;gap:10px;min-width:240px}
+.toast.success{border-color:var(--green)}.toast.error{border-color:var(--red)}.toast.info{border-color:var(--accent)}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;width:100%;max-width:520px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:modalIn .25s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal h2{font-family:var(--font-d);font-size:24px;margin-bottom:24px}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all .2s}
+.modal-close:hover{background:var(--bg4);color:var(--text)}
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px}
+.form-input{width:100%;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;transition:border-color .2s;outline:none}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+.form-error{color:var(--red);font-size:12px;margin-top:6px;min-height:16px}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.spinner{width:26px;height:26px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#forum-app{max-width:860px;margin:0 auto;padding:calc(var(--hh) + 28px) 16px 80px}
+.forum-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap}
+.forum-header h1{font-family:var(--font-d);font-size:26px;margin:0;display:flex;align-items:center;gap:10px}
+.thread-list{display:flex;flex-direction:column;gap:8px}
+.thread-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:16px 20px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s;display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+.thread-card:hover{border-color:var(--accent);box-shadow:0 4px 20px rgba(201,168,76,.12);transform:translateY(-1px)}
+.tc-title{font-size:15px;font-weight:700;grid-column:1;line-height:1.3}
+.tc-excerpt{font-size:13px;color:var(--text2);grid-column:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;margin-top:4px}
+.tc-meta{font-size:11px;color:var(--text3);grid-column:1;display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.tc-meta .au{color:var(--accent);font-weight:600;cursor:pointer}
+.tc-meta .au:hover{text-decoration:underline}
+.tc-stats{grid-column:2;grid-row:1/span 3;align-self:center;text-align:center;display:flex;flex-direction:column;gap:8px;min-width:52px}
+.tc-stat{font-size:11px;color:var(--text3)}
+.tc-stat strong{display:block;font-size:15px;color:var(--text)}
+#new-thread-panel{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:28px;display:none}
+#new-thread-panel.open{display:block}
+#new-thread-panel h2{font-size:18px;font-family:var(--font-d);margin:0 0 18px}
+.nt-title-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;font-weight:600;padding:11px 14px;outline:none;transition:border-color .15s;font-family:var(--font)}
+.nt-title-input:focus{border-color:var(--accent)}
+.nt-title-input::placeholder{color:var(--text3);font-weight:400}
+#view-thread{display:none}
+.tv-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);cursor:pointer;padding:6px 0;transition:color .15s;margin-bottom:6px}
+.tv-back:hover{color:var(--accent)}
+.tv-title{font-family:var(--font-d);font-size:24px;margin:10px 0 8px;line-height:1.3}
+.tv-meta{font-size:12px;color:var(--text3);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tv-meta .au{color:var(--accent);font-weight:600;cursor:pointer}
+.tv-meta .au:hover{text-decoration:underline}
+.post-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.post-card.op-post{border-color:rgba(201,168,76,.4)}
+.post-head{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.1)}
+.post-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-d));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#000;flex-shrink:0;cursor:pointer}
+.post-name{font-weight:700;font-size:14px;cursor:pointer}
+.post-name:hover{color:var(--accent)}
+.op-badge{font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(201,168,76,.15);color:var(--accent);margin-left:4px}
+.num-badge{font-size:11px;color:var(--text3);margin-left:4px}
+.post-date{font-size:11px;color:var(--text3);margin-left:auto}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 6px;border-radius:4px;transition:color .15s,background .15s;margin-left:4px}
+.del-btn:hover{color:var(--red);background:rgba(224,85,85,.1)}
+.post-body{padding:14px 18px;font-size:15px;line-height:1.75;color:var(--text);word-break:break-word}
+.post-body p{margin:0 0 10px}.post-body p:last-child{margin-bottom:0}
+.post-body h1,.post-body h2,.post-body h3{font-family:var(--font-d);margin:16px 0 8px}
+.post-body h1{font-size:20px}.post-body h2{font-size:17px}.post-body h3{font-size:15px}
+.post-body ul,.post-body ol{padding-left:20px;margin:6px 0 10px}
+.post-body li{margin-bottom:4px}
+.post-body code{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:13px;font-family:'Consolas',monospace}
+.post-body pre{background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:10px 0}
+.post-body pre code{background:none;border:none;padding:0}
+.post-body blockquote{border-left:3px solid var(--accent);padding:4px 0 4px 14px;margin:8px 0;color:var(--text2);font-style:italic}
+.post-body a{color:var(--accent);text-decoration:underline}
+.post-body strong{font-weight:700}.post-body em{font-style:italic}
+.post-body hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+.post-body table{border-collapse:collapse;width:100%;margin:10px 0}
+.post-body th,.post-body td{border:1px solid var(--border);padding:6px 12px;text-align:left}
+.post-body th{background:rgba(0,0,0,.2);font-weight:700}
+.md-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s}
+.md-wrap:focus-within{border-color:var(--accent)}
+.md-toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:8px 10px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.12)}
+.md-toolbar button{background:none;border:1px solid transparent;color:var(--text3);font-size:13px;padding:4px 8px;border-radius:5px;cursor:pointer;transition:color .12s,background .12s;font-family:var(--font);line-height:1}
+.md-toolbar button:hover{color:var(--text);background:rgba(255,255,255,.07);border-color:var(--border)}
+.md-sep{width:1px;background:var(--border);margin:2px 4px;align-self:stretch}
+.md-tabs{display:flex;border-bottom:1px solid var(--border);background:rgba(0,0,0,.1)}
+.md-tab{padding:8px 16px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:color .12s,border-color .12s;user-select:none}
+.md-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.md-panel{display:none}.md-panel.active{display:block}
+.md-textarea{width:100%;background:transparent;border:none;outline:none;color:var(--text);font-size:14px;font-family:'Consolas',monospace;line-height:1.6;padding:14px 16px;resize:vertical;min-height:130px;box-sizing:border-box}
+.md-preview-wrap{padding:14px 16px;min-height:80px}
+.md-empty{color:var(--text3);font-style:italic;font-size:14px}
+.md-hint{font-size:11px;color:var(--text3);padding:6px 12px 10px;border-top:1px solid var(--border)}
+.char-counter{font-size:12px;color:var(--text3);text-align:right;margin-top:4px}
+.char-counter.warn{color:#e67e22}.char-counter.over{color:var(--red);font-weight:700}
+.reply-section{margin-top:24px}
+.reply-section h3{font-size:16px;margin-bottom:14px}
+.editor-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding-top:12px}
+.forum-pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:20px;flex-wrap:wrap}
+.page-btn{min-width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;cursor:pointer;transition:background .12s,border-color .12s;padding:0 10px}
+.page-btn:hover{border-color:var(--accent);background:rgba(201,168,76,.1)}
+.page-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+.page-btn:disabled{opacity:.35;cursor:default;pointer-events:none}
+.forum-empty{text-align:center;padding:64px 20px;color:var(--text3)}
+.forum-empty .ei{font-size:52px;margin-bottom:14px}
+.forum-empty p{font-size:15px}
+.forum-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:48px;color:var(--text3);font-size:15px}
+.search-result{transition:background .1s}
+.search-result:hover{background:var(--bg4)!important}
+/* ── HAMBURGER ─────────────────────────────────────────────── */
+.burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:none;flex-shrink:0}
+.burger span{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .25s}
+.burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.burger.open span:nth-child(2){opacity:0}
+.burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.mobile-nav{display:none;position:fixed;top:var(--hh);left:0;right:0;background:rgba(14,15,19,.98);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:999;padding:12px 0;flex-direction:column;gap:2px}
+.mobile-nav.open{display:flex}
+.mobile-nav a{color:var(--text2);padding:12px 24px;font-size:15px;font-weight:600;transition:color .15s,background .15s}
+.mobile-nav a:hover,.mobile-nav a.active{color:var(--accent);background:rgba(201,168,76,.06)}
+@media(max-width:680px){
+  .nav-links{display:none}
+  .burger{display:flex}
+  .online-badge{display:none}
+  .thread-card{grid-template-columns:1fr}.tc-stats{display:none}
+  .forum-header{flex-direction:column;align-items:flex-start;gap:10px}
+  .forum-header h1{font-size:20px}
+  .tv-title{font-size:19px}
+  #header{padding:0 14px;gap:8px}
+  #forum-app{padding:calc(var(--hh) + 16px) 12px 60px}
+  .modal{padding:20px 16px;max-width:96vw}
+  .modal h2{font-size:20px;margin-bottom:18px}
+  .thread-card{padding:12px 14px}
+  .tc-title{font-size:14px}
+  .post-body{font-size:14px;padding:12px 14px}
+  .post-head{padding:8px 14px}
+  .md-textarea{font-size:14px;min-height:100px}
+  .editor-actions{flex-direction:column-reverse;align-items:stretch}
+  .editor-actions .btn{width:100%;justify-content:center}
+  .tv-back{font-size:14px;padding:8px 0}
+  #toast-container{bottom:16px;right:12px;left:12px}
+  .toast{min-width:0;width:100%}
+  .forum-pagination{gap:4px}
+  .page-btn{min-width:34px;height:34px;font-size:13px}
+  .reply-section h3{font-size:15px}
+}
+  </style>
+</head>
+<body>
+
+<!-- header injected by /js/header.js -->
+
+
+<div id="forum-app">
+
+<div id="forum-app" style="padding-top:56px">
+  <!-- LIST -->
+  <div id="view-list">
+    <div class="forum-header">
+      <h1>💬 Форум Chess Home</h1>
+      <button class="btn btn-primary" onclick="toggleNewThread()">✏️ Новое обсуждение</button>
+    </div>
+
+    <div id="new-thread-panel">
+      <h2>✏️ Создать обсуждение</h2>
+      <div style="margin-bottom:14px">
+        <label class="form-label">Заголовок <span style="color:var(--red)">*</span></label>
+        <input id="nt-title" class="nt-title-input" maxlength="120" placeholder="Кратко о теме…"
+          oninput="document.getElementById('nt-tc').textContent=this.value.length">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px"><span id="nt-tc">0</span>/120</div>
+      </div>
+      <label class="form-label" style="margin-bottom:6px;display:block">Описание <span style="color:var(--red)">*</span></label>
+      <div id="nt-editor-mount"></div>
+      <div id="nt-error" style="color:var(--red);font-size:13px;margin-top:10px;min-height:18px"></div>
+      <div class="editor-actions">
+        <button class="btn btn-ghost btn-sm" onclick="toggleNewThread()">Отмена</button>
+        <button class="btn btn-primary" id="nt-submit" onclick="submitNewThread()">📨 Опубликовать</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:12px">⚠️ Не более 3 обсуждений в сутки</div>
+    </div>
+
+    <div id="thread-list-wrap">
+      <div class="forum-loading"><div class="spinner"></div>&nbsp;Загружаем форум…</div>
+    </div>
+    <div id="forum-pagination" class="forum-pagination"></div>
+  </div>
+
+  <!-- THREAD -->
+  <div id="view-thread">
+    <div class="tv-back" onclick="backToList()">← Все обсуждения</div>
+    <h1 id="tv-title" class="tv-title"></h1>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+      <div id="tv-meta" class="tv-meta" style="margin-bottom:0"></div>
+      <button class="btn btn-ghost btn-sm" id="search-replies-btn" onclick="openReplySearch()">🔍 Поиск в ответах</button>
+    </div>
+    <div id="tv-op"></div>
+    <div id="tv-replies"></div>
+    <div id="tv-reply-section" class="reply-section" style="display:none">
+      <h3>💬 Ваш ответ</h3>
+      <div id="reply-editor-mount"></div>
+      <div id="reply-error" style="color:var(--red);font-size:13px;margin-top:8px;min-height:18px"></div>
+      <div class="editor-actions">
+        <button class="btn btn-primary" id="reply-submit" onclick="submitReply()">📨 Ответить</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px">⚠️ Не более 10 ответов в сутки</div>
+    </div>
+    <div id="tv-auth-req" style="display:none;text-align:center;padding:32px 0;color:var(--text3)">
+      <div style="font-size:36px;margin-bottom:10px">🔒</div>
+      <p>Чтобы отвечать, нужно <a href="#" style="color:var(--accent)" onclick="openModal('modal-login');return false">войти в аккаунт</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Login -->
+<div class="modal-overlay" id="modal-login">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
+    <h2>♚ Вход</h2>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Имя пользователя</label>
+        <input class="form-input" id="login-username" placeholder="Ваш ник" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input class="form-input" id="login-password" type="password" placeholder="Пароль" autocomplete="current-password">
+      </div>
+      <div class="form-error" id="login-error"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-login');window.location='/?register=1'">Нет аккаунта?</button>
+        <button type="submit" class="btn btn-primary">Войти</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Search -->
+<div class="modal-overlay" id="modal-reply-search">
+  <div class="modal" style="max-width: 600px">
+    <button class="modal-close" onclick="closeModal('modal-reply-search')">✕</button>
+    <h2>🔍 Поиск в теме</h2>
+    <div class="form-group">
+      <input id="search-query" class="form-input" placeholder="Слово или фраза..." autocomplete="off">
+    </div>
+    <div id="search-results" style="max-height: 400px; overflow-y: auto;"></div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+'use strict';
+
+function toggleMobileNav(){
+  const nav=document.getElementById('mobile-nav');
+  const btn=document.getElementById('burger-btn');
+  nav.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#burger-btn')&&!e.target.closest('#mobile-nav')){
+    document.getElementById('mobile-nav')?.classList.remove('open');
+    document.getElementById('burger-btn')?.classList.remove('open');
+  }
+});
+
+const API='/api';
+// Авторизация теперь через HttpOnly-cookie (ch_token) — не localStorage.
+let currentUser=null;
+let currentThreadId=null;
+let currentThreadSlug=null;
+let forumPage=0;
+const PER_PAGE=20;
+const REPLIES_PER_PAGE = 50;
+let currentReplyPage = 1;
+
+function getDeviceId(){let id=localStorage.getItem('ch_device_id');if(!id){id='dev_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);localStorage.setItem('ch_device_id',id);}return id;}
+const DEVICE_ID=getDeviceId();
+
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function timeAgo(ts){
+  if(!ts)return'';
+  const d=Date.now()-ts;
+  if(d<60000)return'только что';
+  if(d<3600000)return Math.floor(d/60000)+' мин. назад';
+  if(d<86400000)return Math.floor(d/3600000)+' ч. назад';
+  if(d<7*86400000)return Math.floor(d/86400000)+' дн. назад';
+  return new Date(ts).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function mdRender(text){
+  if(!text)return'';
+  try{
+    if(typeof marked!=='undefined'&&typeof DOMPurify!=='undefined'){
+      marked.setOptions({breaks:true,gfm:true});
+      return DOMPurify.sanitize(marked.parse(text),{
+        ALLOWED_TAGS:['p','br','strong','em','b','i','u','s','del','h1','h2','h3','h4',
+          'ul','ol','li','blockquote','code','pre','a','hr','table','thead','tbody','tr','td','th'],
+        ALLOWED_ATTR:['href','title']
+      });
+    }
+  }catch(e){}
+  return'<p>'+esc(text).replace(/\n/g,'<br>')+'</p>';
+}
+
+async function apiGet(path){
+  const res=await fetch(API+path,{credentials:'include'});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error||'Ошибка '+res.status);
+  return data;
+}
+async function apiPost(path,body){
+  const res=await fetch(API+path,{
+    method:'POST',
+    credentials:'include',
+    headers:{'Content-Type':'application/json','X-Device-Id':DEVICE_ID},
+    body:JSON.stringify(body)
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error||'Ошибка '+res.status);
+  return data;
+}
+async function apiDelete(path){
+  const res=await fetch(API+path,{method:'DELETE',credentials:'include'});
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.error||'Ошибка '+res.status);
+  return data;
+}
+
+function toast(msg,type='info'){
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML='<span>'+({success:'✓',error:'✗',info:'ℹ'}[type]||'ℹ')+'</span><span>'+esc(msg)+'</span>';
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(30px)';el.style.transition='.3s';setTimeout(()=>el.remove(),300);},3500);
+}
+
+function openModal(id){const m=document.getElementById(id);if(m){m.style.display='flex';requestAnimationFrame(()=>m.classList.add('open'));}}
+function closeModal(id){const m=document.getElementById(id);if(m){m.classList.remove('open');setTimeout(()=>{if(!m.classList.contains('open'))m.style.display='none';},300);}}
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-overlay'))closeModal(e.target.id);});
+
+async function tryAutoLogin(){
+  // Токен читается сервером из HttpOnly-cookie; просто спрашиваем /api/me.
+  try{
+    currentUser=await apiGet('/me');
+  }catch(e){currentUser=null;}
+}
+
+function updateAuthUI(){
+  CH.setCurrentUser(currentUser);
+  CH.setActivePage('forum');
+}
+
+async function handleLogin(e){
+  e.preventDefault();
+  const un=document.getElementById('login-username').value.trim();
+  const pw=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  errEl.textContent='';
+  try{
+    const data=await apiPost('/login',{username:un,password:pw});
+    // Токен приходит в HttpOnly-cookie, сервер выставляет её сам.
+    currentUser=data.user;
+    closeModal('modal-login');updateAuthUI();
+    toast('Добро пожаловать, '+un+'! ♟️','success');
+    renderView();
+  }catch(er){errEl.textContent=er.message;}
+}
+
+async function fetchOnline(){}
+
+// ── EDITOR ──────────────────────────────────────────────────
+const _editors={};
+
+function createEditor(mountId,opts){
+  opts=opts||{};
+  const mount=document.getElementById(mountId);
+  if(!mount)return null;
+  const maxLen=opts.maxLen||5000;
+  const ph=opts.placeholder||'Напишите здесь…';
+  const minH=opts.minHeight||'130px';
+  const uid='ed_'+mountId;
+
+  mount.innerHTML=
+    '<div class="md-wrap">'
+      +'<div class="md-toolbar">'
+        +'<button title="Жирный" type="button" onclick="mdc(\''+uid+'\',\'bold\')"><b>B</b></button>'
+        +'<button title="Курсив" type="button" onclick="mdc(\''+uid+'\',\'italic\')"><i>I</i></button>'
+        +'<button title="Зачёркнутый" type="button" onclick="mdc(\''+uid+'\',\'strike\')"><s>S</s></button>'
+        +'<div class="md-sep"></div>'
+        +'<button title="Заголовок 2" type="button" onclick="mdc(\''+uid+'\',\'h2\')">H2</button>'
+        +'<button title="Заголовок 3" type="button" onclick="mdc(\''+uid+'\',\'h3\')">H3</button>'
+        +'<div class="md-sep"></div>'
+        +'<button title="Цитата" type="button" onclick="mdc(\''+uid+'\',\'quote\')">\u201c\u201d</button>'
+        +'<button title="Код" type="button" onclick="mdc(\''+uid+'\',\'code\')">{ }</button>'
+        +'<button title="Блок кода" type="button" onclick="mdc(\''+uid+'\',\'codeblock\')">```</button>'
+        +'<div class="md-sep"></div>'
+        +'<button title="Список" type="button" onclick="mdc(\''+uid+'\',\'ul\')">• —</button>'
+        +'<button title="Нумерация" type="button" onclick="mdc(\''+uid+'\',\'ol\')">1.</button>'
+        +'<div class="md-sep"></div>'
+        +'<button title="Линия" type="button" onclick="mdc(\''+uid+'\',\'hr\')">—</button>'
+      +'</div>'
+      +'<div class="md-tabs">'
+        +'<div class="md-tab active" id="'+uid+'_tw" onclick="mdTab(\''+uid+'\',\'write\')">Редактор</div>'
+        +'<div class="md-tab" id="'+uid+'_tp" onclick="mdTab(\''+uid+'\',\'preview\')">Предпросмотр</div>'
+      +'</div>'
+      +'<div class="md-panel active" id="'+uid+'_pw">'
+        +'<textarea class="md-textarea" id="'+uid+'_ta" placeholder="'+ph+'" maxlength="'+maxLen+'" style="min-height:'+minH+'" oninput="mdInp(\''+uid+'\')"></textarea>'
+      +'</div>'
+      +'<div class="md-panel post-body" id="'+uid+'_pp">'
+        +'<div class="md-preview-wrap" id="'+uid+'_pv"><span class="md-empty">Введите текст…</span></div>'
+      +'</div>'
+      +'<div class="md-hint"><b>**жирный**</b> &nbsp; <i>*курсив*</i> &nbsp; <code>`код`</code> &nbsp; &gt; цитата</div>'
+    +'</div>'
+    +'<div class="char-counter" id="'+uid+'_cc"><span id="'+uid+'_cn">0</span>/'+maxLen+'</div>';
+
+  const ta=document.getElementById(uid+'_ta');
+  ta.addEventListener('keydown',ev=>{
+    if(ev.key==='Tab'){ev.preventDefault();const s=ta.selectionStart,en=ta.selectionEnd;ta.value=ta.value.slice(0,s)+'  '+ta.value.slice(en);ta.selectionStart=ta.selectionEnd=s+2;}
+  });
+
+  _editors[uid]={
+    getValue:()=>{const t=document.getElementById(uid+'_ta');return t?t.value:'';},
+    clear:()=>{const t=document.getElementById(uid+'_ta');if(t){t.value='';mdInp(uid);}}
+  };
+  return _editors[uid];
+}
+
+function mdInp(uid){
+  const ta=document.getElementById(uid+'_ta');if(!ta)return;
+  const cn=document.getElementById(uid+'_cn');const cc=document.getElementById(uid+'_cc');
+  if(cn)cn.textContent=ta.value.length;
+  if(cc){const max=parseInt(ta.maxLength)||5000;const r=ta.value.length/max;cc.className='char-counter'+(r>=1?' over':r>=.9?' warn':'');}
+  const pp=document.getElementById(uid+'_pp');
+  if(pp&&pp.classList.contains('active')){const pv=document.getElementById(uid+'_pv');if(pv)pv.innerHTML=ta.value.trim()?mdRender(ta.value):'<span class="md-empty">Введите текст…</span>';}
+}
+
+function mdTab(uid,which){
+  document.getElementById(uid+'_tw').classList.toggle('active',which==='write');
+  document.getElementById(uid+'_tp').classList.toggle('active',which==='preview');
+  document.getElementById(uid+'_pw').classList.toggle('active',which==='write');
+  document.getElementById(uid+'_pp').classList.toggle('active',which==='preview');
+  if(which==='preview'){
+    const ta=document.getElementById(uid+'_ta');const pv=document.getElementById(uid+'_pv');
+    if(ta&&pv)pv.innerHTML=ta.value.trim()?mdRender(ta.value):'<span class="md-empty">Введите текст…</span>';
+  }
+}
+
+function mdc(uid,cmd){
+  const ta=document.getElementById(uid+'_ta');if(!ta)return;
+  const s=ta.selectionStart,en=ta.selectionEnd,sel=ta.value.slice(s,en);
+  let ins='',off=0;
+  switch(cmd){
+    case'bold':ins='**'+(sel||'жирный')+'**';off=sel?ins.length:2;break;
+    case'italic':ins='*'+(sel||'курсив')+'*';off=sel?ins.length:1;break;
+    case'strike':ins='~~'+(sel||'текст')+'~~';off=sel?ins.length:2;break;
+    case'h2':ins='\n## '+(sel||'Заголовок')+'\n';off=ins.length;break;
+    case'h3':ins='\n### '+(sel||'Заголовок')+'\n';off=ins.length;break;
+    case'quote':ins='\n> '+(sel||'цитата')+'\n';off=ins.length;break;
+    case'code':ins='`'+(sel||'код')+'`';off=sel?ins.length:1;break;
+    case'codeblock':ins='\n```\n'+(sel||'код')+'\n```\n';off=ins.length;break;
+    case'ul':ins='\n- '+(sel||'пункт')+'\n';off=ins.length;break;
+    case'ol':ins='\n1. '+(sel||'пункт')+'\n';off=ins.length;break;
+    case'hr':ins='\n---\n';off=ins.length;break;
+    default:return;
+  }
+  ta.value=ta.value.slice(0,s)+ins+ta.value.slice(en);
+  ta.selectionStart=s;ta.selectionEnd=s+off;ta.focus();
+  mdInp(uid);
+}
+
+// ── ROUTER ──────────────────────────────────────────────────
+let ntEditor=null,replyEditor=null;
+
+function renderView(){
+  const path=location.pathname;
+  if(path==='/forum'||path==='/forum/'){
+    showList();
+  } else if(path.startsWith('/forum/')){
+    const slug = decodeURIComponent(path.slice(7));
+    const params = new URLSearchParams(location.search);
+    const replyPage = parseInt(params.get('replyPage')) || 1;
+    openThread(slug, replyPage);
+  } else {
+    showList();
+  }
+}
+
+function showList(){
+  document.getElementById('view-list').style.display='block';
+  document.getElementById('view-thread').style.display='none';
+  history.replaceState({},'','/forum');
+  document.title='Форум — Chess Home';
+  if(!ntEditor)ntEditor=createEditor('nt-editor-mount',{maxLen:10000,minHeight:'180px',placeholder:'Опишите тему подробнее. Поддерживается **Markdown**…'});
+  loadList(forumPage);
+}
+
+async function loadList(page){
+  page=page||0;forumPage=page;
+  const wrap=document.getElementById('thread-list-wrap');
+  wrap.innerHTML='<div class="forum-loading"><div class="spinner"></div>&nbsp;Загружаем…</div>';
+  try{
+    const data=await apiGet('/forum/threads?page='+page+'&limit='+PER_PAGE);
+    renderList(data);
+  }catch(e){
+    wrap.innerHTML='<div class="forum-empty"><div class="ei">⚠️</div><p>'+esc(e.message)+'</p></div>';
+  }
+}
+
+function renderList(data){
+  const threads=data.threads,total=data.total,page=data.page,limit=data.limit;
+  const wrap=document.getElementById('thread-list-wrap');
+  if(!threads||!threads.length){
+    wrap.innerHTML='<div class="forum-empty"><div class="ei">💬</div><p>Обсуждений пока нет. Будьте первым!</p></div>';
+    document.getElementById('forum-pagination').innerHTML='';
+    return;
+  }
+  const ul=document.createElement('div');ul.className='thread-list';
+  threads.forEach(function(t){
+    const card=document.createElement('div');card.className='thread-card';
+    const excerpt=t.body.replace(/[#*`>_~\[\]()!|]/g,'').slice(0,150);
+    card.innerHTML=
+      '<div class="tc-title">'+esc(t.title)+'</div>'
+      +'<div class="tc-excerpt">'+esc(excerpt)+'</div>'
+      +'<div class="tc-meta">автор:&nbsp;<span class="au" data-u="'+esc(t.author)+'">'+esc(t.author)+'</span>'
+        +' <span>·</span> '+timeAgo(t.createdAt)
+        +(t.replyCount?' <span>·</span> посл. ответ: '+timeAgo(t.lastActivityAt):'')
+      +'</div>'
+      +'<div class="tc-stats"><div class="tc-stat"><strong>'+(t.replyCount||0)+'</strong>ответов</div>'
+        +'<div class="tc-stat"><strong>'+(t.views||0)+'</strong>просм.</div></div>';
+    card.addEventListener('click',function(ev){
+      if(ev.target.classList.contains('au')){window.location='/profile/'+ev.target.dataset.u;return;}
+      openThread(t.slug||t.id, 1);
+    });
+    ul.appendChild(card);
+  });
+  wrap.innerHTML='';wrap.appendChild(ul);
+
+  const tp=Math.ceil(total/(limit||PER_PAGE));
+  const pag=document.getElementById('forum-pagination');
+  pag.innerHTML='';
+  if(tp>1){
+    const prev=document.createElement('button');prev.className='page-btn';prev.textContent='←';prev.disabled=page===0;
+    prev.onclick=function(){loadList(page-1);};pag.appendChild(prev);
+    for(let i=0;i<tp;i++){
+      const pb=document.createElement('button');pb.className='page-btn'+(i===page?' active':'');pb.textContent=i+1;
+      (function(pg){pb.onclick=function(){loadList(pg);};})(i);pag.appendChild(pb);
+    }
+    const next=document.createElement('button');next.className='page-btn';next.textContent='→';next.disabled=page>=tp-1;
+    next.onclick=function(){loadList(page+1);};pag.appendChild(next);
+  }
+}
+
+function openThread(slug, page){
+  page = page || 1;
+  currentReplyPage = page;
+  currentThreadSlug = slug;
+  history.pushState({}, '', '/forum/' + encodeURIComponent(slug) + (page > 1 ? '?replyPage=' + page : ''));
+  showThread(slug, page);
+}
+
+async function showThread(slug, page){
+  page = page || 1;
+  currentReplyPage = page;
+  currentThreadSlug = slug;
+  document.getElementById('view-list').style.display='none';
+  document.getElementById('view-thread').style.display='block';
+  document.getElementById('tv-title').textContent='Загружаем…';
+  document.getElementById('tv-op').innerHTML='<div class="forum-loading"><div class="spinner"></div></div>';
+  document.getElementById('tv-replies').innerHTML='';
+  // очистим старую пагинацию
+  const oldPag = document.querySelector('#tv-replies + .reply-pagination');
+  if(oldPag) oldPag.remove();
+  replyEditor=null;document.getElementById('reply-editor-mount').innerHTML='';
+  try{
+    const data=await apiGet('/forum/threads/'+encodeURIComponent(slug)+'?replyPage='+page+'&replyLimit='+REPLIES_PER_PAGE);
+    currentThreadId=data.thread.id;
+    renderThread(data.thread, data.replies, data.replyMeta);
+    document.title=data.thread.title+' — Форум Chess Home';
+  }catch(e){
+    document.getElementById('tv-title').textContent='Ошибка';
+    document.getElementById('tv-op').innerHTML='<div class="forum-empty"><div class="ei">⚠️</div><p>'+esc(e.message)+'</p></div>';
+  }
+}
+
+function renderThread(thread, replies, replyMeta){
+  document.getElementById('tv-title').textContent=thread.title;
+  const canDel=currentUser&&currentUser.role==='admin';
+  var meta='автор: <span class="au" onclick="window.location=\'/profile/'+esc(thread.author)+'\'">'+esc(thread.author)+'</span>'
+    +' <span>·</span> '+timeAgo(thread.createdAt)
+    +' <span>·</span> '+(thread.views||0)+' просм.'
+    +' <span>·</span> '+(thread.replyCount||0)+' отв.';
+  if(canDel)meta+=' <button class="del-btn" onclick="delThread(\''+thread.id+'\')">🗑 Удалить тему</button>';
+  document.getElementById('tv-meta').innerHTML=meta;
+  document.getElementById('tv-op').innerHTML=makePost(thread.body,thread.author,thread.createdAt,true,null,false,0);
+
+  const rEl=document.getElementById('tv-replies');rEl.innerHTML='';
+  if(!replies||!replies.length){
+    rEl.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px 0;font-size:14px">Ответов пока нет. Будьте первым!</div>';
+  }else{
+    replies.forEach(function(r,i){
+      const canDelR=currentUser&&currentUser.role==='admin';
+      const div=document.createElement('div');div.id='reply-'+r.id;
+      div.innerHTML=makePost(r.body,r.author,r.createdAt,false,r.id,canDelR,(replyMeta.page-1)*replyMeta.limit + i + 1);
+      rEl.appendChild(div);
+    });
+  }
+
+  // Пагинация ответов
+  const paginationDiv = document.createElement('div');
+  paginationDiv.className = 'forum-pagination reply-pagination';
+  paginationDiv.style.marginTop = '20px';
+  if(replyMeta.totalPages > 1){
+    const prevBtn = document.createElement('button');
+    prevBtn.textContent = '←';
+    prevBtn.className = 'page-btn';
+    prevBtn.disabled = replyMeta.page === 1;
+    prevBtn.onclick = () => changeReplyPage(thread.slug, replyMeta.page - 1);
+    paginationDiv.appendChild(prevBtn);
+    for(let i=1; i<=replyMeta.totalPages; i++){
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      btn.className = 'page-btn' + (i === replyMeta.page ? ' active' : '');
+      btn.onclick = () => changeReplyPage(thread.slug, i);
+      paginationDiv.appendChild(btn);
+    }
+    const nextBtn = document.createElement('button');
+    nextBtn.textContent = '→';
+    nextBtn.className = 'page-btn';
+    nextBtn.disabled = replyMeta.page === replyMeta.totalPages;
+    nextBtn.onclick = () => changeReplyPage(thread.slug, replyMeta.page + 1);
+    paginationDiv.appendChild(nextBtn);
+  }
+  // Удаляем старую пагинацию, если есть
+  const oldPag = document.querySelector('#tv-replies + .reply-pagination');
+  if(oldPag) oldPag.remove();
+  rEl.parentNode.insertBefore(paginationDiv, rEl.nextSibling);
+
+  const rs=document.getElementById('tv-reply-section');
+  const ar=document.getElementById('tv-auth-req');
+  if(currentUser){
+    rs.style.display='block';ar.style.display='none';
+    if(!replyEditor)replyEditor=createEditor('reply-editor-mount',{maxLen:5000,minHeight:'120px',placeholder:'Ваш ответ… (поддерживается Markdown)'});
+  }else{
+    rs.style.display='none';ar.style.display='block';
+  }
+}
+
+function changeReplyPage(slug, newPage){
+  const url = '/forum/' + encodeURIComponent(slug) + '?replyPage=' + newPage;
+  history.pushState({}, '', url);
+  showThread(slug, newPage);
+}
+
+function makePost(body,author,ts,isOp,replyId,canDel,num){
+  return '<div class="post-card'+(isOp?' op-post':'')+'"><div class="post-head">'
+    +'<div class="post-av" onclick="window.location=\'/profile/'+esc(author)+'\'">'+esc(author[0].toUpperCase())+'</div>'
+    +'<div><span class="post-name" onclick="window.location=\'/profile/'+esc(author)+'\'">'+esc(author)+'</span>'
+    +(isOp?'<span class="op-badge">OP</span>':(num?'<span class="num-badge">#'+num+'</span>':''))+'</div>'
+    +'<span class="post-date">'+timeAgo(ts)+'</span>'
+    +(canDel?'<button class="del-btn" type="button" onclick="delReply(\''+replyId+'\')">🗑</button>':'')
+    +'</div><div class="post-body">'+mdRender(body)+'</div></div>';
+}
+
+function backToList(){
+  currentThreadId=null;currentThreadSlug=null;replyEditor=null;
+  document.getElementById('reply-editor-mount').innerHTML='';
+  document.getElementById('view-thread').style.display='none';
+  document.getElementById('view-list').style.display='block';
+  history.pushState({},'','/forum');
+  document.title='Форум — Chess Home';
+  loadList(forumPage);
+}
+
+function toggleNewThread(){
+  if(!currentUser){openModal('modal-login');return;}
+  const p=document.getElementById('new-thread-panel');
+  p.classList.toggle('open');
+  if(p.classList.contains('open'))setTimeout(function(){p.scrollIntoView({behavior:'smooth',block:'start'});},50);
+}
+
+async function submitNewThread(){
+  if(!currentUser){openModal('modal-login');return;}
+  const title=document.getElementById('nt-title').value.trim();
+  const body=ntEditor?ntEditor.getValue().trim():'';
+  const errEl=document.getElementById('nt-error');errEl.textContent='';
+  if(!title){errEl.textContent='Введите заголовок';return;}
+  if(!body){errEl.textContent='Введите описание';return;}
+  const btn=document.getElementById('nt-submit');btn.disabled=true;btn.textContent='Публикация…';
+  try{
+    const data=await apiPost('/forum/threads',{title:title,body:body});
+    document.getElementById('new-thread-panel').classList.remove('open');
+    document.getElementById('nt-title').value='';
+    document.getElementById('nt-tc').textContent='0';
+    if(ntEditor)ntEditor.clear();
+    toast('Обсуждение создано ✅','success');
+    openThread(data.thread.slug, 1);
+  }catch(e){errEl.textContent=e.message;}
+  finally{btn.disabled=false;btn.textContent='📨 Опубликовать';}
+}
+
+async function submitReply(){
+  if(!currentUser){openModal('modal-login');return;}
+  if(!currentThreadId)return;
+  const body=replyEditor?replyEditor.getValue().trim():'';
+  const errEl=document.getElementById('reply-error');errEl.textContent='';
+  if(!body){errEl.textContent='Введите текст ответа';return;}
+  const btn=document.getElementById('reply-submit');btn.disabled=true;btn.textContent='Отправка…';
+  try{
+    await apiPost('/forum/threads/'+currentThreadId+'/replies',{body:body});
+    if(replyEditor)replyEditor.clear();
+    toast('Ответ опубликован ✅','success');
+    await showThread(currentThreadSlug, currentReplyPage);
+    var last=document.querySelector('#tv-replies > div:last-child');
+    if(last)last.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){errEl.textContent=e.message;}
+  finally{btn.disabled=false;btn.textContent='📨 Ответить';}
+}
+
+async function delThread(id){
+  if(!confirm('Удалить обсуждение и все ответы?'))return;
+  try{await apiDelete('/forum/threads/'+id);toast('Удалено','success');backToList();}
+  catch(e){toast(e.message,'error');}
+}
+
+async function delReply(id){
+  if(!confirm('Удалить ответ?'))return;
+  try{
+    await apiDelete('/forum/replies/'+id);toast('Удалено','success');
+    var el=document.getElementById('reply-'+id);
+    if(el){el.style.opacity='0';el.style.transition='.3s';setTimeout(function(){el.remove();},300);}
+  }catch(e){toast(e.message,'error');}
+}
+
+// ── ПОИСК ПО ОТВЕТАМ ──────────────────────────────────────
+async function openReplySearch() {
+  if (!currentThreadId && !currentThreadSlug) {
+    toast('Не выбрана тема', 'error');
+    return;
+  }
+  const modal = document.getElementById('modal-reply-search');
+  const input = document.getElementById('search-query');
+  const resultsDiv = document.getElementById('search-results');
+  input.value = '';
+  resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">Введите запрос...</div>';
+  openModal('modal-reply-search');
+  input.focus();
+  let timeout = null;
+  input.oninput = () => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      const q = input.value.trim();
+      if (!q) { resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">Введите запрос...</div>'; return; }
+      performReplySearch(q);
+    }, 300);
+  };
+}
+
+async function performReplySearch(q) {
+  try {
+    const data = await apiGet('/forum/threads/' + encodeURIComponent(currentThreadSlug) + '/search?q=' + encodeURIComponent(q));
+    const resultsDiv = document.getElementById('search-results');
+    if (!data.results.length) {
+      resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">😕 Ничего не найдено</div>';
+      return;
+    }
+    let html = '<div style="font-size:13px;margin-bottom:12px">Найдено: ' + data.results.length + '</div>';
+    data.results.forEach(res => {
+      html += `<div class="search-result" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer" onclick="goToReplyPage('${res.page}', '${res.id}')">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+          <strong>${esc(res.author)}</strong> <span style="font-size:11px;color:var(--text3)">стр. ${res.page}</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2)">${esc(res.body)}</div>
+      </div>`;
+    });
+    resultsDiv.innerHTML = html;
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function goToReplyPage(page, replyId) {
+  closeModal('modal-reply-search');
+  if (currentThreadSlug) {
+    await showThread(currentThreadSlug, page);
+    setTimeout(() => {
+      const el = document.getElementById('reply-' + replyId);
+      if (el) {
+        el.style.transition = 'background 0.3s';
+        el.style.backgroundColor = 'var(--accent)';
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => { if(el) el.style.backgroundColor = ''; }, 1500);
+      }
+    }, 200);
+  }
+}
+
+document.addEventListener('DOMContentLoaded',async function(){
+  CH.initHeader();
+  try{await tryAutoLogin();}catch(e){console.warn(e);}
+  updateAuthUI();
+  fetchOnline();
+  setInterval(fetchOnline,15000);
+  renderView();
+  window.addEventListener('popstate',renderView);
+});
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+</div>
+</body>
+</html>

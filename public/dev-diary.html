@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дневник разработки — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" href="/img/logo/favicon.png">
+  <style>
+    body {
+      background: var(--bg-primary, #12121a);
+      color: var(--text-primary, #fff);
+      font-family: var(--font-body, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+      margin: 0; padding: 0;
+    }
+    #app { max-width: 1000px; margin: 0 auto; padding: 24px 20px 60px; }
+
+    .page-header { margin-bottom: 24px; }
+    .page-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .page-header p  { color: var(--text-muted, #888); font-size: 14px; }
+
+    /* ── Форма добавления ── */
+    .dev-diary-form {
+      background: var(--bg-card, #1e1e2e);
+      border: 1px solid var(--border, #2a2a36);
+      border-radius: 20px; padding: 20px; margin-bottom: 32px;
+    }
+    .dev-diary-form h3 { margin-top: 0; margin-bottom: 16px; font-size: 18px; }
+
+    /* ── Карточка записи ── */
+    .dev-diary-entry {
+      background: var(--bg-card, #1e1e2e);
+      border: 1px solid var(--border, #2a2a36);
+      border-radius: 20px; padding: 20px; margin-bottom: 20px;
+      transition: border-color 0.15s;
+    }
+    .dev-diary-entry:hover { border-color: var(--accent, #c9a84c); }
+
+    .dev-diary-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+    }
+    .dev-diary-title  { font-size: 20px; font-weight: 800; color: var(--accent, #c9a84c); }
+    .dev-diary-meta   { font-size: 12px; color: var(--text-muted, #888); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .dev-diary-content { margin-top: 12px; color: var(--text-secondary, #ccc); line-height: 1.6; font-size: 15px; white-space: pre-wrap; }
+    .dev-diary-admin-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+
+    /* ── Реакции ── */
+    .reactions-bar {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 16px; padding-top: 14px;
+      border-top: 1px solid var(--border, #2a2a36);
+    }
+    .reaction-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--bg-secondary, #262634);
+      border: 1px solid var(--border, #2a2a36);
+      border-radius: 30px; padding: 5px 12px;
+      font-size: 15px; cursor: pointer; color: var(--text-primary, #fff);
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      user-select: none;
+    }
+    .reaction-btn:hover { background: rgba(201,168,76,0.12); border-color: var(--accent, #c9a84c); transform: scale(1.06); }
+    .reaction-btn.my-reaction {
+      background: rgba(201,168,76,0.18);
+      border-color: var(--accent, #c9a84c);
+      color: var(--accent, #c9a84c);
+      font-weight: 700;
+    }
+    .reaction-btn .rc { font-size: 13px; opacity: 0.8; min-width: 12px; }
+    .reactions-login-hint { font-size: 12px; color: var(--text-muted, #888); align-self: center; }
+
+    /* ── Комменты ── */
+    .comments-section {
+      margin-top: 18px; padding-top: 14px;
+      border-top: 1px solid var(--border, #2a2a36);
+    }
+    .comments-toggle {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted, #888); font-size: 13px; padding: 0;
+      display: flex; align-items: center; gap: 6px;
+      transition: color 0.15s;
+    }
+    .comments-toggle:hover { color: var(--accent, #c9a84c); }
+    .comments-body { margin-top: 14px; }
+
+    .comment-item {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 10px 14px;
+      background: var(--bg-secondary, #1a1a28);
+      border-radius: 12px; margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .comment-item-header {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .comment-author { font-weight: 700; color: var(--accent, #c9a84c); }
+    .comment-time   { font-size: 11px; color: var(--text-muted, #888); }
+    .comment-text   { color: var(--text-secondary, #ccc); line-height: 1.5; word-break: break-word; }
+    .comment-admin-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+    .comments-form { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .comments-form textarea {
+      flex: 1; min-width: 0; min-height: 60px; resize: vertical;
+      background: var(--bg-secondary, #1a1a28);
+      border: 1px solid var(--border, #2a2a36); border-radius: 12px;
+      color: var(--text-primary, #fff); padding: 10px 12px; font-size: 14px;
+      font-family: inherit;
+    }
+    .comments-form textarea:focus { outline: none; border-color: var(--accent, #c9a84c); }
+    .comments-form .send-btn {
+      align-self: flex-end; white-space: nowrap;
+    }
+    .comment-limit-info { font-size: 12px; color: var(--text-muted, #888); margin-top: 6px; }
+    .comment-login-hint { font-size: 13px; color: var(--text-muted, #888); margin-top: 8px; }
+
+    .comment-pagination {
+      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .comment-pagination button {
+      background: var(--bg-secondary, #262634);
+      border: none; border-radius: 20px; padding: 5px 12px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      color: var(--text-primary); transition: background 0.15s;
+    }
+    .comment-pagination button:hover:not(:disabled) { background: var(--accent, #c9a84c); color: #000; }
+    .comment-pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .comment-pagination .cp-active { background: var(--accent, #c9a84c); color: #000; }
+
+    /* ── Пагинация постов ── */
+    .pagination { display: flex; justify-content: center; gap: 12px; margin-top: 32px; }
+    .pagination button {
+      background: var(--bg-secondary, #262634); border: none; border-radius: 30px;
+      padding: 8px 16px; font-weight: 600; cursor: pointer;
+      color: var(--text-primary); transition: background 0.15s;
+    }
+    .pagination button:hover:not(:disabled) { background: var(--accent, #c9a84c); color: #000; }
+    .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pagination .active-page { background: var(--accent, #c9a84c); color: #000; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted, #888); background: var(--bg-card, #1e1e2e); border-radius: 24px; }
+
+    .btn-danger { background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.3); color: #e74c3c; }
+    .btn-danger:hover { background: rgba(231,76,60,0.25); }
+    .btn-warn   { background: rgba(230,126,34,0.12); border: 1px solid rgba(230,126,34,0.3); color: #e67e22; }
+    .btn-warn:hover { background: rgba(230,126,34,0.25); }
+    .btn-success { background: rgba(39,174,96,0.12); border: 1px solid rgba(39,174,96,0.3); color: #27ae60; }
+    .btn-success:hover { background: rgba(39,174,96,0.25); }
+
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="page-header">
+      <h1>📔 Дневник разработки</h1>
+      <p>Новости, обновления и новые фишки Chess Home</p>
+    </div>
+
+    <!-- Форма добавления (видна только админам) -->
+    <div id="dev-diary-form" class="dev-diary-form" style="display: none;">
+      <h3>➕ Новая запись</h3>
+      <input type="text" id="dev-diary-title" class="form-input" placeholder="Заголовок (макс 100 симв.)" maxlength="100" style="margin-bottom:12px;">
+      <textarea id="dev-diary-content" class="form-input" rows="5" placeholder="Текст записи (макс 2000 симв.)" maxlength="2000" style="margin-bottom:12px;"></textarea>
+      <button class="btn btn-primary" onclick="submitDevDiaryEntry()">Опубликовать</button>
+    </div>
+
+    <!-- Список записей -->
+    <div id="dev-diary-list"></div>
+
+    <!-- Пагинация -->
+    <div id="dev-diary-pagination" class="pagination"></div>
+  </div>
+
+  <script src="/js/header.js"></script>
+  <script>
+    const ALLOWED_EMOJIS = ['👍','❤️','🔥','😂','🤯'];
+
+    let currentPage  = 1;
+    let totalPages   = 1;
+    let currentUser  = null;
+    // Авторизация теперь через HttpOnly-cookie (ch_token) — не localStorage.
+
+    // ─── Текущий пользователь ────────────────────────────────────
+    async function fetchCurrentUser() {
+      try {
+        const res = await fetch('/api/me', { credentials: 'include' });
+        if (res.ok) { currentUser = await res.json(); return currentUser; }
+      } catch {}
+      return null;
+    }
+
+    // ─── Загрузка записей ────────────────────────────────────────
+    async function loadDevDiary(page = 1) {
+      const listDiv       = document.getElementById('dev-diary-list');
+      const paginationDiv = document.getElementById('dev-diary-pagination');
+      listDiv.innerHTML   = '<div class="empty-state"><div class="spinner"></div></div>';
+
+      try {
+        const res = await fetch(`/api/dev-diary?page=${page}&limit=20`);
+        if (!res.ok) throw new Error('Ошибка загрузки');
+        const data    = await res.json();
+        const entries = data.entries || [];
+        totalPages    = data.totalPages || 1;
+        currentPage   = data.page || 1;
+
+        if (!entries.length) {
+          listDiv.innerHTML = '<div class="empty-state">📭 Пока нет записей. Следите за обновлениями!</div>';
+          paginationDiv.innerHTML = '';
+          return;
+        }
+
+        // Строим HTML карточек
+        listDiv.innerHTML = entries.map(entry => buildEntryHtml(entry)).join('');
+
+        // Загружаем реакции для всех карточек
+        for (const entry of entries) {
+          loadReactions(entry.id);
+        }
+
+        renderPagination();
+      } catch (err) {
+        console.error(err);
+        listDiv.innerHTML = '<div class="empty-state">❌ Ошибка загрузки дневника разработки</div>';
+      }
+    }
+
+    // ─── HTML карточки записи ────────────────────────────────────
+    function buildEntryHtml(entry) {
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      return `
+        <div class="dev-diary-entry" data-id="${entry.id}">
+          <div class="dev-diary-header">
+            <div class="dev-diary-title">${escapeHtml(entry.title)}</div>
+            <div class="dev-diary-meta">
+              <span>👤 ${escapeHtml(entry.author)}</span>
+              <span>📅 ${new Date(entry.createdAt).toLocaleDateString('ru-RU', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
+            </div>
+          </div>
+          <div class="dev-diary-content">${escapeHtml(entry.content).replace(/\n/g,'<br>')}</div>
+
+          ${isAdmin ? `
+            <div class="dev-diary-admin-actions">
+              <button class="btn btn-sm btn-danger" onclick="deleteDevDiaryEntry('${entry.id}')">🗑 Удалить запись</button>
+            </div>
+          ` : ''}
+
+          <!-- Реакции -->
+          <div class="reactions-bar" id="reactions-${entry.id}">
+            <span style="font-size:13px;color:var(--text-muted,#888)">Загрузка реакций…</span>
+          </div>
+
+          <!-- Комментарии -->
+          <div class="comments-section">
+            <button class="comments-toggle" onclick="toggleComments('${entry.id}', this)">
+              💬 <span class="ct-label">Показать комментарии</span>
+            </button>
+            <div class="comments-body" id="comments-${entry.id}" style="display:none;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ─── Реакции ─────────────────────────────────────────────────
+    async function loadReactions(entryId) {
+      const bar = document.getElementById('reactions-' + entryId);
+      if (!bar) return;
+      try {
+        const res = await fetch(`/api/dev-diary/${entryId}/reactions`, { credentials: 'include' });
+        const data = await res.json();
+        renderReactionBar(bar, entryId, data.counts || {}, data.myEmoji || null);
+      } catch {
+        bar.innerHTML = '';
+      }
+    }
+
+    function renderReactionBar(bar, entryId, counts, myEmoji) {
+      const isLoggedIn = !!currentUser;
+      let html = '';
+      for (const emoji of ALLOWED_EMOJIS) {
+        const cnt = counts[emoji] || 0;
+        const active = myEmoji === emoji ? ' my-reaction' : '';
+        const disabled = !isLoggedIn ? ' style="opacity:0.5;cursor:default;"' : '';
+        const clickAction = isLoggedIn
+          ? `onclick="sendReaction('${entryId}', '${emoji}')"`
+          : `onclick="alert('Войдите, чтобы ставить реакции')"`;
+        html += `<button class="reaction-btn${active}" ${clickAction}${disabled} title="${emoji}">
+          ${emoji}<span class="rc">${cnt > 0 ? cnt : ''}</span>
+        </button>`;
+      }
+      if (!isLoggedIn) {
+        html += `<span class="reactions-login-hint">Войдите, чтобы реагировать</span>`;
+      }
+      bar.innerHTML = html;
+    }
+
+    async function sendReaction(entryId, emoji) {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`/api/dev-diary/${entryId}/reactions`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emoji })
+        });
+        if (!res.ok) { const e = await res.json(); alert(e.error); return; }
+        loadReactions(entryId); // обновить после действия
+      } catch (e) { alert('Ошибка'); }
+    }
+
+    // ─── Комментарии ─────────────────────────────────────────────
+    let commentsState = {}; // entryId -> { page, totalPages }
+
+    async function toggleComments(entryId, btn) {
+      const body = document.getElementById('comments-' + entryId);
+      const label = btn.querySelector('.ct-label');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        label.textContent = 'Скрыть комментарии';
+        if (!commentsState[entryId]) await loadComments(entryId, 1);
+      } else {
+        body.style.display = 'none';
+        label.textContent = 'Показать комментарии';
+      }
+    }
+
+    async function loadComments(entryId, page = 1) {
+      const body = document.getElementById('comments-' + entryId);
+      if (!body) return;
+      body.innerHTML = '<div style="color:var(--text-muted,#888);font-size:13px;padding:8px 0">Загрузка…</div>';
+      try {
+        const res  = await fetch(`/api/dev-diary/${entryId}/comments?page=${page}`);
+        const data = await res.json();
+        commentsState[entryId] = { page: data.page, totalPages: data.totalPages };
+        renderComments(entryId, data.comments || [], data.page, data.totalPages);
+      } catch {
+        body.innerHTML = '<div style="color:#e74c3c;font-size:13px">Ошибка загрузки комментариев</div>';
+      }
+    }
+
+    function renderComments(entryId, comments, page, totalPages) {
+      const body    = document.getElementById('comments-' + entryId);
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      let html = '';
+
+      if (!comments.length && page === 1) {
+        html += '<div style="color:var(--text-muted,#888);font-size:13px;padding:6px 0">Комментариев ещё нет. Будьте первым!</div>';
+      } else {
+        for (const c of comments) {
+          const time = new Date(c.createdAt).toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+          html += `
+            <div class="comment-item" data-comment-id="${c.id}">
+              <div class="comment-item-header">
+                <span class="comment-author">${escapeHtml(c.username)}</span>
+                <span class="comment-time">${time}</span>
+              </div>
+              <div class="comment-text">${escapeHtml(c.content).replace(/\n/g,'<br>')}</div>
+              ${isAdmin ? `
+                <div class="comment-admin-actions">
+                  <button class="btn btn-sm btn-danger" onclick="deleteComment('${entryId}', '${c.id}', ${page})">🗑 Удалить</button>
+                  <button class="btn btn-sm btn-warn"   onclick="banCommentUser('${escapeHtml(c.username)}', 'ban')">🚫 Забанить в комментах</button>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }
+      }
+
+      // Пагинация комментов
+      if (totalPages > 1) {
+        html += '<div class="comment-pagination" id="cpag-' + entryId + '">';
+        html += `<button onclick="loadComments('${entryId}', ${page - 1})" ${page===1?'disabled':''}>← Назад</button>`;
+        const start = Math.max(1, page - 2), end = Math.min(totalPages, start + 4);
+        for (let i = start; i <= end; i++) {
+          html += `<button onclick="loadComments('${entryId}', ${i})" class="${i===page?'cp-active':''}">${i}</button>`;
+        }
+        html += `<button onclick="loadComments('${entryId}', ${page + 1})" ${page===totalPages?'disabled':''}>Вперёд →</button>`;
+        html += '</div>';
+      }
+
+      // Форма отправки
+      if (currentUser) {
+        html += `
+          <div class="comments-form">
+            <textarea id="ctxt-${entryId}" placeholder="Ваш комментарий (макс 500 симв.)" maxlength="500"></textarea>
+            <button class="btn btn-primary btn-sm send-btn" onclick="sendComment('${entryId}')">Отправить</button>
+          </div>
+          <div class="comment-limit-info">Лимит: 5 комментариев в сутки</div>
+        `;
+        // Кнопка разблокировки для адм
+        if (isAdmin) {
+          html += `<div style="margin-top:8px;">
+            <input type="text" id="unban-input-${entryId}" class="form-input" placeholder="Ник для разблокировки" style="width:220px;display:inline-block;margin-right:8px;">
+            <button class="btn btn-sm btn-success" onclick="banCommentUser(document.getElementById('unban-input-${entryId}').value,'unban')">✅ Разблокировать</button>
+          </div>`;
+        }
+      } else {
+        html += `<div class="comment-login-hint">Войдите, чтобы оставить комментарий</div>`;
+      }
+
+      body.innerHTML = html;
+    }
+
+    async function sendComment(entryId) {
+      const ta = document.getElementById('ctxt-' + entryId);
+      const content = ta.value.trim();
+      if (!content) return;
+      try {
+        const res = await fetch(`/api/dev-diary/${entryId}/comments`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Ошибка'); return; }
+        ta.value = '';
+        // Перезагрузить последнюю страницу, чтобы новый коммент был виден
+        const state = commentsState[entryId];
+        const targetPage = state ? state.totalPages : 1;
+        await loadComments(entryId, targetPage);
+      } catch { alert('Ошибка отправки'); }
+    }
+
+    async function deleteComment(entryId, commentId, page) {
+      if (!confirm('Удалить комментарий?')) return;
+      try {
+        // POST вместо DELETE — некоторые хостинги/прокси блокируют метод DELETE,
+        // из-за чего сервер отвечал HTML-страницей вместо JSON.
+        const res = await fetch(`/api/dev-diary/comments/${commentId}/delete`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        if (!res.ok) {
+          let msg = 'Ошибка';
+          try { msg = (await res.json()).error || msg; } catch {}
+          alert(msg);
+          return;
+        }
+        loadComments(entryId, page);
+      } catch { alert('Ошибка'); }
+    }
+
+    async function banCommentUser(username, action) {
+      if (!username || !username.trim()) { alert('Введите ник'); return; }
+      const confirmMsg = action === 'ban'
+        ? `Запретить ${username} писать комментарии в дневнике?`
+        : `Снять запрет с ${username}?`;
+      if (!confirm(confirmMsg)) return;
+      try {
+        const res = await fetch('/api/admin/dev-diary-comment-ban', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username.trim(), action })
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error || 'Ошибка'); return; }
+        alert(action === 'ban' ? `${username} заблокирован в комментариях` : `${username} разблокирован`);
+      } catch { alert('Ошибка'); }
+    }
+
+    // ─── Пагинация постов ────────────────────────────────────────
+    function renderPagination() {
+      const paginationDiv = document.getElementById('dev-diary-pagination');
+      if (totalPages <= 1) { paginationDiv.innerHTML = ''; return; }
+      let html = '';
+      html += `<button onclick="loadDevDiary(${currentPage - 1})" ${currentPage===1?'disabled':''}>← Назад</button>`;
+      const start = Math.max(1, currentPage - 2), end = Math.min(totalPages, start + 4);
+      for (let i = start; i <= end; i++) {
+        html += `<button onclick="loadDevDiary(${i})" class="${i===currentPage?'active-page':''}">${i}</button>`;
+      }
+      html += `<button onclick="loadDevDiary(${currentPage + 1})" ${currentPage===totalPages?'disabled':''}>Вперёд →</button>`;
+      paginationDiv.innerHTML = html;
+    }
+
+    // ─── Публикация записи (админ) ───────────────────────────────
+    async function submitDevDiaryEntry() {
+      if (!currentUser || currentUser.role !== 'admin') { alert('Только администраторы могут добавлять записи'); return; }
+      const title   = document.getElementById('dev-diary-title').value.trim();
+      const content = document.getElementById('dev-diary-content').value.trim();
+      if (!title || !content) { alert('Заполните заголовок и текст'); return; }
+      if (title.length   > 100)  { alert('Заголовок не длиннее 100 символов'); return; }
+      if (content.length > 2000) { alert('Текст не длиннее 2000 символов'); return; }
+      try {
+        const res = await fetch('/api/dev-diary', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content })
+        });
+        if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Ошибка'); }
+        document.getElementById('dev-diary-title').value   = '';
+        document.getElementById('dev-diary-content').value = '';
+        loadDevDiary(1);
+      } catch (err) { alert(err.message); }
+    }
+
+    // ─── Удаление записи (админ) ─────────────────────────────────
+    async function deleteDevDiaryEntry(id) {
+      if (!currentUser || currentUser.role !== 'admin') { alert('Доступ запрещён'); return; }
+      if (!confirm('Удалить эту запись вместе со всеми реакциями и комментариями?')) return;
+      try {
+        // POST вместо DELETE — см. комментарий в deleteComment выше.
+        const res = await fetch(`/api/dev-diary/${id}/delete`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+        if (!res.ok) throw new Error('Ошибка удаления');
+        loadDevDiary(currentPage);
+      } catch (err) { alert(err.message); }
+    }
+
+    // ─── Инициализация ───────────────────────────────────────────
+    async function initPage() {
+      await fetchCurrentUser();
+      if (currentUser && currentUser.role === 'admin') {
+        const formDiv = document.getElementById('dev-diary-form');
+        if (formDiv) formDiv.style.display = 'block';
+      }
+      loadDevDiary(1);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[m]));
+    }
+
+    document.addEventListener('DOMContentLoaded', initPage);
+  </script>
+</body>
+</html>

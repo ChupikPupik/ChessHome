@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <link rel="icon" href="/img/logo/favicon.png">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chess Home — время жизни</title>
+<script src="/js/header.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Unbounded:wght@300;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a0f;
+  --bg2:      #111118;
+  --bg3:      #1a1a24;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.14);
+  --text:     #f0f0f8;
+  --muted:    rgba(240,240,248,0.35);
+  --accent:   #7c9cbf;
+  --accent2:  #4a6fa5;
+  --mono:     'JetBrains Mono', monospace;
+  --display:  'Unbounded', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--display);
+  overflow-x: hidden;
+}
+
+/* ── background grid ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,156,191,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,156,191,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: -30vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(ellipse, rgba(74,111,165,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  gap: 2.5rem;
+}
+
+/* ── header ── */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: blink 2s infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+.header-title {
+  font-size: clamp(20px, 4vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.header-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  font-weight: 300;
+  font-family: var(--mono);
+}
+
+/* ── main number ── */
+.main-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 720px;
+}
+
+.unit-label {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.main-number {
+  font-family: var(--mono);
+  font-size: clamp(44px, 10vw, 80px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+/* ── digit flip ── */
+.digit-wrap {
+  display: inline-flex;
+  overflow: hidden;
+  height: 1.1em;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.digit-inner {
+  display: inline-block;
+  transition: transform 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.2s;
+}
+
+.digit-inner.going-up {
+  transform: translateY(-110%);
+  opacity: 0;
+}
+
+.digit-inner.coming-from-below {
+  transform: translateY(110%);
+  opacity: 0;
+  transition: none;
+}
+
+.digit-inner.settling {
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.28s cubic-bezier(0.22,1,0.36,1), opacity 0.15s;
+}
+
+.sep {
+  color: var(--muted);
+  display: inline-block;
+  margin: 0 1px;
+}
+
+/* ── tabs ── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tab {
+  padding: 7px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.18s;
+  font-family: var(--display);
+  letter-spacing: 0.06em;
+  font-weight: 300;
+}
+
+.tab:hover {
+  border-color: var(--border2);
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+}
+
+.tab.active {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ── breakdown ── */
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+  max-width: 540px;
+}
+
+.bc {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bc-val {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  height: 1.25em;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.bc-digit-wrap {
+  display: inline-flex;
+  overflow: hidden;
+  height: 1.1em;
+  align-items: center;
+  justify-content: center;
+}
+
+.bc-digit-inner {
+  display: inline-block;
+  transition: transform 0.22s cubic-bezier(0.22,1,0.36,1), opacity 0.18s;
+}
+
+.bc-digit-inner.going-up        { transform: translateY(-110%); opacity: 0; }
+.bc-digit-inner.coming-from-below { transform: translateY(110%); opacity: 0; transition: none; }
+.bc-digit-inner.settling        { transform: translateY(0); opacity: 1;
+  transition: transform 0.22s cubic-bezier(0.22,1,0.36,1), opacity 0.15s; }
+
+.bc-label {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ── ring cards ── */
+.extras {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 540px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.extra-card {
+  flex: 1;
+  min-width: 110px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.extra-val {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.extra-label {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+@media (max-width: 500px) {
+  .breakdown { grid-template-columns: repeat(2, 1fr); }
+  .bc-val { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<div id="ch-root"></div>
+
+<div id="app">
+  <div class="header">
+    <div class="live-badge"><span class="dot"></span>сайт работает</div>
+    <div class="header-title">♟ Chess Home</div>
+    <div class="header-sub">30.03.2026 · 19:32 МСК</div>
+  </div>
+
+  <div class="main-block">
+    <div class="unit-label" id="unit-label">секунд</div>
+    <div class="main-number" id="main-number"></div>
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-unit="seconds">секунды</button>
+      <button class="tab" data-unit="minutes">минуты</button>
+      <button class="tab" data-unit="hours">часы</button>
+      <button class="tab" data-unit="days">дни</button>
+      <button class="tab" data-unit="weeks">недели</button>
+      <button class="tab" data-unit="months">месяцы</button>
+      <button class="tab" data-unit="years">годы</button>
+    </div>
+  </div>
+
+  <div class="breakdown">
+    <div class="bc"><div class="bc-val" id="bc-d"></div><div class="bc-label">дней</div></div>
+    <div class="bc"><div class="bc-val" id="bc-h"></div><div class="bc-label">часов</div></div>
+    <div class="bc"><div class="bc-val" id="bc-m"></div><div class="bc-label">минут</div></div>
+    <div class="bc"><div class="bc-val" id="bc-s"></div><div class="bc-label">секунд</div></div>
+  </div>
+
+  <div class="extras">
+    <div class="extra-card"><div class="extra-val" id="ex-time">—</div><div class="extra-label">время сейчас</div></div>
+    <div class="extra-card"><div class="extra-val" id="ex-day">—</div><div class="extra-label">день года</div></div>
+    <div class="extra-card"><div class="extra-val" id="ex-week">—</div><div class="extra-label">неделя года</div></div>
+    <div class="extra-card"><div class="extra-val" id="ex-month">—</div><div class="extra-label">месяц</div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // 30.03.2026 19:32 МСК = UTC+3 → 16:32 UTC
+  const BIRTH = new Date('2026-03-30T16:32:00.000Z').getTime();
+
+  const UNIT_LABELS = {
+    seconds:'секунд', minutes:'минут', hours:'часов',
+    days:'дней', weeks:'недель', months:'месяцев', years:'лет'
+  };
+  const MONTHS = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+
+  let currentUnit = 'seconds';
+
+  // ── helpers ──────────────────────────────────────────────────
+  function getMainVal(ms) {
+    const s = ms / 1000;
+    switch (currentUnit) {
+      case 'seconds': return s.toFixed(1);
+      case 'minutes': return (s/60).toFixed(4);
+      case 'hours':   return (s/3600).toFixed(6);
+      case 'days':    return (s/86400).toFixed(7);
+      case 'weeks':   return (s/604800).toFixed(8);
+      case 'months': {
+        const start = new Date(BIRTH), end = new Date(BIRTH + ms);
+        let mo = (end.getFullYear()-start.getFullYear())*12 + (end.getMonth()-start.getMonth());
+        if (end.getDate() < start.getDate()) mo--;
+        return Math.max(0,mo).toString();
+      }
+      case 'years': {
+        const start = new Date(BIRTH), end = new Date(BIRTH + ms);
+        let mo = (end.getFullYear()-start.getFullYear())*12 + (end.getMonth()-start.getMonth());
+        if (end.getDate() < start.getDate()) mo--;
+        return (Math.max(0,mo)/12).toFixed(6);
+      }
+    }
+  }
+
+  // ── per-digit flip ─────────────────────────────────────────────
+  const digitState = new Map();
+  const ANIM_MIN_MS = 350;
+
+  function renderDigits(containerId, text, wrapClass, innerClass) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const chars = text.split('');
+    const state = digitState.get(containerId) || { chars: [], times: [] };
+    const prev  = state.chars;
+    const now   = Date.now();
+
+    if (prev.length !== chars.length) {
+      container.innerHTML = '';
+      chars.forEach((ch, i) => {
+        if (ch === ',' || ch === '.' || ch === ' ') {
+          const sep = document.createElement('span');
+          sep.className = 'sep';
+          sep.textContent = ch;
+          container.appendChild(sep);
+        } else {
+          const wrap  = document.createElement('span');
+          wrap.className = wrapClass;
+          const inner = document.createElement('span');
+          inner.className = innerClass;
+          inner.textContent = ch;
+          wrap.appendChild(inner);
+          container.appendChild(wrap);
+        }
+      });
+      digitState.set(containerId, { chars: [...chars], times: chars.map(() => now) });
+      return;
+    }
+
+    let digitIdx = 0;
+    const wraps = container.querySelectorAll('.' + wrapClass);
+    chars.forEach((ch, i) => {
+      if (ch === ',' || ch === '.' || ch === ' ') return;
+      const wrap  = wraps[digitIdx];
+      const inner = wrap ? wrap.querySelector('.' + innerClass) : null;
+      digitIdx++;
+      if (!wrap || !inner) return;
+      if (prev[i] === ch) return;
+
+      const lastT = state.times[i] || 0;
+      const fast  = (now - lastT) < ANIM_MIN_MS;
+      state.times[i] = now;
+      prev[i] = ch;
+
+      if (fast) {
+        inner.classList.remove('going-up', 'coming-from-below', 'settling');
+        inner.textContent = ch;
+        return;
+      }
+
+      inner.classList.remove('going-up', 'coming-from-below', 'settling');
+      void inner.offsetWidth;
+      inner.classList.add('going-up');
+      const captured = ch;
+      setTimeout(() => {
+        inner.textContent = captured;
+        inner.classList.remove('going-up');
+        inner.classList.add('coming-from-below');
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          inner.classList.remove('coming-from-below');
+          inner.classList.add('settling');
+        }));
+      }, 180);
+    });
+
+    digitState.set(containerId, state);
+  }
+
+  function formatMain(raw) {
+    const [int, dec] = raw.split('.');
+    const intF = parseInt(int, 10).toLocaleString('ru-RU');
+    return dec !== undefined ? intF + ',' + dec : intF;
+  }
+
+  function setBC(id, val) {
+    renderDigits(id, String(val), 'bc-digit-wrap', 'bc-digit-inner');
+  }
+
+  let lastMainStr = null;
+  let lastBC = { d:null, h:null, m:null, s:null };
+
+  function tick() {
+    const now = Date.now();
+    const ms  = Math.max(0, now - BIRTH);
+    const totalSec = ms / 1000;
+
+    const rawMain = getMainVal(ms);
+    const fmtMain = formatMain(rawMain);
+    if (fmtMain !== lastMainStr) {
+      lastMainStr = fmtMain;
+      renderDigits('main-number', fmtMain, 'digit-wrap', 'digit-inner');
+    }
+
+    const d = Math.floor(totalSec / 86400);
+    const h = Math.floor((totalSec % 86400) / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = Math.floor(totalSec % 60);
+
+    const dS = d.toLocaleString('ru-RU');
+    const hS = String(h).padStart(2,'0');
+    const mS = String(m).padStart(2,'0');
+    const sS = String(s).padStart(2,'0');
+
+    if (dS !== lastBC.d) { lastBC.d = dS; setBC('bc-d', dS); }
+    if (hS !== lastBC.h) { lastBC.h = hS; setBC('bc-h', hS); }
+    if (mS !== lastBC.m) { lastBC.m = mS; setBC('bc-m', mS); }
+    if (sS !== lastBC.s) { lastBC.s = sS; setBC('bc-s', sS); }
+
+    const nd = new Date(now);
+    const hhmm = String(nd.getHours()).padStart(2,'0') + ':' + String(nd.getMinutes()).padStart(2,'0') + ':' + String(nd.getSeconds()).padStart(2,'0');
+    const startOfYear = new Date(nd.getFullYear(), 0, 0);
+    const dayOfYear = Math.floor((nd - startOfYear) / 86400000);
+    document.getElementById('ex-time').textContent  = hhmm;
+    document.getElementById('ex-day').textContent   = dayOfYear;
+    document.getElementById('ex-week').textContent  = Math.ceil(dayOfYear / 7);
+    document.getElementById('ex-month').textContent = MONTHS[nd.getMonth()];
+  }
+
+  document.getElementById('tabs').addEventListener('click', e => {
+    const btn = e.target.closest('.tab');
+    if (!btn) return;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    currentUnit = btn.dataset.unit;
+    document.getElementById('unit-label').textContent = UNIT_LABELS[currentUnit];
+    lastMainStr = null;
+    digitState.delete('main-number');
+    tick();
+  });
+
+  tick();
+  setInterval(tick, 100);
+
+  // Инициализация хедера.
+  // CH.initHeader() сам по себе не знает, залогинен ли пользователь —
+  // раньше это как-то читалось из localStorage, но токен теперь в
+  // HttpOnly-cookie, поэтому явно спрашиваем сервер через /api/me
+  // и передаём результат в CH.setCurrentUser, иначе хедер всегда
+  // будет показывать "Вход/Регистрация".
+  if (window.CH) {
+    CH.initHeader({ activePage: 'age' });
+    CH.setActivePage('age');
+    fetch('/api/me', { credentials: 'same-origin' })
+      .then(res => res.ok ? res.json() : null)
+      .then(me => CH.setCurrentUser(me))
+      .catch(() => CH.setCurrentUser(null));
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Пожаловаться на игрока — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="../img/logo/favicon.png">
+  <style>
+    body {
+      background: var(--bg-primary, #0f0f14);
+      color: var(--text-primary, #fff);
+      font-family: var(--font-sans, sans-serif);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .report-container {
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 30px;
+      background: var(--bg-card, #1a1a2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .report-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .report-header h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      color: #e74c3c;
+    }
+    .report-header p {
+      margin: 0;
+      color: var(--text-secondary, #a0a0b0);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted, #888);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      font-family: inherit;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--accent, #c9a84c);
+    }
+    .form-textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+    .info-box {
+      background: rgba(201, 168, 76, 0.1);
+      border-left: 4px solid var(--accent, #c9a84c);
+      padding: 12px 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #d0d0d0;
+      line-height: 1.5;
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 14px;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-submit:hover { background: #c0392b; }
+    .btn-submit:active { transform: translateY(2px); }
+    .btn-submit:disabled { background: #555; cursor: not-allowed; transform: none; }
+    
+    #success-msg {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+  </style>
+</head>
+<body>
+
+    <div id="ch-header-root"></div>
+  <script src="js/header.js"></script>
+  <script>
+    // Инициализация при загрузке.
+    // Раньше здесь только вызывался CH.initHeader(), а данные о пользователе
+    // хедер должен был получить сам — но авторизация теперь идёт через
+    // HttpOnly-cookie, и хедеру нужно явно передать текущего пользователя,
+    // иначе он остаётся в состоянии "гость" (кнопки Вход/Регистрация),
+    // даже если сессия по факту валидна (как и было видно на этой странице).
+    document.addEventListener('DOMContentLoaded', async () => {
+      CH.initHeader({ activePage: 'report' });
+      try {
+        const res = await fetch('/api/me', { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('not authed');
+        const me = await res.json();
+        CH.setCurrentUser(me);
+      } catch {
+        CH.setCurrentUser(null);
+        alert('Вам нужно войти в аккаунт, чтобы отправить жалобу.');
+        window.location.href = '/';
+      }
+    });
+  </script>
+
+  <div class="report-container" id="report-form-container">
+    <div class="report-header">
+      <h1>⚠️ Пожаловаться на игрока</h1>
+      <p>Мы серьезно относимся к нарушениям. Пожалуйста, заполните форму ниже.</p>
+    </div>
+
+    <div class="info-box">
+      <strong>Важно / Important:</strong><br>
+      Пожалуйста, опишите ситуацию максимально подробно. Пишите на <strong>русском</strong> или <strong>английском</strong> языке.<br>
+      <em>Please describe the situation in detail. Write in <strong>English</strong> or <strong>Russian</strong>.</em>
+    </div>
+
+    <form id="report-form" onsubmit="submitReport(event)">
+      <div class="form-group">
+        <label class="form-label">Ник нарушителя</label>
+        <input type="text" id="targetUsername" class="form-input" placeholder="Например: cheater123" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Причина</label>
+        <select id="reportReason" class="form-select" required>
+          <option value="" disabled selected>Выберите причину...</option>
+          <option value="cheating">Читерство / Использование движка (Cheating)</option>
+          <option value="abuse">Оскорбления в чате (Abuse/Toxicity)</option>
+          <option value="spam">Спам / Реклама (Spam)</option>
+          <option value="stalling">Затягивание времени (Stalling)</option>
+          <option value="other">Другое (Other)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Подробности (Details)</label>
+        <textarea id="reportDetails" class="form-textarea" placeholder="Укажите ссылку на партию или опишите, что произошло..." required maxlength="500"></textarea>
+        <div style="text-align:right; font-size:11px; color:#888; margin-top:4px;"><span id="char-count">0</span>/500</div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submit-btn">Отправить жалобу</button>
+    </form>
+  </div>
+
+  <div class="report-container" id="success-msg">
+    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+    <h2 style="margin:0 0 12px 0;">Жалоба отправлена</h2>
+    <p style="color: #a0a0b0; line-height:1.5;">Спасибо за помощь в поддержании порядка на Chess Home. Администраторы рассмотрят ваш репорт в ближайшее время.</p>
+    <button class="btn-submit" style="background:var(--accent); color:#000; margin-top:20px;" onclick="window.location.href='/'">Вернуться на главную</button>
+  </div>
+
+  <script>
+    // Автозаполнение ника из URL (например: /report?user=Ivan)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUser = urlParams.get('user');
+    if (targetUser) {
+      document.getElementById('targetUsername').value = targetUser;
+    }
+
+    // Подсчет символов
+    document.getElementById('reportDetails').addEventListener('input', function(e) {
+      document.getElementById('char-count').innerText = e.target.value.length;
+    });
+
+    async function submitReport(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.innerText = 'Отправка...';
+
+      const targetUsername = document.getElementById('targetUsername').value.trim();
+      const reason = document.getElementById('reportReason').value;
+      const details = document.getElementById('reportDetails').value.trim();
+
+      try {
+        const res = await fetch('/api/report', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUsername, reason, details })
+        });
+
+        const data = await res.json();
+        
+        if (data.error) {
+          alert('Ошибка: ' + data.error);
+          btn.disabled = false;
+          btn.innerText = 'Отправить жалобу';
+        } else {
+          document.getElementById('report-form-container').style.display = 'none';
+          document.getElementById('success-msg').style.display = 'block';
+        }
+      } catch (err) {
+        alert('Произошла ошибка при отправке.');
+        btn.disabled = false;
+        btn.innerText = 'Отправить жалобу';
+      }
+    }
+  </script>
+</body>
+</html>

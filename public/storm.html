@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Puzzle Storm — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" href="/img/logo/favicon.png">
+  <style>
+    /* ── STORM STANDALONE STYLES ─────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100dvh;
+      background: var(--bg-primary, #0f0f1a);
+      color: var(--text-primary, #f0f0f0);
+      font-family: var(--font-body, system-ui, sans-serif);
+    }
+
+    /* ── TOP NAV ──────────────────────────────────────────── */
+    .storm-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+      background: var(--bg-card, #1a1a2e);
+    }
+    .storm-nav-logo {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .storm-nav-logo span { color: #ffa500; }
+    .storm-nav-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted, #888);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      background: transparent;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      font-family: inherit;
+    }
+    .storm-nav-back:hover {
+      background: var(--bg-secondary, #1e1e2e);
+      color: var(--text-primary);
+    }
+    .storm-nav-tabs {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+    }
+    .storm-tab {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted, #888);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .storm-tab:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .storm-tab.active {
+      background: rgba(255,160,0,0.12);
+      border-color: rgba(255,160,0,0.35);
+      color: #ffa500;
+    }
+
+    /* ── SCREENS ──────────────────────────────────────────── */
+    .storm-screen { display: none; }
+    .storm-screen.active { display: flex; flex-direction: column; }
+
+    /* ── LANDING ──────────────────────────────────────────── */
+    #screen-landing {
+      min-height: calc(100dvh - 57px);
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      text-align: center;
+    }
+    .storm-hero-bolt {
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .storm-hero-bolt::before {
+      content: '';
+      position: absolute;
+      inset: -40px;
+      background: radial-gradient(ellipse at center, rgba(255,200,0,0.18) 0%, transparent 70%);
+      animation: stormPulse 2.5s ease-in-out infinite;
+    }
+    .storm-bolt-icon {
+      font-size: clamp(52px, 10vw, 88px);
+      line-height: 1;
+      filter: drop-shadow(0 0 24px rgba(255,200,0,0.55));
+      animation: stormBolt 1.8s ease-in-out infinite alternate;
+      display: block;
+      position: relative;
+    }
+    .storm-title {
+      font-size: clamp(28px, 6vw, 52px);
+      font-weight: 900;
+      letter-spacing: -.03em;
+      margin: 0 0 8px;
+      background: linear-gradient(135deg, #ffe066, #ffa500, #ff6b00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .storm-subtitle {
+      font-size: clamp(14px, 2vw, 17px);
+      color: var(--text-secondary, #aaa);
+      max-width: 460px;
+      margin: 0 0 36px;
+      line-height: 1.6;
+    }
+    .storm-subtitle b { color: var(--accent, #c9a84c); }
+
+    /* Bonus cards */
+    .storm-bonuses {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+    .storm-bonus-card {
+      background: var(--bg-secondary, #1e1e2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 12px;
+      padding: 12px 18px;
+      min-width: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: transform .15s, border-color .15s;
+    }
+    .storm-bonus-card:hover { transform: translateY(-2px); border-color: var(--accent, #c9a84c); }
+    .storm-bonus-card .bonus-icon { font-size: 22px; }
+    .storm-bonus-card .bonus-val  { font-size: 11px; font-weight: 700; }
+    .storm-bonus-card .bonus-lbl  { font-size: 10px; color: var(--text-muted, #888); }
+
+    /* Start button */
+    .storm-start-btn {
+      background: linear-gradient(135deg, #ff9500, #ffa500, #ffe066);
+      color: #1a1a2e;
+      font-weight: 900;
+      font-size: 18px;
+      padding: 16px 40px;
+      border-radius: 14px;
+      border: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 24px rgba(255,160,0,0.45);
+      cursor: pointer;
+      transition: transform .15s, box-shadow .2s;
+      font-family: inherit;
+    }
+    .storm-start-btn:hover {
+      transform: translateY(-3px) scale(1.04);
+      box-shadow: 0 8px 36px rgba(255,160,0,0.65);
+    }
+    .storm-start-btn:active { transform: scale(.97); }
+
+    .storm-leaderboard-link {
+      margin-top: 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted, #888);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: color .15s;
+      font-family: inherit;
+    }
+    .storm-leaderboard-link:hover { color: var(--text-primary); }
+
+    .storm-pb {
+      margin-top: 28px;
+    }
+    .storm-pb-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted, #888);
+      margin-bottom: 4px;
+    }
+    .storm-pb-value {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--accent, #c9a84c);
+    }
+
+    /* ── GAME SCREEN ──────────────────────────────────────── */
+    #screen-game {
+      padding: 12px 16px;
+      max-width: 680px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .storm-hud {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .storm-hud-streak { text-align: left; }
+    .storm-hud-score  { text-align: right; }
+    .storm-hud-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted, #888);
+      font-weight: 700;
+    }
+    .storm-hud-val {
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+    .storm-hud-score .storm-hud-val { color: var(--accent, #c9a84c); }
+
+    /* Timer */
+    .storm-timer-wrap { position: relative; display: inline-block; text-align: center; }
+    .storm-timer-inner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #storm-timer-val {
+      font-size: 28px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+    #storm-timer-val.low { color: #e74c3c; }
+    #storm-timer-arc.low { stroke: #e74c3c !important; }
+    #storm-timer-bonus {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0;
+      height: 16px;
+      color: #ffe066;
+    }
+
+    /* Board area */
+    .storm-board-wrap { position: relative; }
+    #storm-board {
+      border-radius: 6px;
+      overflow: hidden;
+      display: grid;
+    }
+    #storm-feedback-flash {
+      position: absolute;
+      inset: 0;
+      border-radius: 6px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .storm-progress {
+      margin-top: 8px;
+      height: 3px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #storm-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ffa500, #ffcc00);
+      width: 0;
+      transition: width .3s;
+    }
+
+    /* ── RESULT SCREEN ────────────────────────────────────── */
+    #screen-result {
+      min-height: calc(100dvh - 57px);
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      text-align: center;
+    }
+    .storm-result-icon { font-size: 48px; margin-bottom: 12px; }
+    .storm-result-title {
+      font-size: clamp(20px, 5vw, 36px);
+      font-weight: 900;
+      margin: 0 0 4px;
+    }
+    .storm-record-badge {
+      display: none;
+      font-size: 12px;
+      font-weight: 800;
+      color: #1a1a2e;
+      background: linear-gradient(135deg, #ffe066, #ffa500);
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin: 8px 0;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .storm-stats-grid {
+      margin: 20px 0 28px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .storm-stat-card {
+      background: var(--bg-secondary, #1e1e2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 14px;
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .storm-stat-val  { font-size: 30px; font-weight: 900; }
+    .storm-stat-label {
+      font-size: 11px;
+      color: var(--text-muted, #888);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .storm-result-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn-ghost-sm {
+      background: none;
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      color: var(--text-secondary, #aaa);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+      font-family: inherit;
+    }
+    .btn-ghost-sm:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--accent, #c9a84c);
+    }
+
+    /* ── LEADERBOARD SCREEN ───────────────────────────────── */
+    #screen-leaderboard {
+      padding: 24px 16px;
+      max-width: 740px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .storm-lb-header { margin-bottom: 20px; }
+    .storm-lb-header h1 { font-size: 24px; font-weight: 900; margin-bottom: 4px; }
+    .storm-lb-header p  { font-size: 14px; color: var(--text-secondary, #aaa); }
+
+    .storm-search-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .storm-search-input {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--bg-secondary, #1e1e2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 10px;
+      color: var(--text-primary, #f0f0f0);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .storm-search-input:focus { border-color: var(--accent, #c9a84c); }
+    .storm-search-input::placeholder { color: var(--text-muted, #888); }
+
+    #storm-search-result {
+      display: none;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: var(--bg-secondary, #1e1e2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 14px;
+    }
+
+    .storm-lb-panel {
+      background: var(--bg-card, #1a1a2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .storm-lb-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
+      transition: background .12s;
+    }
+    .storm-lb-row:last-child { border-bottom: none; }
+    .storm-lb-row:hover { background: rgba(255,255,255,0.03); }
+    .storm-lb-row.gold { background: linear-gradient(90deg, rgba(255,160,0,0.08), transparent); }
+    .storm-lb-rank { width: 32px; text-align: center; font-weight: 900; }
+    .storm-lb-name { flex: 1; }
+    .storm-lb-username { font-weight: 700; font-size: 14px; }
+    .storm-lb-runs { font-size: 11px; color: var(--text-muted, #888); }
+    .storm-lb-score { text-align: right; }
+    .storm-lb-best { font-size: 22px; font-weight: 900; color: var(--accent, #c9a84c); }
+    .storm-lb-record-label { font-size: 10px; color: var(--text-muted, #888); text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── PROMO DIALOG ─────────────────────────────────────── */
+    .storm-promo-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.6);
+    }
+    .storm-promo-box {
+      background: var(--bg-card, #1e1e2e);
+      border: 2px solid #ffa500;
+      border-radius: 14px;
+      padding: 20px 28px;
+      text-align: center;
+    }
+    .storm-promo-title {
+      font-weight: 800;
+      margin-bottom: 14px;
+      font-size: 15px;
+    }
+    .storm-promo-row { display: flex; gap: 10px; }
+    .storm-promo-btn {
+      width: 52px;
+      height: 52px;
+      font-size: 26px;
+      background: var(--bg-secondary, #1e1e2e);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .15s, transform .12s;
+      font-family: inherit;
+    }
+    .storm-promo-btn:hover { background: rgba(255,160,0,0.15); transform: scale(1.1); }
+
+    /* ── LOGIN NOTICE ─────────────────────────────────────── */
+    .storm-login-notice {
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 13px;
+      color: var(--text-secondary, #aaa);
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .storm-login-notice a {
+      color: var(--accent, #c9a84c);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .storm-login-notice a:hover { text-decoration: underline; }
+
+    /* ── ANIMATIONS ───────────────────────────────────────── */
+    @keyframes stormPulse {
+      0%,100% { opacity:.7; transform:scale(1); }
+      50%      { opacity:1; transform:scale(1.08); }
+    }
+    @keyframes stormBolt {
+      from { filter:drop-shadow(0 0 16px rgba(255,200,0,.4)); transform:rotate(-3deg) scale(1); }
+      to   { filter:drop-shadow(0 0 40px rgba(255,180,0,.85)); transform:rotate(3deg) scale(1.07); }
+    }
+    @keyframes stormBonusPop {
+      0%   { opacity:0; transform:translateY(6px) scale(.7); }
+      30%  { opacity:1; transform:translateY(-4px) scale(1.15); }
+      70%  { opacity:1; transform:translateY(0) scale(1); }
+      100% { opacity:0; }
+    }
+    @keyframes stormScorePop {
+      0%   { transform:scale(1); }
+      40%  { transform:scale(1.4); color:#ffe066; }
+      100% { transform:scale(1); }
+    }
+    @keyframes stormFlashGreen {
+      0%   { opacity:.38; background:#2ecc71; }
+      100% { opacity:0; }
+    }
+    @keyframes stormFlashRed {
+      0%   { opacity:.42; background:#e74c3c; }
+      100% { opacity:0; }
+    }
+
+    /* ── MOBILE ───────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      #screen-game { padding: 8px 10px; }
+      .storm-hud-val { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="storm-nav">
+    <a href="/" class="storm-nav-logo">♚ Chess<span>Home</span></a>
+    <button class="storm-nav-back" onclick="history.back()">← Назад</button>
+    <div class="storm-nav-tabs">
+      <button class="storm-tab active" id="tab-play" onclick="showScreen('landing')">⚡ Шторм</button>
+      <button class="storm-tab" id="tab-lb" onclick="showScreen('leaderboard'); loadLeaderboard()">🏆 Рейтинг</button>
+    </div>
+  </nav>
+
+  <!-- ── ЛЕНДИНГ ──────────────────────────────────────────── -->
+  <div id="screen-landing" class="storm-screen active">
+    <div class="storm-hero-bolt">
+      <span class="storm-bolt-icon">⚡</span>
+    </div>
+    <h1 class="storm-title">Puzzle Storm</h1>
+    <p class="storm-subtitle">
+      Реши как можно больше задач за <b>3 минуты</b>.<br>
+      Только лёгкие и средние. Серии дают бонусное время!
+    </p>
+
+    <div class="storm-bonuses">
+      <div class="storm-bonus-card">
+        <div class="bonus-icon">🔥×5</div>
+        <div class="bonus-val" style="color:var(--accent,#c9a84c)">+3 сек</div>
+        <div class="bonus-lbl">5 подряд</div>
+      </div>
+      <div class="storm-bonus-card">
+        <div class="bonus-icon">🔥×10</div>
+        <div class="bonus-val" style="color:#ff9500">+6 сек</div>
+        <div class="bonus-lbl">10 подряд</div>
+      </div>
+      <div class="storm-bonus-card" style="border-color:rgba(231,76,60,0.4)">
+        <div class="bonus-icon">❌</div>
+        <div class="bonus-val" style="color:#e74c3c">−2 сек</div>
+        <div class="bonus-lbl">Ошибка</div>
+      </div>
+    </div>
+
+    <button class="storm-start-btn" onclick="stormStart()">
+      <span>⚡</span><span>Начать Шторм</span>
+    </button>
+    <button class="storm-leaderboard-link" onclick="showScreen('leaderboard'); loadLeaderboard()">
+      🏆 Таблица рекордов →
+    </button>
+
+    <div id="storm-pb" class="storm-pb" style="display:none">
+      <div class="storm-pb-label">Мой рекорд</div>
+      <div id="storm-pb-val" class="storm-pb-value">—</div>
+    </div>
+
+    <div id="storm-login-notice" class="storm-login-notice" style="display:none">
+      ℹ️ <span>Чтобы сохранить результат, <a href="/">войдите в аккаунт</a></span>
+    </div>
+  </div>
+
+  <!-- ── ИГРА ─────────────────────────────────────────────── -->
+  <div id="screen-game" class="storm-screen">
+    <div class="storm-hud">
+      <!-- Серия -->
+      <div class="storm-hud-streak">
+        <div class="storm-hud-label">Серия</div>
+        <div class="storm-hud-val">🔥 <span id="storm-streak-val">0</span></div>
+      </div>
+      <!-- Таймер -->
+      <div style="text-align:center">
+        <div class="storm-timer-wrap">
+          <svg width="110" height="110" viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="48" fill="none"
+              stroke="rgba(255,255,255,0.07)" stroke-width="8"/>
+            <circle id="storm-timer-arc" cx="55" cy="55" r="48" fill="none"
+              stroke="#ffa500" stroke-width="8" stroke-linecap="round"
+              stroke-dasharray="301.6" stroke-dashoffset="0"
+              transform="rotate(-90 55 55)"
+              style="transition:stroke-dashoffset .25s linear, stroke .5s"/>
+          </svg>
+          <div class="storm-timer-inner">
+            <div id="storm-timer-val">3:00</div>
+            <div id="storm-timer-bonus"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Счёт -->
+      <div class="storm-hud-score">
+        <div class="storm-hud-label">Решено</div>
+        <div id="storm-score" class="storm-hud-val">0</div>
+      </div>
+    </div>
+
+    <div id="storm-turn-indicator" style="text-align:center;margin-bottom:10px;font-size:13px;font-weight:700;letter-spacing:.04em;opacity:.85"></div>
+    <div class="storm-board-wrap">
+      <div id="storm-board"></div>
+      <div id="storm-feedback-flash"></div>
+    </div>
+    <div class="storm-progress">
+      <div id="storm-progress-bar"></div>
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <button onclick="stormSurrender()"
+        style="background:none;border:1px solid rgba(255,255,255,0.15);color:var(--text-muted,#888);
+               font-size:12px;padding:6px 16px;border-radius:20px;cursor:pointer;
+               transition:border-color .2s,color .2s;letter-spacing:.03em"
+        onmouseover="this.style.borderColor='#e74c3c';this.style.color='#e74c3c'"
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.15)';this.style.color='var(--text-muted,#888)'">
+        🏳 Сдаться
+      </button>
+    </div>
+  </div>
+
+  <!-- ── РЕЗУЛЬТАТ ─────────────────────────────────────────── -->
+  <div id="screen-result" class="storm-screen">
+    <div id="storm-result-icon" class="storm-result-icon">⚡</div>
+    <h2 class="storm-result-title">Шторм окончен!</h2>
+    <div id="storm-record-badge" class="storm-record-badge">🏆 Новый рекорд!</div>
+
+    <div class="storm-stats-grid">
+      <div class="storm-stat-card">
+        <div id="res-score" class="storm-stat-val" style="color:var(--accent,#c9a84c)">0</div>
+        <div class="storm-stat-label">Решено</div>
+      </div>
+      <div class="storm-stat-card">
+        <div id="res-correct" class="storm-stat-val" style="color:#2ecc71">0</div>
+        <div class="storm-stat-label">Верно</div>
+      </div>
+      <div class="storm-stat-card">
+        <div id="res-wrong" class="storm-stat-val" style="color:#e74c3c">0</div>
+        <div class="storm-stat-label">Ошибок</div>
+      </div>
+    </div>
+
+    <div class="storm-result-actions">
+      <button class="storm-start-btn" onclick="stormStart()" style="font-size:16px;padding:14px 28px">
+        <span>⚡</span><span>Играть снова</span>
+      </button>
+      <button class="btn-ghost-sm" onclick="showScreen('leaderboard'); loadLeaderboard()">🏆 Рейтинг</button>
+      <button class="btn-ghost-sm" onclick="location.href='/'">На главную</button>
+    </div>
+  </div>
+
+  <!-- ── ЛИДЕРБОРД ─────────────────────────────────────────── -->
+  <div id="screen-leaderboard" class="storm-screen">
+    <div class="storm-lb-header">
+      <h1>⚡ Puzzle Storm — Рейтинг</h1>
+      <p>Кто решил больше всего задач за 3 минуты</p>
+    </div>
+
+    <div class="storm-search-row">
+      <input id="storm-search-input" class="storm-search-input"
+        placeholder="🔍 Найти игрока..."
+        oninput="stormSearchPlayer(this.value)">
+    </div>
+    <div id="storm-search-result"></div>
+
+    <div class="storm-lb-panel">
+      <div id="storm-lb-list">
+        <div style="padding:20px;text-align:center;color:var(--text-muted,#888)">Загрузка...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ════════════════════════════════════════════════════════════
+  //  storm.html — встроенный JS
+  // ════════════════════════════════════════════════════════════
+
+  const STORM_DURATION  = 180;
+  const STORM_STREAK5   = 3;
+  const STORM_STREAK10  = 6;
+  const STORM_WRONG_PEN = 2;
+
+  const storm = {
+    puzzles:[], idx:0, score:0, correct:0, wrong:0, streak:0,
+    timeBonus:0, timeLeft:STORM_DURATION, running:false, _timer:null,
+    currentPuzzle:null, board:null, flipped:false, legalDests:{},
+    selected:null, playerMoves:[], autoMoves:[], moveStep:0, autoPlaying:false,
+    runId:null,
+  };
+
+  let currentUser = null;
+
+  // ── Auth check ─────────────────────────────────────────────
+  // Токен — в HttpOnly-cookie ch_token, её JS прочитать не может (и не должен).
+  // Она уезжает сама с любым fetch с credentials:'include', так что заголовок
+  // Authorization тут не нужен — /api/me проверит куку на сервере.
+  function _authHeaders() {
+    return {};
+  }
+
+  async function initAuth() {
+    try {
+      const r = await fetch('/api/me', {
+        credentials: 'include',
+      });
+      if (r.ok) {
+        currentUser = await r.json();
+        loadPersonalBest();
+      } else {
+        document.getElementById('storm-login-notice').style.display = 'flex';
+      }
+    } catch (e) {
+      document.getElementById('storm-login-notice').style.display = 'flex';
+    }
+  }
+
+  async function loadPersonalBest() {
+    if (!currentUser) return;
+    try {
+      const r = await apiFetch(`/api/storm/player/${encodeURIComponent(currentUser.username)}`);
+      if (r && r.runs > 0) {
+        document.getElementById('storm-pb').style.display = 'block';
+        document.getElementById('storm-pb-val').textContent = r.best;
+      }
+    } catch (e) {}
+  }
+
+  // ── Screen routing ─────────────────────────────────────────
+  function showScreen(name) {
+    document.querySelectorAll('.storm-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    document.querySelectorAll('.storm-tab').forEach(t => t.classList.remove('active'));
+    if (name === 'landing' || name === 'game' || name === 'result') {
+      document.getElementById('tab-play').classList.add('active');
+    } else if (name === 'leaderboard') {
+      document.getElementById('tab-lb').classList.add('active');
+    }
+  }
+
+  // ── API helper ─────────────────────────────────────────────
+  async function apiFetch(url, opts = {}) {
+    const headers = { ..._authHeaders(), ...(opts.headers || {}) };
+    const r = await fetch(url, { credentials: 'include', ...opts, headers });
+    if (!r.ok) { const e = await r.json().catch(() => ({})); throw e; }
+    return r.json();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  GAME ENGINE
+  // ════════════════════════════════════════════════════════════
+
+  async function stormStart() {
+    if (!currentUser) {
+      // Гостям разрешаем играть без сохранения
+    }
+    showScreen('game');
+    Object.assign(storm, {
+      puzzles:[], idx:0, score:0, correct:0, wrong:0, streak:0,
+      timeBonus:0, timeLeft:STORM_DURATION, running:false,
+      selected:null, moveStep:0, autoPlaying:false, runId:null,
+    });
+    clearInterval(storm._timer);
+    document.getElementById('storm-record-badge').style.display = 'none';
+    updateHUD();
+
+    document.getElementById('storm-board').innerHTML =
+      '<div style="text-align:center;padding:40px;color:var(--text-muted,#888)">Загрузка задач...</div>';
+
+    // Сервер сам засекает старт забега — нужно для проверки результата на финише.
+    if (currentUser) {
+      try {
+        const s = await apiFetch('/api/storm/start', { method: 'POST' });
+        storm.runId = s.runId;
+      } catch (e) { /* без runId результат просто не сохранится на финише */ }
+    }
+
+    try {
+      const data = await apiFetch('/api/storm/puzzles?topics=mate1,mate2');
+      if (!data || !data.length) { alert('Не удалось загрузить задачи'); showScreen('landing'); return; }
+      storm.puzzles = data;
+    } catch (e) { alert('Ошибка загрузки задач'); showScreen('landing'); return; }
+
+    loadPuzzle();
+    storm.running = true;
+    storm._timer  = setInterval(tick, 250);
+  }
+
+  function stormSurrender() {
+    if (!storm.running) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'surrender-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7)';
+    overlay.innerHTML = `
+      <div style="background:var(--bg-card,#1e1e2e);border:1px solid var(--border,rgba(255,255,255,.1));
+                  border-radius:16px;padding:28px 32px;text-align:center;max-width:300px">
+        <div style="font-size:32px;margin-bottom:12px">🏳</div>
+        <div style="font-weight:800;font-size:18px;margin-bottom:8px">Сдаться?</div>
+        <div style="color:var(--text-muted,#888);font-size:13px;margin-bottom:20px">
+          Результат сохранится: <b style="color:var(--accent,#c9a84c)">${storm.score}</b> задач решено
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button onclick="document.getElementById('surrender-overlay').remove()"
+            style="padding:10px 20px;border-radius:10px;border:1px solid var(--border,rgba(255,255,255,.1));
+                   background:none;color:var(--text-primary,#fff);cursor:pointer;font-size:14px;font-weight:600">
+            Отмена
+          </button>
+          <button onclick="document.getElementById('surrender-overlay').remove();stormFinish()"
+            style="padding:10px 20px;border-radius:10px;border:none;
+                   background:#e74c3c;color:#fff;cursor:pointer;font-size:14px;font-weight:700">
+            Сдаться
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  }
+
+  async function stormFinish() {
+    storm.running = false;
+    clearInterval(storm._timer);
+    showScreen('result');
+
+    setText('res-score',   storm.score);
+    setText('res-correct', storm.correct);
+    setText('res-wrong',   storm.wrong);
+    document.getElementById('storm-result-icon').textContent =
+      storm.score >= 20 ? '🏆' : storm.score >= 10 ? '⚡' : '🎯';
+
+    if (!currentUser) return;
+    try {
+      const r = await apiFetch('/api/storm/finish', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          score: storm.score, totalAttempted: storm.correct + storm.wrong,
+          correct: storm.correct, wrong: storm.wrong, timeBonus: storm.timeBonus,
+          runId: storm.runId,
+        }),
+      });
+      if (r && r.isBest) {
+        document.getElementById('storm-record-badge').style.display = 'inline-block';
+        // Обновляем личный рекорд на лендинге
+        document.getElementById('storm-pb').style.display = 'block';
+        document.getElementById('storm-pb-val').textContent = r.newBest;
+      }
+    } catch (e) { console.error('[Storm finish]', e); }
+  }
+
+  function tick() {
+    if (!storm.running) return;
+    storm.timeLeft = Math.max(0, storm.timeLeft - 0.25);
+    updateTimer();
+    if (storm.timeLeft <= 0) stormFinish();
+  }
+
+  function loadPuzzle() {
+    if (storm.idx >= storm.puzzles.length) {
+      storm.idx = 0;
+      storm.puzzles = [...storm.puzzles].sort(() => Math.random() - .5);
+    }
+    const puz = storm.puzzles[storm.idx++];
+    if (!puz) return;
+
+    storm.currentPuzzle = puz;
+    storm.board         = fenToBoard(puz.fen);
+    // Первый ход solution = ход ИГРОКА (i%2===0)
+    // FEN-сторона = сторона игрока → переворачиваем если FEN говорит что ходят чёрные
+    const fenSide = fenTurn(puz.fen);
+    storm.flipped = fenSide === 'w'; // за чёрных — переворачиваем
+
+    const allMoves = (puz.solution || '').trim().split(/\s+/).filter(Boolean);
+    storm.playerMoves = allMoves.filter((_, i) => i % 2 === 0);
+    storm.autoMoves   = allMoves.filter((_, i) => i % 2 === 1);
+    storm.moveStep   = 0;
+    storm.selected   = null;
+    storm.autoPlaying= false;
+
+    computeLegal();
+    render();
+    updateTurnIndicator();
+
+    const prog = document.getElementById('storm-progress-bar');
+    if (prog) prog.style.width = Math.min(100, storm.idx / storm.puzzles.length * 100) + '%';
+  }
+
+  // ── Chess helpers ──────────────────────────────────────────
+  function fenToBoard(fen) {
+    const board = Array(64).fill(null);
+    const rows  = fen.split(' ')[0].split('/');
+    for (let r = 0; r < 8; r++) {
+      let f = 0;
+      for (const ch of rows[r]) {
+        if (ch >= '1' && ch <= '8') { f += +ch; }
+        else { board[(7-r)*8+f] = { color: ch===ch.toUpperCase()?'w':'b', type: ch.toLowerCase() }; f++; }
+      }
+    }
+    return board;
+  }
+
+  function fenTurn(fen) { return (fen.split(' ')[1] || 'w'); }
+
+  function sqToUCI(sq) { return 'abcdefgh'[sq%8] + (Math.floor(sq/8)+1); }
+  function uciToSq(uci) {
+    const file = uci.charCodeAt(0) - 97;
+    const rank = parseInt(uci[1]) - 1;
+    return rank * 8 + file;
+  }
+
+  function pieceChar(p) {
+    // Возвращает путь к SVG: /img/pieces/wQ.svg, bK.svg и т.д.
+    const typeMap = { k:'K', q:'Q', r:'R', b:'B', n:'N', p:'P' };
+    return '/img/pieces/' + p.color + typeMap[p.type] + '.svg';
+  }
+
+  function applyMove(uci) {
+    const from  = uciToSq(uci.slice(0,2));
+    const to    = uciToSq(uci.slice(2,4));
+    const promo = uci.length === 5 ? uci[4] : null;
+    const nb    = [...storm.board];
+    nb[to]   = promo ? { color: nb[from]?.color || 'w', type: promo } : nb[from];
+    nb[from] = null;
+    if (nb[to]?.type === 'k') {
+      if (uci==='e1g1'){nb[5]=nb[7];nb[7]=null;}
+      if (uci==='e1c1'){nb[3]=nb[0];nb[0]=null;}
+      if (uci==='e8g8'){nb[61]=nb[63];nb[63]=null;}
+      if (uci==='e8c8'){nb[59]=nb[56];nb[56]=null;}
+    }
+    storm.board = nb;
+  }
+
+  // ── Legal dests — все ходы текущего цвета ──────────────────
+  // Игрок может сделать ЛЮБОЙ ход. Правильность — в checkMove.
+  function computeLegal() {
+    storm.legalDests = {};
+    if (!storm.currentPuzzle || !storm.board) return;
+    // Игрок всегда ходит своим цветом (из FEN задачи)
+    const turn = fenTurn(storm.currentPuzzle.fen);
+    const opp  = turn === 'w' ? 'b' : 'w';
+    const rnk  = sq => Math.floor(sq / 8);
+    const fil  = sq => sq % 8;
+
+    function slide(from, dr, df) {
+      const res = [];
+      let r = rnk(from) + dr, f = fil(from) + df;
+      while (r >= 0 && r < 8 && f >= 0 && f < 8) {
+        const sq = r * 8 + f;
+        if (storm.board[sq]) { if (storm.board[sq].color === opp) res.push(sq); break; }
+        res.push(sq);
+        r += dr; f += df;
+      }
+      return res;
+    }
+
+    function jump(from, moves) {
+      return moves
+        .map(([dr, df]) => [rnk(from)+dr, fil(from)+df])
+        .filter(([r, f]) => r >= 0 && r < 8 && f >= 0 && f < 8)
+        .map(([r, f]) => r * 8 + f)
+        .filter(sq => !storm.board[sq] || storm.board[sq].color === opp);
+    }
+
+    for (let from = 0; from < 64; from++) {
+      const p = storm.board[from];
+      if (!p || p.color !== turn) continue;
+      let targets = [];
+      if (p.type === 'p') {
+        const dir = turn === 'w' ? 1 : -1;
+        const startRank = turn === 'w' ? 1 : 6;
+        const r = rnk(from), f = fil(from);
+        const fwd1 = (r + dir) * 8 + f;
+        if (r + dir >= 0 && r + dir < 8 && !storm.board[fwd1]) {
+          targets.push(fwd1);
+          if (r === startRank && !storm.board[(r + dir*2)*8 + f]) targets.push((r + dir*2)*8 + f);
+        }
+        [-1, 1].forEach(df => {
+          const nr = r+dir, nf = f+df;
+          if (nr >= 0 && nr < 8 && nf >= 0 && nf < 8) {
+            const sq = nr*8+nf;
+            if (storm.board[sq] && storm.board[sq].color === opp) targets.push(sq);
+          }
+        });
+      } else if (p.type === 'n') {
+        targets = jump(from, [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]]);
+      } else if (p.type === 'b') {
+        targets = [[-1,-1],[-1,1],[1,-1],[1,1]].flatMap(([dr,df]) => slide(from,dr,df));
+      } else if (p.type === 'r') {
+        targets = [[-1,0],[1,0],[0,-1],[0,1]].flatMap(([dr,df]) => slide(from,dr,df));
+      } else if (p.type === 'q') {
+        targets = [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].flatMap(([dr,df]) => slide(from,dr,df));
+      } else if (p.type === 'k') {
+        targets = jump(from, [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]]);
+      }
+      if (targets.length) storm.legalDests[from] = targets;
+    }
+  }
+
+  // ── Turn indicator ────────────────────────────────────────
+  function updateTurnIndicator() {
+    const el = document.getElementById('storm-turn-indicator');
+    if (!el || !storm.currentPuzzle) return;
+    const fenSide   = fenTurn(storm.currentPuzzle.fen);
+    const playerColor = fenSide; // игрок ходит первым, его сторона = FEN-сторона
+    const isMate1 = storm.playerMoves.length === 1;
+    const mateLabel = isMate1 ? 'Мат в 1 ход' : 'Мат в 2 хода';
+    const colorLabel = playerColor === 'w' ? '♔ Ход белых' : '♚ Ход чёрных';
+    const colorStyle = playerColor === 'w' ? 'color:#f0d9b5' : 'color:#b58863';
+    el.innerHTML = `<span style="${colorStyle}">${colorLabel}</span>
+      <span style="color:rgba(255,255,255,0.3);margin:0 8px">·</span>
+      <span style="color:var(--accent,#c9a84c)">${mateLabel}</span>`;
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+  function render() {
+    const el = document.getElementById('storm-board');
+    if (!el) return;
+
+    const containerW = el.parentElement?.offsetWidth || 360;
+    const size = Math.min(containerW, window.innerWidth - 32, 560);
+    const sq   = Math.floor(size / 8);
+
+    el.style.width   = sq*8 + 'px';
+    el.style.height  = sq*8 + 'px';
+    el.style.gridTemplateColumns = `repeat(8, ${sq}px)`;
+    el.innerHTML = '';
+
+    for (let visual = 0; visual < 64; visual++) {
+      const vr = Math.floor(visual / 8);
+      const vf = visual % 8;
+
+      const logical = storm.flipped
+        ? (7 - vr) * 8 + (7 - vf)
+        : visual;
+      const rank    = Math.floor(logical / 8);
+      const file    = logical % 8;
+      const isLight = (rank + file) % 2 === 0;
+
+      const cell = document.createElement('div');
+      let bg = isLight ? 'var(--board-light,#f0d9b5)' : 'var(--board-dark,#b58863)';
+      if (storm.selected === logical) bg = isLight ? '#f6f669' : '#baca2b';
+
+      cell.style.cssText = `
+        width:${sq}px;height:${sq}px;display:flex;align-items:center;justify-content:center;
+        position:relative;
+        cursor:pointer;user-select:none;background:${bg};`;
+
+      // Точки ходов
+      if (storm.legalDests[storm.selected]?.includes(logical)) {
+        const dot = document.createElement('div');
+        const hasPiece = storm.board[logical];
+        dot.style.cssText = hasPiece
+          ? 'position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 4px rgba(0,0,0,.35);pointer-events:none;'
+          : `width:${Math.floor(sq*.3)}px;height:${Math.floor(sq*.3)}px;border-radius:50%;background:rgba(0,0,0,.22);pointer-events:none;`;
+        cell.appendChild(dot);
+      }
+
+      const piece = storm.board[logical];
+      if (piece) {
+        const img = document.createElement('img');
+        img.src = pieceChar(piece);
+        img.style.cssText = `width:${Math.floor(sq*.82)}px;height:${Math.floor(sq*.82)}px;position:relative;z-index:1;display:block;pointer-events:none;`;
+        img.draggable = false;
+        cell.appendChild(img);
+      }
+
+      cell.addEventListener('click', () => onSquareClick(logical));
+      el.appendChild(cell);
+    }
+  }
+
+  // ── Click handler ──────────────────────────────────────────
+  function onSquareClick(sq) {
+    if (!storm.running || storm.autoPlaying) return;
+    const piece = storm.board[sq];
+
+    if (storm.selected === null) {
+      // Выбрать можно только фигуру у которой есть легальные ходы на этом шаге
+      if (storm.legalDests[sq]?.length) storm.selected = sq;
+    } else {
+      if (sq === storm.selected) { storm.selected = null; render(); return; }
+      if (storm.legalDests[storm.selected]?.includes(sq)) {
+        makeMove(storm.selected, sq); return;
+      }
+      // Переключить на другую фигуру с легальными ходами
+      storm.selected = storm.legalDests[sq]?.length ? sq : null;
+    }
+    render();
+  }
+
+  function makeMove(from, to) {
+    const p      = storm.board[from];
+    const toRank = Math.floor(to / 8);
+    const isPromo = p?.type==='p' &&
+      ((p.color==='w'&&toRank===7)||(p.color==='b'&&toRank===0));
+    if (isPromo) { showPromoDialog(from, to); return; }
+    checkMove(from, to, sqToUCI(from)+sqToUCI(to));
+  }
+
+  function showPromoDialog(from, to) {
+    const old = document.getElementById('st-promo');
+    if (old) old.remove();
+    const color = storm.board[from]?.color || 'w';
+    const typeMap = { q:'Q', r:'R', b:'B', n:'N' };
+    const sym = { q: color+typeMap.q, r: color+typeMap.r, b: color+typeMap.b, n: color+typeMap.n };
+
+    const overlay = document.createElement('div');
+    overlay.id = 'st-promo';
+    overlay.className = 'storm-promo-overlay';
+
+    const box = document.createElement('div');
+    box.className = 'storm-promo-box';
+    box.innerHTML = '<div class="storm-promo-title">Превращение пешки</div>';
+
+    const row = document.createElement('div');
+    row.className = 'storm-promo-row';
+    ['q','r','b','n'].forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'storm-promo-btn';
+      const pi = document.createElement('img');
+      pi.src = '/img/pieces/' + sym[p] + '.svg';
+      pi.style.cssText = 'width:36px;height:36px;display:block;pointer-events:none;';
+      pi.draggable = false;
+      btn.appendChild(pi);
+      btn.onclick = () => { overlay.remove(); checkMove(from, to, sqToUCI(from)+sqToUCI(to)+p); };
+      row.appendChild(btn);
+    });
+    box.appendChild(row);
+    overlay.appendChild(box);
+    overlay.onclick = e => { if (e.target===overlay){ overlay.remove(); storm.selected=null; render(); } };
+    document.body.appendChild(overlay);
+  }
+
+  function checkMove(from, to, uci) {
+    const expected = storm.playerMoves[storm.moveStep];
+    if (!expected) return;
+
+    const variants = expected.split('|').map(v => v.trim());
+    let ok = variants.includes(uci) ||
+      variants.some(v => v.length===4 && uci.startsWith(v)) ||
+      variants.some(v => v.length===5 && v.endsWith('q') && uci===v.slice(0,4));
+
+    if (ok) {
+      const canon = variants.find(v =>
+        v===uci||(v.length===4&&uci.startsWith(v))||(v.length===5&&v.endsWith('q')&&uci===v.slice(0,4))
+      ) || uci;
+      applyMove(canon);
+      storm.selected = null;
+      storm.moveStep++;
+
+      if (storm.moveStep >= storm.playerMoves.length) {
+        // ✓ Решено
+        flash(true);
+        storm.score++;
+        storm.correct++;
+        storm.streak++;
+        applyStreak();
+        updateHUD();
+        computeLegal(); render();
+        setTimeout(loadPuzzle, 400);
+      } else {
+        // Автомат отвечает: его индекс = moveStep-1 (т.к. moveStep уже увеличен)
+        const nextAuto = storm.autoMoves[storm.moveStep - 1];
+        if (nextAuto) {
+          storm.autoPlaying = true;
+          computeLegal(); render();
+          setTimeout(() => {
+            applyMove(nextAuto);
+            storm.autoPlaying = false;
+            computeLegal(); render(); updateTurnIndicator();
+          }, 350);
+        }
+      }
+    } else {
+      // ✗ Ошибка
+      flash(false);
+      storm.wrong++;
+      storm.streak  = 0;
+      storm.timeLeft= Math.max(0, storm.timeLeft - STORM_WRONG_PEN);
+      storm.selected= null;
+      updateHUD(); render();
+      setTimeout(loadPuzzle, 900);
+    }
+  }
+
+  // ── Bonus streak ───────────────────────────────────────────
+  function applyStreak() {
+    let bonus = 0, label = '';
+    if (storm.streak>0 && storm.streak%10===0) { bonus=STORM_STREAK10; label=`🔥×${storm.streak}  +${bonus}с`; }
+    else if (storm.streak>0 && storm.streak%5===0) { bonus=STORM_STREAK5; label=`🔥×${storm.streak}  +${bonus}с`; }
+    if (bonus > 0) {
+      storm.timeLeft  = Math.min(STORM_DURATION*1.5, storm.timeLeft+bonus);
+      storm.timeBonus += bonus;
+      const el = document.getElementById('storm-timer-bonus');
+      if (el) {
+        el.textContent = label;
+        el.style.color = '#ffe066';
+        el.style.animation = 'none';
+        void el.offsetHeight;
+        el.style.animation = 'stormBonusPop .9s ease-out forwards';
+      }
+    }
+  }
+
+  // ── Flash board ────────────────────────────────────────────
+  function flash(ok) {
+    const el = document.getElementById('storm-feedback-flash');
+    if (!el) return;
+    el.style.animation = 'none';
+    void el.offsetHeight;
+    el.style.animation = ok
+      ? 'stormFlashGreen .5s ease-out forwards'
+      : 'stormFlashRed .6s ease-out forwards';
+  }
+
+  // ── HUD ────────────────────────────────────────────────────
+  function updateHUD() {
+    setText('storm-streak-val', storm.streak);
+    const sc = document.getElementById('storm-score');
+    if (sc) {
+      sc.textContent = storm.score;
+      sc.style.animation = 'none';
+      void sc.offsetHeight;
+      sc.style.animation = 'stormScorePop .35s ease-out';
+    }
+    updateTimer();
+  }
+
+  function updateTimer() {
+    const val = document.getElementById('storm-timer-val');
+    const arc = document.getElementById('storm-timer-arc');
+    if (!val||!arc) return;
+
+    const t = Math.max(0, storm.timeLeft);
+    val.textContent = `${Math.floor(t/60)}:${Math.floor(t%60).toString().padStart(2,'0')}`;
+
+    const circ = 2*Math.PI*48;
+    arc.style.strokeDashoffset = circ * (1 - Math.min(t/STORM_DURATION, 1));
+    arc.style.stroke = t<30 ? '#e74c3c' : t<60 ? '#ff9500' : '#ffa500';
+    val.className    = t<30 ? 'low' : '';
+    arc.className    = t<30 ? 'low' : '';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  LEADERBOARD
+  // ════════════════════════════════════════════════════════════
+
+  let _lbLoaded = false;
+  async function loadLeaderboard() {
+    if (_lbLoaded) return;
+    const list = document.getElementById('storm-lb-list');
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted,#888)">Загрузка...</div>';
+    try {
+      const data = await apiFetch('/api/storm/leaderboard');
+      _lbLoaded = true;
+      if (!data||!data.length) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted,#888)">Ещё никто не играл</div>';
+        return;
+      }
+      const medals = ['🥇','🥈','🥉'];
+      list.innerHTML = data.map((u, i) => `
+        <div class="storm-lb-row${i===0?' gold':''}">
+          <div class="storm-lb-rank" style="font-size:${i<3?20:14}px;color:${i===0?'#ffa500':i===1?'#aaa':i===2?'#cd7f32':'var(--text-muted)'}">
+            ${i<3?medals[i]:i+1}
+          </div>
+          <div class="storm-lb-name">
+            <div class="storm-lb-username">${esc(u.username)}</div>
+            <div class="storm-lb-runs">${u.runs} ${u.runs===1?'игра':'игр'}</div>
+          </div>
+          <div class="storm-lb-score">
+            <div class="storm-lb-best">${u.best}</div>
+            <div class="storm-lb-record-label">рекорд</div>
+          </div>
+        </div>`).join('');
+    } catch (e) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted,#888)">Ошибка загрузки</div>';
+    }
+  }
+
+  // ── Player search ──────────────────────────────────────────
+  let _searchTimer = null;
+  function stormSearchPlayer(val) {
+    clearTimeout(_searchTimer);
+    const res = document.getElementById('storm-search-result');
+    if (!val.trim()) { res.style.display = 'none'; return; }
+    _searchTimer = setTimeout(async () => {
+      try {
+        const d = await apiFetch(`/api/storm/player/${encodeURIComponent(val.trim())}`);
+        res.style.display = 'block';
+        if (!d || d.error) {
+          res.innerHTML = `<div style="color:var(--text-muted,#888);font-size:14px">Игрок <b>${esc(val.trim())}</b> не найден или ни разу не играл в Шторм</div>`;
+          return;
+        }
+        res.innerHTML = `
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div>
+              <div style="font-weight:800;font-size:16px">${esc(d.username)}</div>
+              <div style="font-size:12px;color:var(--text-muted,#888);margin-top:2px">
+                ${d.runs>0?`Сыграл ${d.runs} раз`:'Ещё не играл в Шторм'}
+              </div>
+            </div>
+            ${d.runs>0?`
+              <div style="margin-left:auto;text-align:right">
+                <div style="font-size:32px;font-weight:900;color:var(--accent,#c9a84c)">${d.best}</div>
+                <div style="font-size:10px;color:var(--text-muted,#888);text-transform:uppercase;letter-spacing:.06em">Рекорд</div>
+              </div>
+              <div style="width:100%;margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                ${d.history.slice(0,5).map(h=>`
+                  <div style="background:var(--bg-secondary,#1e1e2e);border:1px solid var(--border,rgba(255,255,255,.08));
+                    border-radius:8px;padding:6px 12px;font-size:13px;font-weight:700">
+                    ${h.score}
+                    <span style="font-size:10px;color:var(--text-muted,#888);font-weight:400">✓${h.correct} ✗${h.wrong}</span>
+                  </div>`).join('')}
+              </div>` : ''}
+          </div>`;
+      } catch (e) {
+        res.style.display = 'block';
+        res.innerHTML = '<div style="color:var(--text-muted,#888)">Игрок не найден</div>';
+      }
+    }, 400);
+  }
+
+  // ── Utils ──────────────────────────────────────────────────
+  function setText(id, val) { const el=document.getElementById(id); if(el) el.textContent=val; }
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ───────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    initAuth();
+    // URL param: ?tab=leaderboard
+    if (new URLSearchParams(location.search).get('tab') === 'leaderboard') {
+      showScreen('leaderboard');
+      loadLeaderboard();
+    }
+  });
+  </script>
+</body>
+</html>

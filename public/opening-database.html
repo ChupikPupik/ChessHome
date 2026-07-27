@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дебютная база данных — Chess Home</title>
+  <meta name="description" content="Двигайте фигуры и смотрите статистику ходов гроссмейстеров в реальном времени — данные Lichess Opening Explorer">
+
+  <!-- Общие стили сайта -->
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/img/logo/favicon.png">
+
+  <!-- Стили именно этого виджета -->
+  <link rel="stylesheet" href="/css/opening-database.css">
+</head>
+<body>
+
+  <!-- Универсальный header сайта (уже есть в /js/header.js) -->
+  <div id="ch-header-root"></div>
+
+  <main>
+    <section class="od-widget">
+      <h1>♟ Дебютная база данных</h1>
+      <p class="od-subtitle">
+        Двигайте фигуры на доске — статистика ходов гроссмейстеров
+        (Lichess Masters Database) обновляется в реальном времени.
+      </p>
+
+      <div class="od-layout">
+
+        <!-- ── Доска ── -->
+        <div class="od-board-panel">
+          <div class="od-board-wrap" id="od-board-wrap">
+            <div class="od-board" id="od-board"></div>
+          </div>
+
+          <div class="od-board-controls">
+            <button id="od-flip-btn" type="button">⇅ Перевернуть</button>
+            <button id="od-undo-btn" type="button">↶ Назад</button>
+            <button id="od-reset-btn" type="button">⟳ Начальная позиция</button>
+          </div>
+
+          <div class="od-breadcrumb" id="od-breadcrumb"></div>
+
+          <div class="od-form">
+            <input
+              id="od-fen-input"
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+            >
+            <button id="od-search-btn" type="button">Искать</button>
+          </div>
+        </div>
+
+        <!-- ── Таблица статистики ── -->
+        <div class="od-stats-panel">
+          <p id="od-opening-name" class="od-opening-name"></p>
+          <p id="od-status" class="od-status"></p>
+
+          <div id="od-table-wrap" class="od-table-wrap">
+            <table class="od-table">
+              <thead>
+                <tr>
+                  <th>Ход</th>
+                  <th>Партий</th>
+                  <th>Распределение</th>
+                  <th>Белые</th>
+                  <th>Ничьи</th>
+                  <th>Чёрные</th>
+                </tr>
+              </thead>
+              <tbody id="od-table-body"></tbody>
+              <tfoot>
+                <tr id="od-total-row" style="display:none">
+                  <td>Σ Всего</td>
+                  <td data-role="total"></td>
+                  <td></td>
+                  <td class="od-pct-white" data-role="white"></td>
+                  <td class="od-pct-draw" data-role="draw"></td>
+                  <td class="od-pct-black" data-role="black"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- Header сайта -->
+  <script src="/js/header.js"></script>
+
+  <!--
+    Правила ходов — тот же движок, что использует остальная доска сайта
+    (board.js). Больше никакого chess.js с cdnjs: если внешний CDN был
+    недоступен, весь виджет молча умирал — это и была причина пустой
+    доски на скриншоте. Теперь всё локально, без сети. Сами фигуры —
+    обычные SVG-файлы в /img/pieces/, отдельный скрипт для них не нужен.
+
+    ⚠️ Проверьте путь ниже — указан по аналогии с board.js (там уже
+    используется глобальный ChessEngine). Если у вас файл движка
+    называется/лежит иначе — поправьте src.
+  -->
+  <script src="/js/chess-engine.js"></script>
+
+  <!--
+    Фигуры доски — инлайновые SVG без сети (PIECE_IMGS).
+    Этого файла не хватало в разметке: opening-board.js проверяет
+    typeof PIECE_IMGS === 'undefined' и, не найдя его, честно писал
+    "Доска недоступна" вместо молчаливого краха — это и было на
+    скриншоте. Файл js/pieces.js уже лежит на сервере, просто не был
+    подключён здесь.
+  -->
+  <script src="/js/pieces.js"></script>
+
+  <!-- Главный поток виджета: доска + UI + обмен сообщениями с воркером -->
+  <script src="/js/opening-board.js"></script>
+
+</body>
+</html>

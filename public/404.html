@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Страница не найдена | Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+  <link rel="shortcut icon" href="../public/img/logo/favicon.png" type="image/x-icon">
+  <style>
+    /* ── RESET / BASE ── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    .board-size-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+
+    /* ── PARTICLES ── */
+    #bg-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.28;
+    }
+
+    /* ── PAGE WRAPPER ── */
+    .p404 {
+      position: relative;
+      z-index: 1;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 80px 32px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ════════════════════════════════
+       HERO — горизонтальный layout
+       ════════════════════════════════ */
+    .hero {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 56px;
+      padding: 24px 0 52px;
+    }
+
+    /* LEFT: big 404 number */
+    .h-left {
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .num404 {
+      font-family: var(--font-display, 'Georgia', serif);
+      font-size: clamp(110px, 14vw, 200px);
+      font-weight: 900;
+      line-height: 0.85;
+      letter-spacing: -6px;
+      user-select: none;
+      display: block;
+    }
+    .num404 .d {
+      display: inline-block;
+      background: linear-gradient(175deg, #f2dc7e 0%, #c9a84c 38%, #7a5018 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 44px rgba(201,168,76,0.5));
+      animation: bob 3.2s ease-in-out infinite;
+    }
+    .num404 .d:nth-child(2) { animation-delay: 0.3s; }
+    .num404 .d:nth-child(3) { animation-delay: 0.6s; }
+    @keyframes bob {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-14px); }
+    }
+
+    /* CENTER: animated piece */
+    .h-center {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .piece-wrap {
+      position: relative;
+    }
+    .anim-piece {
+      font-size: clamp(72px, 8vw, 110px);
+      display: block;
+      transition: opacity 0.22s;
+      filter: drop-shadow(0 8px 28px rgba(201,168,76,0.6));
+      animation: drift 5s ease-in-out infinite;
+      line-height: 1;
+    }
+    @keyframes drift {
+      0%   { transform: translate(0,0)    rotate(0deg);  }
+      20%  { transform: translate(12px,-10px) rotate(8deg);  }
+      40%  { transform: translate(-9px,5px)  rotate(-6deg); }
+      60%  { transform: translate(18px,-5px) rotate(10deg); }
+      80%  { transform: translate(-7px,8px)  rotate(-5deg); }
+      100% { transform: translate(0,0)    rotate(0deg);  }
+    }
+    .piece-shadow {
+      width: 56px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.45) 0%, transparent 70%);
+      margin: 2px auto 0;
+      animation: shad 5s ease-in-out infinite;
+    }
+    @keyframes shad { 0%,100%{transform:scaleX(1);opacity:.5} 50%{transform:scaleX(1.4);opacity:.9} }
+
+    /* RIGHT: text + buttons */
+    .h-right {
+      flex: 1;
+      min-width: 0;
+      max-width: 440px;
+    }
+    .hero-title {
+      font-family: var(--font-display, 'Georgia', serif);
+      font-size: clamp(22px, 2.8vw, 34px);
+      font-weight: 700;
+      line-height: 1.25;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+    }
+    .hero-title .acc { color: var(--accent, #c9a84c); }
+
+    .hero-sub {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.75;
+      margin-bottom: 8px;
+    }
+    .chip {
+      display: inline-block;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 5px;
+      padding: 1px 8px;
+      font-size: 12px;
+      font-family: var(--font-mono, monospace);
+      color: var(--accent, #c9a84c);
+    }
+    .hero-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 12px;
+      color: var(--text-muted, #5a5e78);
+      margin: 12px 0 22px;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 22px;
+      border-radius: 11px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-family: inherit;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--accent,#c9a84c), var(--accent-dark,#a07830));
+      color: #000;
+      box-shadow: 0 4px 20px rgba(201,168,76,0.38);
+    }
+    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.55); }
+    .btn-ghost {
+      background: rgba(255,255,255,0.04);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255,255,255,0.09);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); border-color: rgba(255,255,255,0.16); }
+
+    /* ── SEPARATOR ── */
+    .sep {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted, #5a5e78);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      margin: 0 0 32px;
+    }
+    .sep::before, .sep::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+    }
+
+    /* ── GAME SECTION ── */
+    .game-section { width: 100%; }
+    .game-hdr { text-align: center; margin-bottom: 18px; }
+    .game-hdr h2 { font-size: 19px; font-weight: 700; margin-bottom: 5px; }
+    .game-hdr p { font-size: 13px; color: var(--text-secondary); }
+
+    .game-card {
+      background: var(--bg-card, #1a1c26);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 16px 56px rgba(0,0,0,0.45);
+      position: relative;
+    }
+    .game-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(201,168,76,0.35), transparent);
+      pointer-events: none;
+    }
+    .game-frame-wrap { width: 100%; background: #09090f; }
+    .game-frame-wrap iframe {
+      display: block; width: 100%; height: 520px; border: none;
+    }
+
+    /* Fallback */
+    .game-fallback {
+      padding: 52px 32px;
+      text-align: center;
+    }
+    .fallback-icon {
+      font-size: 64px; display: block; margin-bottom: 18px;
+      animation: spinSlow 8s linear infinite;
+    }
+    @keyframes spinSlow { to { transform: rotate(360deg); } }
+    .game-fallback h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .game-fallback > p {
+      font-size: 13px; color: var(--text-secondary);
+      max-width: 420px; margin: 0 auto 22px; line-height: 1.65;
+    }
+    .install-box {
+      display: inline-block;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(201,168,76,0.18);
+      border-radius: 12px;
+      padding: 16px 22px;
+      text-align: left;
+      font-family: var(--font-mono, monospace);
+      font-size: 13px;
+      line-height: 2;
+    }
+    .install-box .kw  { color: #7fb8f0; }
+    .install-box .pth { color: #98d4a3; }
+    .install-box .cmt { color: var(--text-muted, #5a5e78); }
+
+    .game-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      background: rgba(0,0,0,0.25);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .game-bar-left { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted,#5a5e78); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.22);
+      border-radius: 999px; padding: 3px 11px;
+      font-size: 11px; font-weight: 700; color: var(--accent,#c9a84c);
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 700px) {
+      .mobile-nav-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+      }
+      header nav,
+      header .nav-links { display: none !important; }
+      header {
+        padding: 0 12px !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 150 !important;
+      }
+      #header-right {
+        display: flex !important;
+        gap: 6px !important;
+        align-items: center !important;
+      }
+      .page-header { padding: 16px 0 12px !important; }
+      .page-header h1 { font-size: 22px !important; }
+      .page-header p { font-size: 13px !important; }
+      .legal-content { font-size: 14px !important; }
+      .legal-content h1 { font-size: 22px !important; }
+      .legal-content h2 { font-size: 16px !important; }
+
+      .hero { flex-direction: column; gap: 28px; padding-bottom: 36px; }
+      .h-left { order: 1; }
+      .h-center { order: 2; }
+      .h-right { order: 3; text-align: center; max-width: 100%; }
+      .hero-btns { justify-content: center; }
+      .hero-hint { margin-left: auto; margin-right: auto; }
+      .num404 { font-size: clamp(72px, 18vw, 120px); letter-spacing: -3px; }
+      .anim-piece { font-size: 64px; }
+      .game-frame-wrap iframe { height: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- header injected by /js/header.js -->
+
+<div class="p404" style="padding-top:56px">
+
+  <div class="hero">
+
+    <div class="h-left">
+      <span class="num404">
+        <span class="d">4</span><span class="d">0</span><span class="d">4</span>
+      </span>
+    </div>
+
+    <div class="h-center">
+      <div class="piece-wrap">
+        <span class="anim-piece" id="anim-piece">♚</span>
+      </div>
+      <div class="piece-shadow"></div>
+    </div>
+
+    <div class="h-right">
+      <h1 class="hero-title">
+        Эта страница <span class="acc">недоступна</span> —<br>
+        если, конечно, у вас нет<br>машины времени
+      </h1>
+      <p class="hero-sub">
+        Страница испарилась, как конь после жертвы.
+        Возможно, ссылка устарела, или кто-то неаккуратно написал <span class="chip">rm&nbsp;-rf</span>.
+        Мы провели расследование — улик нет.
+      </p>
+      <div class="hero-hint">
+        🕵️&nbsp; Проверьте URL — возможно, там затаилась опечатка
+      </div>
+      <div class="hero-btns">
+        <a href="/" class="btn btn-gold">♚ На главную</a>
+        <a href="/tournaments" class="btn btn-ghost">🏆 Турниры</a>
+        <button class="btn btn-ghost" onclick="history.back()">← Назад</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="sep">пока ищете машину времени — сыграйте</div>
+
+  <div class="game-section">
+    <div class="game-hdr">
+      <h2>♟ Chess Pursuit</h2>
+      <p>Аркадные шахматы от JS13K — уворачивайтесь от фигур и выживайте как можно дольше</p>
+    </div>
+
+    <div class="game-card">
+      <div class="game-frame-wrap" id="game-wrap">
+        <div class="game-fallback" id="game-fallback">
+          <span class="fallback-icon">♞</span>
+          <h3>Установите Chess Pursuit</h3>
+          <p>
+            Скачайте репо и скопируйте папку <strong style="color:var(--accent)">bin-release</strong> в нужное место — и игра появится прямо здесь.
+          </p>
+          <div class="install-box">
+            <div><span class="kw">git clone</span> https://github.com/Saturnyn/ChessPursuit</div>
+            <div><span class="cmt"># Затем скопируйте папку в ваш public:</span></div>
+            <div><span class="kw">cp -r</span> ChessPursuit/<span class="pth">bin-release</span>/ public/<span class="pth">games/chess-pursuit/</span></div>
+            <div><span class="cmt"># Итог: public/games/chess-pursuit/index.html</span></div>
+          </div>
+          <p style="margin-top:18px;font-size:12px;color:var(--text-muted)">
+            После этого обновите страницу — игра загрузится автоматически.
+          </p>
+        </div>
+      </div>
+
+      <div class="game-bar">
+        <div class="game-bar-left">
+          <span class="badge">🎮 Мини-игра</span>
+          <span>Chess Pursuit · Saturnyn · JS13K Games 2015</span>
+        </div>
+        <a href="https://github.com/Saturnyn/ChessPursuit" target="_blank" rel="noopener"
+           class="btn btn-ghost" style="padding:6px 14px;font-size:12px">↗ GitHub</a>
+      </div>
+    </div>
+  </div>
+
+</div><script>
+// ── LOAD GAME IF EXISTS ──
+fetch('/games/chess-pursuit/index.html', { method: 'HEAD' })
+  .then(r => {
+    if (!r.ok) return;
+    const fb = document.getElementById('game-fallback');
+    if (fb) fb.remove();
+    const iframe = document.createElement('iframe');
+    iframe.src = '/games/chess-pursuit/index.html';
+    iframe.allow = 'autoplay';
+    iframe.setAttribute('allowfullscreen', '');
+    document.getElementById('game-wrap').appendChild(iframe);
+  }).catch(() => {});
+
+// ── FLOATING CHESS PARTICLES ──
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  const SYM = ['♙','♟','♖','♜','♘','♞','♗','♝','♕','♛','♚'];
+  let W, H, pts;
+
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+
+  function mkPt() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H + H * 0.05,
+      vx: (Math.random() - 0.5) * 0.22,
+      vy: -(Math.random() * 0.32 + 0.1),
+      a: Math.random() * 0.42 + 0.07,
+      sz: Math.random() * 15 + 9,
+      sym: SYM[Math.floor(Math.random() * SYM.length)],
+      rot: Math.random() * Math.PI * 2,
+      rv: (Math.random() - 0.5) * 0.007,
+    };
+  }
+
+  resize();
+  pts = Array.from({ length: 32 }, mkPt);
+  pts.forEach(p => p.y = Math.random() * H);
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (const p of pts) {
+      p.x += p.vx; p.y += p.vy; p.rot += p.rv;
+      if (p.y < -60) { Object.assign(p, mkPt()); p.y = H + 20; }
+      ctx.save();
+      ctx.globalAlpha = p.a;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.font = p.sz + 'px serif';
+      ctx.fillStyle = '#c9a84c';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.sym, 0, 0);
+      ctx.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize', resize);
+})();
+
+// ── CYCLING PIECE ANIMATION ──
+(function () {
+  const pieces = ['♚','♛','♜','♝','♞','♙','♟','♘'];
+  let i = 0;
+  const el = document.getElementById('anim-piece');
+  el.style.transition = 'opacity 0.22s';
+  setInterval(() => {
+    el.style.opacity = '0';
+    setTimeout(() => {
+      i = (i + 1) % pieces.length;
+      el.textContent = pieces[i];
+      el.style.opacity = '1';
+    }, 220);
+  }, 2500);
+})();
+
+// ── HEADER AUTH ──
+// Раньше здесь использовались authToken/apiGet/updateHeaderUI из localStorage —
+// но они нигде в этом файле не объявлены (полагались на глобалы из header.js),
+// и в любом случае токен в localStorage больше не хранится (он в HttpOnly-cookie).
+// Делаем страницу независимой: спрашиваем /api/me напрямую и отдаём результат в CH.
+async function initHeader() {
+  CH.initHeader();
+  try {
+    const res = await fetch('/api/me', { credentials: 'same-origin' });
+    const me = res.ok ? await res.json() : null;
+    CH.setCurrentUser(me);
+  } catch {
+    CH.setCurrentUser(null);
+  }
+}
+
+async function loadOnline() {
+  try {
+    const r = await fetch('/api/online');
+    if (r.ok) { const d = await r.json(); document.getElementById('online-count').textContent = d.count; }
+  } catch {}
+}
+
+initHeader();
+loadOnline();
+setInterval(loadOnline, 15000);
+</script>
+<script src="/js/ping-widget.js" onerror="void 0"></script>
+</body>
+</html>

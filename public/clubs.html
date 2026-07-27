@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Клубы — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+  <link rel="icon" href="/img/logo/favicon.png">
+  <style>
+    body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); }
+
+    .clubs-page { max-width: 1100px; margin: 0 auto; padding: 80px 20px 60px; }
+
+    /* ── HERO ── */
+    .page-hero { text-align: center; padding: 40px 0 32px; position: relative; }
+    .page-hero::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 400px; height: 200px;
+      background: radial-gradient(ellipse, rgba(201,168,76,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .page-hero h1 { font-size: 42px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+    .page-hero h1 span { color: var(--accent); }
+    .page-hero p { color: var(--text-secondary); font-size: 16px; }
+
+    /* ── TABS ── */
+    .tabs-bar {
+      display: flex; gap: 4px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 4px;
+      margin-bottom: 24px; width: fit-content;
+    }
+    .tab-btn {
+      padding: 8px 22px; border-radius: 9px; border: none;
+      background: transparent; color: var(--text-secondary);
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .tab-btn.active { background: var(--accent); color: #000; }
+    .tab-btn:hover:not(.active) { background: var(--bg-hover); color: var(--text-primary); }
+
+    /* ── TOOLBAR ── */
+    .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .search-box {
+      flex: 1; min-width: 180px; max-width: 340px;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0 14px; height: 40px;
+    }
+    .search-box input {
+      flex: 1; border: none; background: transparent; color: var(--text-primary);
+      font-size: 14px; outline: none;
+    }
+    .search-box input::placeholder { color: var(--text-muted); }
+
+    /* ── GRID ── */
+    .clubs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+    /* ── CLUB CARD ── */
+    .club-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px;
+      cursor: pointer; transition: border-color 0.2s, transform 0.15s;
+      position: relative; overflow: hidden;
+    }
+    .club-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .club-card.official { border-color: rgba(201,168,76,0.4); }
+    .club-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent); opacity: 0; transition: opacity 0.2s;
+    }
+    .club-card:hover::before, .club-card.official::before { opacity: 1; }
+
+    .club-card-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px; }
+    .club-avatar {
+      width: 52px; height: 52px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), rgba(201,168,76,0.4));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; flex-shrink: 0;
+    }
+    .club-avatar.official-av { background: linear-gradient(135deg, #c9a84c, #7c6128); }
+    .club-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .official-badge {
+      background: var(--accent); color: #000;
+      font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .club-desc { color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin-bottom: 12px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .club-meta { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--text-muted); }
+    .club-members { display: flex; align-items: center; gap: 4px; }
+
+    .club-admins { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px; }
+    .admin-pill {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px 10px; font-size: 12px;
+      color: var(--text-secondary); display: flex; align-items: center; gap: 4px;
+    }
+    .admin-pill .crown { color: var(--accent); font-size: 11px; }
+
+    /* ── CLUB PAGE (detail) ── */
+    #club-detail { display: none; }
+    .back-btn {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--text-secondary); font-size: 14px; font-weight: 600;
+      background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 24px;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: var(--text-primary); }
+
+    /* Двухколоночный лэйаут: чат слева, контент справа */
+    .club-detail-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    .club-detail-left { display: flex; flex-direction: column; gap: 0; position: sticky; top: calc(var(--header-height, 64px) + 16px); }
+    .club-detail-right { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+
+    @media (max-width: 900px) {
+      .club-detail-grid {
+        grid-template-columns: 1fr;
+      }
+      .club-detail-left { position: static; }
+    }
+
+    .club-detail-hero {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px; margin-bottom: 24px;
+    }
+    .club-detail-top { display: flex; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+    .club-detail-avatar {
+      width: 72px; height: 72px; border-radius: 14px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent), rgba(201,168,76,0.4));
+      display: flex; align-items: center; justify-content: center; font-size: 36px;
+    }
+    .club-detail-info { flex: 1; min-width: 0; }
+    .club-detail-name { font-size: 26px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+    .club-detail-desc { color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+    .club-detail-stats { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px; }
+    .club-stat { text-align: center; }
+    .club-stat-val { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .club-stat-lbl { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .club-detail-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+    .members-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    .members-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+    .member-row {
+      display: flex; align-items: center; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .member-row:last-child { border-bottom: none; }
+    .member-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg-secondary); display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0;
+    }
+    .member-name { font-weight: 600; font-size: 14px; flex: 1; }
+    .member-name a { color: var(--text-primary); text-decoration: none; }
+    .member-name a:hover { color: var(--accent); }
+    .member-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .member-actions { display: flex; gap: 6px; }
+
+    /* ── CREATE MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px;
+    }
+    .modal-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px; max-width: 480px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-box h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+    .form-group input, .form-group textarea {
+      width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 9px; padding: 10px 14px; color: var(--text-primary);
+      font-size: 14px; font-family: var(--font-body); outline: none;
+      transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: var(--accent); }
+    .form-group textarea { min-height: 90px; resize: vertical; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .empty-state .empty-icon { font-size: 52px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 18px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+
+    /* ── LIMITS BAR ── */
+    .limits-bar {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;
+      font-size: 13px; color: var(--text-secondary);
+      display: flex; gap: 20px; flex-wrap: wrap; align-items: center;
+    }
+    .limit-item { display: flex; align-items: center; gap: 7px; }
+    .limit-num { font-weight: 700; color: var(--text-primary); }
+    .limit-num.warn { color: #e67e22; }
+    .limit-num.full { color: #e74c3c; }
+
+    /* ── EDIT DESC ── */
+    #edit-desc-form { display: none; margin-top: 12px; }
+    #edit-desc-form textarea {
+      width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 9px; padding: 10px 14px; color: var(--text-primary);
+      font-size: 14px; font-family: var(--font-body); outline: none;
+      transition: border-color 0.2s; box-sizing: border-box; min-height: 80px; resize: vertical;
+    }
+    #edit-desc-form textarea:focus { border-color: var(--accent); }
+
+    @media (max-width: 600px) {
+      .clubs-grid { grid-template-columns: 1fr; }
+      .club-detail-top { flex-direction: column; }
+      .page-hero h1 { font-size: 28px; }
+    }
+
+    /* ── CLUB CHAT ── */
+    .club-chat-section {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 14px; overflow: hidden; margin-bottom: 0;
+    }
+    .club-chat-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+    .club-chat-header h3 { font-size: 15px; font-weight: 700; margin: 0; flex: 1; }
+    .chat-info-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-muted); font-size: 12px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .chat-info-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .club-chat-messages {
+      height: 420px; overflow-y: auto; padding: 12px 8px;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .club-chat-messages::-webkit-scrollbar { width: 4px; }
+    .club-chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .club-chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .club-chat-msg {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 5px 10px; border-radius: 8px; transition: background 0.12s;
+      position: relative;
+    }
+    .club-chat-msg:hover { background: var(--bg-hover); }
+    .club-chat-msg:hover .msg-actions { opacity: 1; }
+
+    .club-chat-msg.system-msg {
+      text-align: center; justify-content: center;
+      background: rgba(230,126,34,0.08); border: 1px solid rgba(230,126,34,0.2);
+      border-radius: 8px; padding: 6px 14px; margin: 4px 0;
+    }
+    .club-chat-msg.system-msg span {
+      font-size: 12px; color: #e67e22; font-weight: 600;
+    }
+
+    .msg-av {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg,var(--accent),var(--accent-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #000;
+      cursor: pointer; margin-top: 2px;
+    }
+    .msg-body { flex: 1; min-width: 0; }
+    .msg-header { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+    .msg-name {
+      font-weight: 700; font-size: 13px; cursor: pointer;
+      transition: color 0.12s;
+    }
+    .msg-name:hover { color: var(--accent); }
+    .msg-name.admin-name { color: var(--accent); }
+    .msg-name.me-name { color: var(--blue, #5dade2); }
+    .msg-badge {
+      font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+    }
+    .msg-badge.admin { background: rgba(201,168,76,0.15); color: var(--accent); }
+    .msg-badge.club-admin { background: rgba(93,173,226,0.15); color: #5dade2; }
+    .msg-time { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+    .msg-text { font-size: 13px; color: var(--text-secondary); line-height: 1.45; word-break: break-word; }
+    .msg-text .mention { color: #2ecc71; font-weight: 700; }
+    .msg-text .mention-me { color: #2ecc71; font-weight: 700; background: rgba(46,204,113,0.12); border-radius: 3px; padding: 0 2px; }
+
+    .msg-actions {
+      display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s;
+      align-items: center; flex-shrink: 0;
+    }
+    .msg-action-btn {
+      background: none; border: none; cursor: pointer; font-size: 13px;
+      padding: 2px 4px; border-radius: 4px; color: var(--text-muted);
+      transition: all 0.12s;
+    }
+    .msg-action-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
+    .msg-action-btn.danger:hover { color: var(--red, #e74c3c); }
+
+    .club-chat-footer { border-top: 1px solid var(--border); }
+    .club-chat-banned {
+      padding: 14px 16px; text-align: center;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .club-chat-input-row {
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+    }
+    .club-chat-input-row input {
+      flex: 1; background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 9px; padding: 8px 12px; color: var(--text-primary);
+      font-size: 13px; font-family: var(--font-body); outline: none;
+      transition: border-color 0.15s;
+    }
+    .club-chat-input-row input:focus { border-color: var(--accent); }
+    .club-chat-send {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      border: none; border-radius: 9px; padding: 8px 14px;
+      color: #000; font-weight: 700; font-size: 13px; cursor: pointer;
+      transition: opacity 0.15s; white-space: nowrap;
+    }
+    .club-chat-send:hover { opacity: 0.88; }
+    .club-chat-not-member {
+      padding: 14px 16px; text-align: center;
+      font-size: 13px; color: var(--text-muted);
+    }
+
+    /* Ban modal */
+    .club-ban-modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      z-index: 99999; display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .club-ban-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; max-width: 360px; width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .club-ban-box h3 { margin: 0 0 6px; font-size: 17px; }
+    .ban-opts { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+    .ban-opt-btn {
+      padding: 11px 14px; border-radius: 10px; border: 2px solid var(--border);
+      background: var(--bg-secondary); cursor: pointer; font-size: 13px;
+      text-align: left; color: var(--text-primary); transition: all 0.15s;
+      font-family: var(--font-body);
+    }
+    .ban-opt-btn:hover { border-color: var(--accent); background: rgba(201,168,76,0.08); }
+    .ban-opt-btn.danger:hover { border-color: var(--red, #e74c3c); background: rgba(231,76,60,0.08); }
+
+    /* Info tooltip */
+    .chat-info-popup {
+      position: absolute; top: 100%; right: 0; z-index: 999;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; max-width: 280px;
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+
+<!-- header injected by /js/header.js -->
+
+<div id="app" style="padding-top:56px">
+  <div class="clubs-page">
+
+    <!-- ── СПИСОК КЛУБОВ ── -->
+    <div id="clubs-list-view">
+      <div class="page-hero">
+        <h1>🛡️ <span>Клубы</span></h1>
+        <p>Вступай в шахматные клубы, общайся и соревнуйся вместе</p>
+      </div>
+
+      <div id="limits-bar" class="limits-bar" style="display:none">
+        <span class="limit-item">👤 Вы в клубах: <span class="limit-num" id="lim-member">0</span>/10</span>
+        <span class="limit-item">✏️ Создано вами: <span class="limit-num" id="lim-created">0</span>/5</span>
+      </div>
+
+      <div class="toolbar">
+        <div class="tabs-bar">
+          <button class="tab-btn active" id="tab-all" onclick="switchTab('all')">🌍 Все клубы</button>
+          <button class="tab-btn" id="tab-my" onclick="switchTab('my')">🛡️ Мои клубы</button>
+        </div>
+        <div class="search-box">
+          <span style="color:var(--text-muted)">🔍</span>
+          <input type="text" id="search-input" placeholder="Поиск клубов..." oninput="filterClubs()">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateModal()" id="create-btn" style="display:none">+ Создать клуб</button>
+      </div>
+
+      <div class="clubs-grid" id="clubs-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Загрузка...</div>
+      </div>
+    </div>
+
+    <!-- ── СТРАНИЦА КЛУБА ── -->
+    <div id="club-detail">
+      <button class="back-btn" onclick="backToList()">← Все клубы</button>
+
+      <div class="club-detail-grid">
+
+        <!-- ЛЕВАЯ КОЛОНКА: чат -->
+        <div class="club-detail-left">
+          <!-- ── CLUB CHAT ── -->
+          <div class="club-chat-section" id="club-chat-section" style="display:none">
+            <div class="club-chat-header">
+              <span style="font-size:18px">💬</span>
+              <h3>Чат клуба</h3>
+              <div style="position:relative">
+                <button class="chat-info-btn" id="chat-info-btn" title="Правила чата" onclick="toggleChatInfo()">ℹ</button>
+                <div class="chat-info-popup" id="chat-info-popup" style="display:none">
+                  <b style="color:var(--text-primary)">Правила чата</b><br><br>
+                  Мнения авторов сообщений могут не совпадать с позицией администрации клуба и платформы Chess Home.
+                  Администрация не несёт ответственности за высказывания участников.<br><br>
+                  Запрещено: оскорбления, мат, спам, реклама, ссылки на сторонние ресурсы.
+                  Нарушителям может быть выдан мут или бан в чате.
+                </div>
+              </div>
+            </div>
+            <div class="club-chat-messages" id="club-chat-messages"></div>
+            <div class="club-chat-footer" id="club-chat-footer">
+              <div class="club-chat-not-member" id="chat-not-member" style="display:none">
+                Вступите в клуб, чтобы писать в чат
+              </div>
+              <div class="club-chat-banned" id="chat-banned-notice" style="display:none"></div>
+              <div class="club-chat-input-row" id="chat-input-row" style="display:none">
+                <input type="text" id="club-chat-input" placeholder="Написать сообщение..." maxlength="300"
+                  onkeydown="if(event.key==='Enter')sendClubChatMsg()">
+                <button class="club-chat-send" onclick="sendClubChatMsg()">Отправить</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА: инфо клуба + участники -->
+        <div class="club-detail-right">
+          <div class="club-detail-hero" id="detail-hero"></div>
+          <div class="members-section" id="detail-members"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── CREATE MODAL ── -->
+<div class="modal-overlay" id="create-modal" style="display:none" onclick="if(event.target===this)closeCreateModal()">
+  <div class="modal-box">
+    <h2>🛡️ Создать клуб</h2>
+    <div class="form-group">
+      <label>Название клуба *</label>
+      <input type="text" id="new-club-name" placeholder="Например: Русский гамбит" maxlength="40">
+    </div>
+    <div class="form-group">
+      <label>Описание</label>
+      <textarea id="new-club-desc" placeholder="Расскажите о вашем клубе..." maxlength="500"></textarea>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">
+      ⚠️ Название не может содержать «ChessHome» · Максимум 5 созданных клубов · Максимум 10 членств
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeCreateModal()">Отмена</button>
+      <button class="btn btn-primary btn-sm" onclick="createClub()">Создать</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const API = '/api';
+let currentUser = null;
+let allClubs = [];
+let currentTab = 'all';
+let currentClubId = null;
+let clubSocketAuthed = false;
+
+// ── Utils ──────────────────────────────────────────────────────
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toast(msg, type='info') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+async function apiReq(method, path, body) {
+  // Токен в HttpOnly-cookie — Authorization-заголовок из localStorage больше
+  // не нужен, cookie уходит с запросом сама (credentials: 'same-origin').
+  const opts = {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+
+// ── Auth / Header ──────────────────────────────────────────────
+// Хедер управляется через CH API (header.js)
+function updateHeaderUI() {
+  CH.setCurrentUser(currentUser);
+  CH.setActivePage('clubs');
+}
+// Примечание: отдельной logout() здесь больше нет — кнопка "Выйти" в хедере
+// уже сама вызывает CH.logout() напрямую (см. header.js). Локальная обёртка
+// вида "function logout(){ CH.logout(); }" была мёртвым кодом и к тому же
+// ловушкой: если бы её всё-таки вызвали, CH.logout() в фолбэке сама дёргает
+// window.logout(), а тот снова CH.logout() — бесконечная рекурсия.
+
+// ── Load clubs ─────────────────────────────────────────────────
+async function loadClubs() {
+  try {
+    allClubs = await apiReq('GET', '/clubs');
+    renderClubs();
+    updateLimitsBar();
+  } catch(e) {
+    document.getElementById('clubs-grid').innerHTML =
+      `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Не удалось загрузить клубы</div>`;
+  }
+}
+
+function isMember(club) {
+  if (!currentUser) return false;
+  const members = club.members || [];
+  return members.map(m => m.toLowerCase()).includes(currentUser.username.toLowerCase());
+}
+
+function myMemberCount() {
+  return allClubs.filter(c => isMember(c)).length;
+}
+
+function myCreatedCount() {
+  if (!currentUser) return 0;
+  return allClubs.filter(c => (c.createdBy||'').toLowerCase() === currentUser.username.toLowerCase()).length;
+}
+
+function updateLimitsBar() {
+  if (!currentUser) return;
+  const bar = document.getElementById('limits-bar');
+  bar.style.display = 'flex';
+  const memberOf = myMemberCount();
+  const createdBy = myCreatedCount();
+  const limM = document.getElementById('lim-member');
+  const limC = document.getElementById('lim-created');
+  limM.textContent = memberOf;
+  limM.className = 'limit-num' + (memberOf >= 10 ? ' full' : memberOf >= 8 ? ' warn' : '');
+  limC.textContent = createdBy;
+  limC.className = 'limit-num' + (createdBy >= 5 ? ' full' : createdBy >= 4 ? ' warn' : '');
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-all').classList.toggle('active', tab === 'all');
+  document.getElementById('tab-my').classList.toggle('active', tab === 'my');
+  renderClubs();
+}
+
+function filterClubs() { renderClubs(); }
+
+function renderClubs() {
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  let list = allClubs;
+  if (currentTab === 'my') {
+    if (!currentUser) {
+      document.getElementById('clubs-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔐</div><h3>Войдите в аккаунт</h3><p>Чтобы видеть свои клубы</p></div>`;
+      return;
+    }
+    list = allClubs.filter(c => isMember(c));
+  }
+  if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.description||'').toLowerCase().includes(q));
+
+  if (!list.length) {
+    document.getElementById('clubs-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🛡️</div><h3>Клубов не найдено</h3><p>${currentTab === 'my' ? 'Вступите в клуб или создайте свой' : 'Попробуйте другой запрос'}</p></div>`;
+    return;
+  }
+
+  document.getElementById('clubs-grid').innerHTML = list.map(club => {
+    const member = isMember(club);
+    const adminsHtml = (club.admins||[]).map(a =>
+      `<span class="admin-pill"><span class="crown">♛</span>${escapeHtml(a)}</span>`
+    ).join('');
+    return `
+    <div class="club-card${club.official ? ' official' : ''}" onclick="openClub('${club.id}')">
+      <div class="club-card-top">
+        <div class="club-avatar${club.official ? ' official-av' : ''}">${club.official ? '♚' : '🛡️'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="club-title">
+            ${escapeHtml(club.name)}
+            ${club.official ? '<span class="official-badge">OFFICIAL</span>' : ''}
+            ${member ? '<span style="font-size:11px;color:var(--accent)">✓ В клубе</span>' : ''}
+          </div>
+          <div class="club-meta">
+            <span class="club-members">👥 ${club.memberCount||0}</span>
+          </div>
+        </div>
+      </div>
+      <div class="club-desc">${club.description ? escapeHtml(club.description) : ''}</div>
+      <div class="club-admins">${adminsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Club detail ────────────────────────────────────────────────
+async function openClub(id) {
+  currentClubId = id;
+  // Update URL without reload
+  history.pushState({ clubId: id }, '', '/clubs/' + id);
+  document.getElementById('clubs-list-view').style.display = 'none';
+  document.getElementById('club-detail').style.display = 'block';
+  document.getElementById('detail-hero').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:30px">Загрузка...</div>';
+  document.getElementById('detail-members').innerHTML = '';
+  // Hide chat while loading
+  const chatSection = document.getElementById('club-chat-section');
+  if (chatSection) chatSection.style.display = 'none';
+  try {
+    const club = await apiReq('GET', '/clubs/' + id);
+    // Update allClubs with fresh data for this club
+    const idx = allClubs.findIndex(c => c.id === club.id);
+    if (idx !== -1) allClubs[idx] = club; else allClubs.push(club);
+    renderClubDetail(club);
+    // Load chat
+    loadClubChat(id);
+  } catch(e) {
+    document.getElementById('detail-hero').innerHTML = `<div style="color:var(--text-muted);text-align:center;padding:30px">Не удалось загрузить клуб</div>`;
+  }
+}
+
+function backToList() {
+  currentClubId = null;
+  currentClubChatId = null;
+  // Leave club socket room
+  if (clubSocket && clubSocket.connected) {
+    try { clubSocket.emit('leave_club_room', currentClubChatId); } catch {}
+  }
+  history.pushState({}, '', '/clubs');
+  document.getElementById('clubs-list-view').style.display = '';
+  document.getElementById('club-detail').style.display = 'none';
+  const chatSection = document.getElementById('club-chat-section');
+  if (chatSection) chatSection.style.display = 'none';
+  loadClubs();
+}
+
+window.addEventListener('popstate', e => {
+  const path = window.location.pathname;
+  if (path === '/clubs') {
+    document.getElementById('clubs-list-view').style.display = '';
+    document.getElementById('club-detail').style.display = 'none';
+    loadClubs();
+  }
+});
+
+function renderClubDetail(club) {
+  const me = currentUser;
+  const lme = me ? me.username.toLowerCase() : '';
+  const members = club.members || [];
+  const admins = club.admins || [];
+  const isAdmin = admins.map(a=>a.toLowerCase()).includes(lme);
+  const isCreator = (club.createdBy||'').toLowerCase() === lme;
+  const isSuperAdmin = me && (me.username.toLowerCase() === 'chesshome' || me.role === 'admin');
+  const isMem = members.map(m=>m.toLowerCase()).includes(lme);
+
+  const memberOf = myMemberCount();
+  const canJoin = me && !isMem && memberOf < 10;
+
+  // Hero
+  document.getElementById('detail-hero').innerHTML = `
+    <div class="club-detail-top">
+      <div class="club-detail-avatar${club.official ? ' official-av' : ''}" style="${club.official ? 'background:linear-gradient(135deg,#c9a84c,#7c6128)' : ''}">${club.official ? '♚' : '🛡️'}</div>
+      <div class="club-detail-info">
+        <div class="club-detail-name">
+          ${escapeHtml(club.name)}
+          ${club.official ? '<span class="official-badge">OFFICIAL</span>' : ''}
+        </div>
+        <div class="club-detail-stats">
+          <div class="club-stat"><div class="club-stat-val">${club.memberCount||0}</div><div class="club-stat-lbl">участников</div></div>
+          <div class="club-stat"><div class="club-stat-val">${admins.length}</div><div class="club-stat-lbl">админов</div></div>
+        </div>
+        <div style="margin-top:10px;font-size:13px;color:var(--text-muted)">Создан: ${new Date(club.createdAt||0).toLocaleDateString('ru-RU')}</div>
+      </div>
+    </div>
+
+    <div id="desc-display" style="margin-top:16px;color:var(--text-secondary);font-size:14px;line-height:1.7">
+      ${club.description ? escapeHtml(club.description) : ''}
+      ${(isAdmin||isSuperAdmin) ? `<button class="btn btn-ghost btn-sm" style="margin-left:10px" onclick="toggleEditDesc()">✏️</button>` : ''}
+    </div>
+    <div id="edit-desc-form">
+      <textarea id="edit-desc-ta" maxlength="500">${escapeHtml(club.description||'')}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveDesc('${club.id}')">Сохранить</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleEditDesc()">Отмена</button>
+      </div>
+    </div>
+
+    <div class="club-detail-actions" style="margin-top:18px">
+      ${!me ? '' : isMem
+        ? `${!isCreator || !club.official ? `<button class="btn btn-ghost btn-sm" onclick="leaveClub('${club.id}')">🚪 Выйти из клуба</button>` : ''}`
+        : canJoin ? `<button class="btn btn-primary btn-sm" onclick="joinClub('${club.id}')">+ Вступить</button>` : '<span style="color:var(--text-muted);font-size:13px">Вы в 10 клубах (максимум)</span>'
+      }
+      ${isSuperAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteClub('${club.id}')">🗑️ Удалить клуб</button>` : ''}
+    </div>
+  `;
+
+  // Members
+  const membersHtml = members.map(username => {
+    const isAdminM = admins.map(a=>a.toLowerCase()).includes(username.toLowerCase());
+    const isCreatorM = (club.createdBy||'').toLowerCase() === username.toLowerCase();
+    const canKick = (isAdmin || isSuperAdmin) && !isCreatorM && (isSuperAdmin || !isAdminM) && username.toLowerCase() !== lme;
+    const canPromote = (isCreator || isSuperAdmin) && !isAdminM && admins.length < 3 && username.toLowerCase() !== lme;
+    const canDemote = (isCreator || isSuperAdmin) && isAdminM && !isCreatorM;
+    return `
+    <div class="member-row">
+      <div class="member-avatar" style="background:var(--bg-secondary)">${username[0].toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div class="member-name"><a href="/profile/${escapeHtml(username)}">${escapeHtml(username)}</a></div>
+        <div class="member-role">
+          ${isCreatorM ? '<span style="color:var(--accent)">♛ Создатель</span>' : isAdminM ? '<span style="color:var(--text-secondary)">🛡 Администратор</span>' : 'Участник'}
+        </div>
+      </div>
+      <div class="member-actions">
+        ${canPromote ? `<button class="btn btn-ghost btn-sm" title="Назначить администратором" onclick="promoteUser('${club.id}','${username}')">⬆️</button>` : ''}
+        ${canDemote  ? `<button class="btn btn-ghost btn-sm" title="Снять с должности" onclick="demoteUser('${club.id}','${username}')">⬇️</button>` : ''}
+        ${canKick    ? `<button class="btn btn-danger btn-sm" title="Исключить" onclick="kickUser('${club.id}','${username}')">✕</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('detail-members').innerHTML = `
+    <h3>👥 Участники (${members.length})</h3>
+    ${membersHtml || '<div style="color:var(--text-muted);font-size:14px">Нет участников</div>'}
+  `;
+}
+
+function toggleEditDesc() {
+  const form = document.getElementById('edit-desc-form');
+  const disp = document.getElementById('desc-display');
+  const showing = form.style.display !== 'none' && form.style.display !== '';
+  form.style.display = showing ? 'none' : 'block';
+  disp.style.display = showing ? '' : 'none';
+}
+
+async function saveDesc(clubId) {
+  const desc = document.getElementById('edit-desc-ta').value;
+  try {
+    await apiReq('PATCH', '/clubs/' + clubId, { description: desc });
+    toast('Описание обновлено', 'success');
+    openClub(clubId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function joinClub(id) {
+  try {
+    await apiReq('POST', '/clubs/' + id + '/join');
+    toast('Вы вступили в клуб!', 'success');
+    await loadClubs();
+    openClub(id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function leaveClub(id) {
+  if (!confirm('Выйти из клуба?')) return;
+  try {
+    await apiReq('POST', '/clubs/' + id + '/leave');
+    toast('Вы покинули клуб', 'info');
+    backToList();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function kickUser(clubId, username) {
+  if (!confirm(`Исключить ${username} из клуба?`)) return;
+  try {
+    await apiReq('POST', '/clubs/' + clubId + '/kick', { username });
+    toast(`${username} исключён`, 'success');
+    openClub(clubId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function promoteUser(clubId, username) {
+  if (!confirm(`Назначить ${username} администратором?`)) return;
+  try {
+    await apiReq('POST', '/clubs/' + clubId + '/promote', { username });
+    toast(`${username} назначен администратором`, 'success');
+    openClub(clubId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function demoteUser(clubId, username) {
+  if (!confirm(`Снять ${username} с должности администратора?`)) return;
+  try {
+    await apiReq('POST', '/clubs/' + clubId + '/demote', { username });
+    toast(`${username} снят с должности`, 'success');
+    openClub(clubId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteClub(id) {
+  if (!confirm('Удалить клуб? Это действие необратимо.')) return;
+  try {
+    await apiReq('DELETE', '/clubs/' + id);
+    toast('Клуб удалён', 'success');
+    backToList();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Create modal ───────────────────────────────────────────────
+function openCreateModal() {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  document.getElementById('new-club-name').value = '';
+  document.getElementById('new-club-desc').value = '';
+  document.getElementById('create-modal').style.display = 'flex';
+}
+function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
+
+async function createClub() {
+  const name = document.getElementById('new-club-name').value.trim();
+  const description = document.getElementById('new-club-desc').value.trim();
+  if (!name) { toast('Введите название', 'error'); return; }
+  try {
+    const club = await apiReq('POST', '/clubs', { name, description });
+    toast('Клуб создан!', 'success');
+    closeCreateModal();
+    await loadClubs();
+    openClub(club.id);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Club Chat ──────────────────────────────────────────────────
+let clubSocket = null;
+let currentClubChatId = null;
+let clubChatBadWords = ['блять','блядь','бля','пиздец','пизда','хуй','хуе','хер','ебать','ебал','ебан','нахуй','нахер','сука','мудак','дебил','fuck','bitch','shit','asshole','dick','казино','casino','http://','https://','www.','t.me','telegram','discord'];
+
+function chatNorm(t){return t.toLowerCase().replace(/ё/g,'е').replace(/[@]/g,'a').replace(/[0]/g,'o').replace(/[3]/g,'e').replace(/[1!]/g,'i').replace(/\s+/g,'').replace(/[^a-zа-я]/gi,'');}
+function chatHasBad(t){return clubChatBadWords.some(w=>chatNorm(t).includes(chatNorm(w)));}
+
+function formatClubMsg(text, myUsername) {
+  let safe = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  safe = safe.replace(/@([\w\u0400-\u04FF]+)/g, (m, name) => {
+    const isMe = myUsername && name.toLowerCase() === myUsername.toLowerCase();
+    const cls = isMe ? 'mention-me' : 'mention';
+    return `<span class="${cls}">@${name}</span>`;
+  });
+  return safe;
+}
+
+function toggleChatInfo() {
+  const pop = document.getElementById('chat-info-popup');
+  pop.style.display = pop.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#chat-info-btn') && !e.target.closest('#chat-info-popup')) {
+    const pop = document.getElementById('chat-info-popup');
+    if (pop) pop.style.display = 'none';
+  }
+});
+
+function appendClubChatMsg(msg, scroll = true) {
+  const el = document.getElementById('club-chat-messages');
+  if (!el) return;
+
+  if (msg.system) {
+    const div = document.createElement('div');
+    div.className = 'club-chat-msg system-msg';
+    div.innerHTML = `<span>⚠️ ${escapeHtml(msg.message)}</span>`;
+    el.appendChild(div);
+    if (scroll) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+    return;
+  }
+
+  const isMe = currentUser && msg.username === currentUser.username;
+  const isAdmin = msg.role === 'admin';
+  const club = allClubs.find(c => c.id === currentClubChatId);
+  const isClubAdm = club && (club.admins || []).map(a=>a.toLowerCase()).includes((msg.username||'').toLowerCase());
+  const canMod = currentUser && club && isClubModerator_client(club, currentUser.username);
+
+  const div = document.createElement('div');
+  div.className = 'club-chat-msg';
+  div.dataset.msgId = msg.id;
+  div.dataset.username = msg.username;
+
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = (msg.username||'?')[0].toUpperCase();
+  av.onclick = () => { window.location = '/profile/' + encodeURIComponent(msg.username); };
+  div.appendChild(av);
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const header = document.createElement('div');
+  header.className = 'msg-header';
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'msg-name' + (isAdmin ? ' admin-name' : isMe ? ' me-name' : '');
+  nameEl.textContent = (isAdmin ? '👑 ' : '') + msg.username;
+  nameEl.onclick = () => { window.location = '/profile/' + encodeURIComponent(msg.username); };
+  header.appendChild(nameEl);
+
+  if (isAdmin) {
+    const b = document.createElement('span'); b.className = 'msg-badge admin'; b.textContent = 'ADMIN'; header.appendChild(b);
+  } else if (isClubAdm) {
+    const b = document.createElement('span'); b.className = 'msg-badge club-admin'; b.textContent = 'Админ клуба'; header.appendChild(b);
+  }
+
+  // @ кнопка
+  if (currentUser && !isMe) {
+    const atBtn = document.createElement('button');
+    atBtn.className = 'msg-action-btn';
+    atBtn.style.cssText = 'opacity:0.6;font-size:11px;font-weight:700;transition:opacity 0.15s';
+    atBtn.textContent = '@';
+    atBtn.title = 'Обратиться к ' + msg.username;
+    atBtn.onclick = e => { e.stopPropagation(); insertClubMention(msg.username); };
+    header.appendChild(atBtn);
+  }
+
+  const timeEl = document.createElement('span');
+  timeEl.className = 'msg-time';
+  timeEl.textContent = new Date(msg.timestamp).toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit'});
+  header.appendChild(timeEl);
+
+  body.appendChild(header);
+
+  const text = document.createElement('div');
+  text.className = 'msg-text';
+  text.innerHTML = formatClubMsg(msg.message, currentUser?.username);
+  body.appendChild(text);
+
+  div.appendChild(body);
+
+  // Кнопки модерации
+  if (canMod && !isMe) {
+    const acts = document.createElement('div');
+    acts.className = 'msg-actions';
+    const banBtn = document.createElement('button');
+    banBtn.className = 'msg-action-btn danger';
+    banBtn.textContent = '🚫';
+    banBtn.title = 'Бан / Мут';
+    banBtn.onclick = e => { e.stopPropagation(); showClubBanModal(msg.username, club.id); };
+    acts.appendChild(banBtn);
+    // Репорт для не-модераторов (и для модераторов тоже)
+    const repBtn = document.createElement('button');
+    repBtn.className = 'msg-action-btn';
+    repBtn.textContent = '🚩';
+    repBtn.title = 'Репорт';
+    repBtn.onclick = e => { e.stopPropagation(); reportClubMsg(msg.id, club.id); };
+    acts.appendChild(repBtn);
+    div.appendChild(acts);
+  } else if (currentUser && !isMe) {
+    const acts = document.createElement('div');
+    acts.className = 'msg-actions';
+    const repBtn = document.createElement('button');
+    repBtn.className = 'msg-action-btn';
+    repBtn.textContent = '🚩';
+    repBtn.title = 'Репорт';
+    repBtn.onclick = e => { e.stopPropagation(); reportClubMsg(msg.id, club?.id); };
+    acts.appendChild(repBtn);
+    div.appendChild(acts);
+  }
+
+  el.appendChild(div);
+  if (scroll) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function insertClubMention(username) {
+  const inp = document.getElementById('club-chat-input');
+  if (!inp) return;
+  const val = inp.value;
+  const cur = inp.selectionStart;
+  const before = val.slice(0, cur);
+  const sep = before.length > 0 && !before.endsWith(' ') ? ' ' : '';
+  inp.value = before + sep + '@' + username + ' ' + val.slice(cur);
+  inp.focus();
+}
+
+function isClubModerator_client(club, username) {
+  if (!username || !club) return false;
+  const uLow = username.toLowerCase();
+  if (uLow === 'chesshome' || uLow === 'marina64') return true;
+  if (currentUser && currentUser.role === 'admin') return true;
+  return (club.admins || []).map(a => a.toLowerCase()).includes(uLow);
+}
+
+async function loadClubChat(clubId) {
+  currentClubChatId = clubId;
+  const section = document.getElementById('club-chat-section');
+  const msgEl = document.getElementById('club-chat-messages');
+  if (!section || !msgEl) return;
+
+  section.style.display = '';
+  msgEl.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px">Загрузка чата...</div>';
+
+  // Настройка footer
+  const club = allClubs.find(c => c.id === clubId);
+  const inputRow = document.getElementById('chat-input-row');
+  const notMember = document.getElementById('chat-not-member');
+  const bannedNotice = document.getElementById('chat-banned-notice');
+
+  if (!currentUser) {
+    inputRow.style.display = 'none';
+    notMember.style.display = '';
+    bannedNotice.style.display = 'none';
+  } else {
+    notMember.style.display = 'none';
+    bannedNotice.style.display = 'none';
+    inputRow.style.display = 'none';
+
+    try {
+      const data = await apiReq('GET', '/clubs/' + clubId + '/chat');
+      msgEl.innerHTML = '';
+      (data.messages || []).forEach(m => appendClubChatMsg(m, false));
+      msgEl.scrollTop = msgEl.scrollHeight;
+
+      if (data.myBan) {
+        if (data.myBan.permanent) {
+          bannedNotice.textContent = '🚫 Вы заблокированы в чате этого клуба';
+          bannedNotice.style.display = '';
+        } else if (data.myBan.until > Date.now()) {
+          const mins = Math.ceil((data.myBan.until - Date.now()) / 60000);
+          bannedNotice.textContent = `🔇 Вы заглушены ещё ${mins} мин.`;
+          bannedNotice.style.display = '';
+        } else {
+          inputRow.style.display = 'flex';
+        }
+      } else {
+        inputRow.style.display = 'flex';
+      }
+    } catch(e) {
+      if (e.message && e.message.includes('участники')) {
+        msgEl.innerHTML = '';
+        notMember.style.display = '';
+      } else {
+        msgEl.innerHTML = `<div style="padding:16px;color:var(--text-muted);font-size:13px">Ошибка: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+  }
+
+  // Socket.IO
+  setupClubSocket(clubId);
+}
+
+function setupClubSocket(clubId) {
+  if (!clubSocket) {
+    try {
+      clubSocket = io();
+      clubSocket.on('connect', () => {
+        // Сервер сам читает JWT из HttpOnly-cookie в handshake-заголовках и
+        // игнорирует то, что мы передаём аргументом — так что аргумент можно
+        // не отправлять, но эмит нужен всегда (раньше он гейтился по
+        // localStorage-токену, которого теперь нет, и auth никогда не
+        // запускался). Смысл есть только если мы вообще залогинены.
+        if (currentUser) clubSocket.emit('auth');
+      });
+      clubSocket.on('auth_ok', () => {
+        clubSocketAuthed = true;
+        clubSocket.emit('join_club_room', currentClubChatId);
+      });
+    } catch(e) { return; }
+  }
+  // Переходим в комнату
+  try {
+    if (currentUser && clubSocket.connected) {
+      clubSocket.emit('join_club_room', clubId);
+    }
+  } catch(e) {}
+
+  // Убираем старые слушатели
+  clubSocket.off('club_chat_msg');
+  clubSocket.off('club_chat_user_banned');
+
+  clubSocket.on('club_chat_msg', ({ clubId: cId, msg }) => {
+    if (cId !== currentClubChatId) return;
+    appendClubChatMsg(msg, true);
+  });
+
+  clubSocket.on('club_chat_user_banned', ({ clubId: cId, username, sysMsg }) => {
+    if (cId !== currentClubChatId) return;
+    // Удаляем все сообщения забаненного
+    document.querySelectorAll(`#club-chat-messages [data-username="${CSS.escape(username)}"]`).forEach(el => el.remove());
+    // Добавляем системное сообщение
+    if (sysMsg) appendClubChatMsg(sysMsg, true);
+  });
+}
+
+async function sendClubChatMsg() {
+  const inp = document.getElementById('club-chat-input');
+  const text = inp?.value.trim();
+  if (!text || !currentClubChatId) return;
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+
+  if (chatHasBad(text)) {
+    toast('Сообщение содержит запрещённые слова', 'error');
+    return;
+  }
+
+  inp.value = '';
+  try {
+    await apiReq('POST', '/clubs/' + currentClubChatId + '/chat', { message: text });
+  } catch(e) {
+    toast(e.message, 'error');
+    inp.value = text;
+  }
+  inp.focus();
+}
+
+function showClubBanModal(username, clubId) {
+  document.getElementById('club-ban-modal-el')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'club-ban-modal';
+  overlay.id = 'club-ban-modal-el';
+
+  overlay.innerHTML = `
+    <div class="club-ban-box">
+      <h3>🚫 Действие над ${escapeHtml(username)}</h3>
+      <p style="color:var(--text-muted);font-size:13px;margin:4px 0 0">Выберите действие:</p>
+      <div class="ban-opts">
+        <button class="ban-opt-btn" id="cban-mute">🔇 Мут на 15 минут — заглушить + удалить все сообщения</button>
+        <button class="ban-opt-btn danger" id="cban-ban">🚫 Бан — заблокировать навсегда в этом чате + удалить все сообщения</button>
+        <button class="ban-opt-btn" id="cban-report">🚩 Только репорт — уведомить администрацию</button>
+      </div>
+      <button id="cban-cancel" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-family:var(--font-body)">Отмена</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#cban-mute').onclick = async () => {
+    overlay.remove();
+    try {
+      await apiReq('POST', '/clubs/' + clubId + '/chat-ban', { username, type: 'mute' });
+      toast(`${username} заглушен на 15 мин.`, 'success');
+    } catch(e) { toast(e.message, 'error'); }
+  };
+  overlay.querySelector('#cban-ban').onclick = async () => {
+    overlay.remove();
+    try {
+      await apiReq('POST', '/clubs/' + clubId + '/chat-ban', { username, type: 'ban' });
+      toast(`${username} заблокирован в чате клуба`, 'success');
+    } catch(e) { toast(e.message, 'error'); }
+  };
+  overlay.querySelector('#cban-report').onclick = () => {
+    overlay.remove();
+    reportClubMsg(null, clubId, username);
+  };
+  overlay.querySelector('#cban-cancel').onclick = () => overlay.remove();
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+}
+
+async function reportClubMsg(msgId, clubId, forUser) {
+  const reason = prompt(`Причина репорта${forUser ? ' на ' + forUser : ''}:`, 'Нарушение правил');
+  if (reason === null) return;
+  try {
+    await apiReq('POST', '/clubs/' + clubId + '/chat-report', { msgId, reason });
+    toast('Репорт отправлен администраторам', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Init ───────────────────────────────────────────────────────
+async function init() {
+  CH.initHeader();
+  // Токен теперь в HttpOnly-cookie — спрашиваем сервер напрямую вместо
+  // decode-а JWT, который раньше лежал в localStorage.
+  try {
+    currentUser = await apiReq('GET', '/me');
+  } catch {
+    currentUser = null;
+  }
+
+  updateHeaderUI();
+
+  if (currentUser && !currentUser.banned) {
+    document.getElementById('create-btn').style.display = '';
+  }
+
+  // online count handled by online-widget.js
+
+  // Check if we're on a specific club URL
+  const path = window.location.pathname;
+  const match = path.match(/^\/clubs\/(.+)$/);
+  if (match) {
+    await loadClubs();
+    openClub(match[1]);
+  } else {
+    await loadClubs();
+  }
+}
+
+init();
+</script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+</body>
+</html>

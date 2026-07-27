@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Личные сообщения — Chess Home</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/header.js"></script>
+  <link rel="icon" href="/img/logo/favicon.png">
+  <style>
+    /* ══════════════════════════════════════════════════════════
+       INBOX — REDESIGN
+       Keeps all existing class names/markup contracts intact;
+       only visual language is upgraded (spacing, depth, motion,
+       gradients, focus states, scrollbars).
+    ══════════════════════════════════════════════════════════ */
+
+    :root {
+      --inbox-radius: 18px;
+      --inbox-radius-sm: 12px;
+      --inbox-shadow-sm: 0 2px 10px rgba(0,0,0,0.18);
+      --inbox-shadow-md: 0 10px 30px rgba(0,0,0,0.30);
+      --inbox-shadow-glow: 0 0 0 1px rgba(201,168,76,0.25), 0 8px 24px rgba(201,168,76,0.12);
+    }
+
+    /* ─── INBOX LAYOUT ─────────────────────────────────────────── */
+    .inbox-wrap {
+      display: flex;
+      height: calc(100vh - var(--header-h));
+      margin-top: var(--header-h);
+      overflow: hidden;
+      background:
+        radial-gradient(1200px 500px at 15% -10%, rgba(201,168,76,0.05), transparent 60%),
+        var(--bg-primary);
+    }
+
+    /* ─── SIDEBAR ──────────────────────────────────────────────── */
+    .inbox-sidebar {
+      width: 336px;
+      min-width: 270px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .inbox-sidebar-header {
+      padding: 22px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: linear-gradient(180deg, rgba(201,168,76,0.05), transparent);
+    }
+
+    .inbox-sidebar-header h2 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      color: var(--accent);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.2px;
+    }
+
+    .inbox-search {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 16px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .inbox-search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.15), inset 0 1px 2px rgba(0,0,0,0.15);
+      background: var(--bg-hover);
+    }
+    .inbox-search::placeholder { color: var(--text-muted); }
+
+    .inbox-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 8px;
+      scrollbar-gutter: stable;
+    }
+
+    /* Custom scrollbars — sidebar + messages */
+    .inbox-list::-webkit-scrollbar,
+    .inbox-messages::-webkit-scrollbar { width: 8px; }
+    .inbox-list::-webkit-scrollbar-track,
+    .inbox-messages::-webkit-scrollbar-track { background: transparent; }
+    .inbox-list::-webkit-scrollbar-thumb,
+    .inbox-messages::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 999px;
+    }
+    .inbox-list::-webkit-scrollbar-thumb:hover,
+    .inbox-messages::-webkit-scrollbar-thumb:hover { background: var(--accent-dark); }
+
+    .inbox-conv-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 12px;
+      margin: 0 0 4px;
+      cursor: pointer;
+      transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+      position: relative;
+      border-radius: var(--inbox-radius-sm);
+      border-left: 3px solid transparent;
+    }
+    .inbox-conv-item:hover {
+      background: var(--bg-hover);
+      transform: translateX(2px);
+    }
+    .inbox-conv-item.active {
+      background: var(--bg-card);
+      border-left-color: var(--accent);
+      box-shadow: var(--inbox-shadow-sm);
+    }
+
+    .inbox-conv-avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #000;
+      flex-shrink: 0;
+      position: relative;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.25), inset 0 0 0 2px rgba(255,255,255,0.06);
+    }
+
+    .inbox-conv-avatar .online-dot-sm {
+      position: absolute;
+      bottom: 1px; right: 1px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      border: 2px solid var(--bg-secondary);
+    }
+
+    .inbox-conv-info { flex: 1; min-width: 0; }
+
+    .inbox-conv-name {
+      font-weight: 700;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-primary);
+    }
+
+    .inbox-conv-preview {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 3px;
+    }
+
+    .inbox-conv-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .inbox-conv-time {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .inbox-unread-badge {
+      background: var(--accent);
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      min-width: 18px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(201,168,76,0.4);
+    }
+
+    .inbox-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 70px 24px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .inbox-empty-state .empty-icon {
+      font-size: 48px;
+      margin-bottom: 14px;
+      opacity: 0.55;
+      animation: floatIcon 3.5s ease-in-out infinite;
+    }
+    .inbox-empty-state p { font-size: 14px; }
+
+    @keyframes floatIcon {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* ─── CHAT AREA ────────────────────────────────────────────── */
+    .inbox-chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      background:
+        radial-gradient(900px 400px at 100% 0%, rgba(201,168,76,0.04), transparent 55%),
+        var(--bg-primary);
+    }
+
+    .inbox-chat-header {
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-secondary);
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+      z-index: 2;
+    }
+
+    .inbox-chat-header .chat-user-info { flex: 1; }
+    .inbox-chat-header .chat-user-name {
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+    .inbox-chat-header .chat-user-name:hover { color: var(--accent); }
+    .inbox-chat-header .chat-user-status {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .chat-online-status { color: var(--green); }
+
+    .inbox-chat-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 10px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: rgba(224,85,85,0.08);
+      transform: translateY(-1px);
+    }
+
+    /* ─── MESSAGES ─────────────────────────────────────────────── */
+    .inbox-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .msg-day-divider {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      color: var(--text-muted);
+      margin: 18px 0 12px;
+      position: relative;
+    }
+    .msg-day-divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0; right: 0;
+      height: 1px;
+      background: var(--border);
+      z-index: 0;
+    }
+    .msg-day-divider span {
+      background: var(--bg-primary);
+      padding: 4px 14px;
+      position: relative;
+      z-index: 1;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+    }
+
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin-bottom: 3px;
+      animation: msgIn 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to   { opacity: 1; transform: none; }
+    }
+    .msg-row.mine { flex-direction: row-reverse; }
+
+    .msg-avatar-sm {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--bg-hover), var(--bg-card));
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0; cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .msg-avatar-sm:hover { border-color: var(--accent); transform: scale(1.06); }
+    .msg-avatar-sm.mine-av {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #000;
+      border-color: transparent;
+    }
+
+    .msg-bubble {
+      max-width: 100%;
+      min-width: 120px;
+      padding: 10px 15px;
+      border-radius: 17px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--inbox-shadow-sm);
+      transition: box-shadow 0.15s;
+    }
+    .msg-row:hover .msg-bubble { box-shadow: 0 4px 16px rgba(0,0,0,0.24); }
+
+    /* wrap = second child (avatar is first); row-reverse makes it visually right for .mine */
+    .msg-row > div + div {
+      max-width: min(72%, 600px);
+    }
+    .msg-row.mine .msg-bubble {
+      background: linear-gradient(135deg, #1a2a0e, #1d2f10);
+      border-color: rgba(76, 175, 114, 0.3);
+      border-bottom-right-radius: 4px;
+      border-bottom-left-radius: 17px;
+    }
+
+    .msg-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-align: right;
+      padding: 0 4px;
+    }
+    .msg-row:not(.mine) .msg-time { text-align: left; }
+
+    .msg-group { margin-bottom: 10px; }
+
+    /* ─── INPUT ────────────────────────────────────────────────── */
+    .inbox-input-area {
+      padding: 16px 22px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    .inbox-text-input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 11px 18px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 14px;
+      outline: none;
+      resize: none;
+      min-height: 46px;
+      max-height: 120px;
+      line-height: 1.5;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      overflow-y: auto;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.18);
+    }
+    .inbox-text-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.15), inset 0 1px 3px rgba(0,0,0,0.18);
+    }
+    .inbox-text-input::placeholder { color: var(--text-muted); }
+
+    .send-btn {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #000;
+      border: none;
+      border-radius: 14px;
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+      flex-shrink: 0;
+      height: 46px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 12px rgba(201,168,76,0.3);
+    }
+    .send-btn:hover {
+      background: var(--accent-light);
+      box-shadow: 0 6px 24px rgba(201,168,76,0.5);
+      transform: translateY(-2px) scale(1.03);
+    }
+    .send-btn:active { transform: translateY(0) scale(0.97); }
+    .send-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* ─── BLOCKED BAR ──────────────────────────────────────────── */
+    .blocked-bar {
+      padding: 14px 20px;
+      background: rgba(224,85,85,0.08);
+      border-top: 1px solid rgba(224,85,85,0.2);
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: none;
+    }
+    .blocked-bar a {
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* ─── WELCOME SCREEN ───────────────────────────────────────── */
+    .inbox-welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px;
+    }
+    .inbox-welcome .welcome-icon {
+      font-size: 68px;
+      margin-bottom: 22px;
+      opacity: 0.35;
+      animation: floatIcon 4s ease-in-out infinite;
+    }
+    .inbox-welcome h3 {
+      font-family: var(--font-display);
+      font-size: 23px;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+    }
+    .inbox-welcome p { font-size: 14px; max-width: 320px; }
+
+    /* ─── NOTIFICATION BELL ────────────────────────────────────── */
+    .inbox-notif-btn {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 5px 12px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .inbox-notif-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .inbox-notif-btn .notif-count {
+      background: var(--red);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 8px;
+      min-width: 16px;
+      text-align: center;
+      display: none;
+    }
+
+    /* ─── IN-SITE NOTIFICATION TOAST ──────────────────────────── */
+    .dm-notif-toast {
+      position: fixed;
+      top: 74px;
+      right: 20px;
+      z-index: 9999;
+      background: var(--bg-card);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--inbox-shadow-md), 0 0 0 1px var(--accent-glow);
+      max-width: 320px;
+      cursor: pointer;
+      animation: slideInToast 0.35s cubic-bezier(0.34,1.56,0.64,1);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    @keyframes slideInToast {
+      from { opacity: 0; transform: translateX(30px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .dm-notif-toast .notif-av {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 700; color: #000; flex-shrink: 0;
+    }
+    .dm-notif-toast .notif-body { flex: 1; }
+    .dm-notif-toast .notif-title { font-weight: 700; font-size: 13px; }
+    .dm-notif-toast .notif-preview { font-size: 12px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+    .dm-notif-toast .notif-close {
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 2px;
+      transition: color 0.15s;
+    }
+    .dm-notif-toast .notif-close:hover { color: var(--text-primary); }
+
+    /* ─── BLOCK CONFIRM MODAL ──────────────────────────────────── */
+    .block-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .block-modal-overlay.open { display: flex; animation: fadeInOverlay 0.2s ease; }
+    @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+    .block-modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: var(--inbox-shadow-md);
+      animation: popInModal 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popInModal { from { opacity: 0; transform: scale(0.92) translateY(8px); } to { opacity: 1; transform: none; } }
+    .block-modal h3 { font-family: var(--font-display); margin-bottom: 10px; }
+    .block-modal p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+    .block-modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ─── LOADING ──────────────────────────────────────────────── */
+    .inbox-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      flex-direction: column;
+      gap: 12px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* ─── NOT LOGGED ───────────────────────────────────────────── */
+    .not-logged-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px;
+    }
+    .not-logged-screen .nl-icon { font-size: 64px; opacity: 0.35; animation: floatIcon 4s ease-in-out infinite; }
+    .not-logged-screen h3 {
+      font-family: var(--font-display);
+      font-size: 22px;
+      color: var(--text-secondary);
+    }
+
+    /* ─── MOBILE ───────────────────────────────────────────────── */
+    @media (max-width: 680px) {
+      .inbox-wrap {
+        height: calc(100vh - var(--header-h));
+      }
+      .inbox-sidebar {
+        width: 100%;
+        display: none;
+      }
+      .inbox-sidebar.visible { display: flex; }
+      .inbox-chat { display: none; }
+      .inbox-chat.visible { display: flex; }
+      .back-btn { display: flex !important; }
+
+      .inbox-sidebar-header { padding: 14px 16px 12px; }
+      .inbox-sidebar-header h2 { font-size: 17px; margin-bottom: 10px; }
+      .inbox-search { font-size: 15px; padding: 10px 14px; }
+
+      .inbox-conv-item { padding: 13px 12px; }
+      .inbox-conv-avatar { width: 40px; height: 40px; font-size: 16px; }
+      .inbox-conv-name { font-size: 15px; }
+      .inbox-conv-preview { font-size: 13px; }
+
+      .inbox-chat-header { padding: 12px 14px; }
+      .inbox-chat-header .chat-user-name { font-size: 15px; }
+
+      .inbox-messages { padding: 16px 12px; }
+      .msg-bubble { font-size: 15px; padding: 10px 14px; }
+      .msg-row > div + div { max-width: min(85%, 600px); }
+
+      .inbox-input-area { padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+      .inbox-text-input { font-size: 16px; /* prevents iOS zoom */ }
+      .send-btn { padding: 10px 16px; }
+
+      .inbox-chat-actions .icon-btn { padding: 8px; font-size: 16px; }
+    }
+
+    /* ─── HAMBURGER NAV ────────────────────────────────────────── */
+    .burger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:none;flex-shrink:0}
+    .burger span{display:block;width:22px;height:2px;background:var(--text-primary);border-radius:2px;transition:all .25s}
+    .burger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+    .burger.open span:nth-child(2){opacity:0}
+    .burger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+    .mobile-nav{display:none;position:fixed;top:var(--header-h);left:0;right:0;background:rgba(14,15,19,.98);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);z-index:999;padding:12px 0;flex-direction:column;gap:2px}
+    .mobile-nav.open{display:flex}
+    .mobile-nav a{color:var(--text-secondary);padding:12px 24px;font-size:15px;font-weight:600;transition:color .15s,background .15s}
+    .mobile-nav a:hover,.mobile-nav a.active{color:var(--accent);background:rgba(201,168,76,.06)}
+    @media(max-width:680px){
+      .burger{display:flex}
+      nav .nav-links{display:none}
+    }
+
+    .back-btn {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      margin-right: 4px;
+      transition: transform 0.15s;
+    }
+    .back-btn:hover { transform: translateX(-2px); }
+
+    /* ─── LIGHTWEIGHT ANIMATED ICONS ─────────────────────────────
+       Inline SVG, animated with transform/opacity only (GPU
+       compositable) — no gif files, no network requests, no jank
+       even on low-end phones.
+    ── */
+    .ico { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+    .ico-sm { width: 15px; height: 15px; }
+    .ico-md { width: 21px; height: 21px; }
+    .ico-lg { width: 46px; height: 46px; }
+    .ico-xl { width: 60px; height: 60px; }
+
+    @keyframes pingRing {
+      0%   { transform: scale(1);   opacity: 0.75; }
+      100% { transform: scale(2.6); opacity: 0; }
+    }
+    .ping-ring {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: pingRing 2.1s cubic-bezier(0,0,0.2,1) infinite;
+    }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0);   opacity: 0.5; }
+      30%           { transform: translateY(-2.5px); opacity: 1; }
+    }
+    .typing-dot {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: typingBounce 1.3s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(3) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes noticePulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.55; }
+    }
+    .notif-ico { animation: noticePulse 1.6s ease-in-out infinite; }
+
+    .send-btn svg {
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .send-btn:hover svg { transform: translate(2px,-2px) rotate(-8deg); }
+    .send-btn:active svg { transform: translate(4px,-3px) rotate(-12deg) scale(0.92); }
+  </style>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<!-- header injected by /js/header.js -->
+
+
+<!-- ── INBOX APP ───────────────────────────────────────────────── -->
+<div class="inbox-wrap" id="inbox-wrap">
+
+  <!-- SIDEBAR -->
+  <div class="inbox-sidebar visible" id="inbox-sidebar">
+    <div class="inbox-sidebar-header">
+      <h2>
+        <svg class="ico ico-md" style="color:var(--accent)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="3"></rect>
+          <polyline points="22 6 12 13 2 6"></polyline>
+          <circle cx="19" cy="6" r="2.1" fill="var(--accent)" stroke="none"></circle>
+          <circle class="ping-ring" cx="19" cy="6" r="2.1" fill="none" stroke="var(--accent)" stroke-width="1.3"></circle>
+        </svg>
+        Личные сообщения
+      </h2>
+      <input class="inbox-search" id="conv-search" placeholder="Поиск по беседам..." oninput="filterConvs(this.value)">
+    </div>
+    <div class="inbox-list" id="inbox-list">
+      <div class="inbox-loading">
+        <div class="spinner" style="margin:0 auto"></div>
+        Загрузка...
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT AREA -->
+  <div class="inbox-chat" id="inbox-chat">
+    <!-- Welcome / not-logged states filled by JS -->
+  </div>
+
+</div>
+
+<!-- ─── BLOCK CONFIRM MODAL ──────────────────────────────────── -->
+<div class="block-modal-overlay" id="block-modal">
+  <div class="block-modal">
+    <div style="font-size:36px;margin-bottom:12px">🚫</div>
+    <h3 id="block-modal-title">Заблокировать?</h3>
+    <p id="block-modal-text">Этот пользователь не сможет отправлять вам сообщения.</p>
+    <div class="block-modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeBlockModal()">Отмена</button>
+      <button class="btn btn-danger btn-sm" id="block-modal-confirm">Заблокировать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container (DM notifications) -->
+<div id="toast-container"></div>
+
+<!-- ── SCRIPTS ─────────────────────────────────────────────────── -->
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/ping-widget.js"></script>
+<script>
+
+// ══════════════════════════════════════════════════════════════
+//  CHESS HOME — INBOX  (Личные Сообщения)
+//  Безопасность: переписку видят только 2 участника + admin
+// ══════════════════════════════════════════════════════════════
+
+const API = '/api';
+let socket = null;
+let currentUser = null;
+// Авторизация теперь через HttpOnly-cookie (ch_token), а не localStorage.
+const DEVICE_ID = localStorage.getItem('ch_device_id') || 'anon';
+const ADMINS = ['jwvc', 'Marina64']; // owners — имеют доступ ко всем чатам
+const SYSTEM_SENDER = 'Система'; // системные сообщения от админа — читать можно, отвечать нельзя
+function isSystemPartner(name) { return !!name && name.toLowerCase() === SYSTEM_SENDER.toLowerCase(); }
+
+// ─── ICONS (inline SVG, animated via CSS transform/opacity only —
+//      no gif/image requests, so it stays smooth on mobile too) ──
+const WARNING_ICON = `<svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+  <line x1="12" y1="9" x2="12" y2="13"></line>
+  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+</svg>`;
+const LOCK_ICON = `<svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+</svg>`;
+const MAIL_ICON_XL = `<svg class="ico ico-xl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="2" y="4" width="20" height="16" rx="3"></rect>
+  <polyline points="22 6 12 13 2 6"></polyline>
+  <circle cx="19.5" cy="5.5" r="2" fill="var(--accent)" stroke="none"></circle>
+  <circle class="ping-ring" cx="19.5" cy="5.5" r="2" fill="none" stroke="var(--accent)" stroke-width="1.2"></circle>
+</svg>`;
+const CHAT_ICON_SM = `<svg class="ico ico-sm notif-ico" style="margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+</svg>`;
+const SEND_ICON = `<svg class="ico ico-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <line x1="22" y1="2" x2="11" y2="13"></line>
+  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+</svg>`;
+
+function toggleMobileNav(){
+  const nav=document.getElementById('mobile-nav');
+  const btn=document.getElementById('burger-btn');
+  nav.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#burger-btn')&&!e.target.closest('#mobile-nav')){
+    document.getElementById('mobile-nav')?.classList.remove('open');
+    document.getElementById('burger-btn')?.classList.remove('open');
+  }
+});
+
+// ─── helpers ──────────────────────────────────────────────────
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function relativeTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) {
+    return d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+  }
+  const days = Math.floor((now - d) / 86400000);
+  if (days === 1) return 'вчера';
+  if (days < 7) return d.toLocaleDateString('ru', { weekday: 'short' });
+  return d.toLocaleDateString('ru', { day: '2-digit', month: '2-digit' });
+}
+
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatDay(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Сегодня';
+  const days = Math.floor((now - d) / 86400000);
+  if (days === 1) return 'Вчера';
+  return d.toLocaleDateString('ru', { day: 'numeric', month: 'long' });
+}
+
+// ─── API ──────────────────────────────────────────────────────
+async function apiGet(path) {
+  const res = await fetch(API + path, {
+    credentials: 'include'
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+async function apiPost(path, body) {
+  const res = await fetch(API + path, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Device-Id': DEVICE_ID
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+
+// ─── STATE ────────────────────────────────────────────────────
+let conversations = [];     // [{partner, lastMsg, lastTs, unread, blocked, blockedByPartner}]
+let activePartner = null;   // string username
+let messages = [];          // array of message objects
+let onlineUsers = new Set();// usernames online
+let pollingTimer = null;
+let convPollingTimer = null;
+
+// ─── TOAST ────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${{success:'✓',error:'✗',info:'ℹ'}[type]||'ℹ'}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(30px)';
+    el.style.transition = '0.3s';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
+// ─── DM IN-SITE NOTIFICATION ──────────────────────────────────
+function showDmNotif(fromUsername, preview) {
+  // Don't show if we're already in that chat
+  if (activePartner === fromUsername) return;
+
+  const existing = document.getElementById('dm-notif-' + fromUsername);
+  if (existing) existing.remove();
+
+  const el = document.createElement('div');
+  el.className = 'dm-notif-toast';
+  el.id = 'dm-notif-' + fromUsername;
+
+  el.innerHTML = `
+    <div class="notif-av">${fromUsername[0].toUpperCase()}</div>
+    <div class="notif-body">
+      <div class="notif-title">${CHAT_ICON_SM} Новое сообщение от ${escapeHtml(fromUsername)}</div>
+      <div class="notif-preview">${escapeHtml(preview)}</div>
+    </div>
+    <div class="notif-close" onclick="this.parentElement.remove()">✕</div>
+  `;
+
+  el.addEventListener('click', (e) => {
+    if (e.target.classList.contains('notif-close')) return;
+    el.remove();
+    openConversation(fromUsername);
+  });
+
+  document.body.appendChild(el);
+
+  setTimeout(() => {
+    if (el.isConnected) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateX(30px)';
+      setTimeout(() => el.remove(), 300);
+    }
+  }, 6000);
+}
+
+// ─── AUTH UI ──────────────────────────────────────────────────
+function updateAuthUI() {
+  const headerRight = document.getElementById('header-right');
+  if (!headerRight) return;
+
+  if (currentUser) {
+    const isAdmin = currentUser.role === 'admin' || ADMINS.includes(currentUser.username);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'user-menu';
+
+    const btn = document.createElement('button');
+    btn.className = 'user-btn';
+    btn.onclick = toggleUserMenu;
+    btn.innerHTML = `
+      <div class="player-avatar" style="width:28px;height:28px;font-size:13px">${currentUser.username[0].toUpperCase()}</div>
+      <span style="font-size:14px;font-weight:600">${escapeHtml(currentUser.username)}</span>
+      <span class="rating-pill">${currentUser.rating}</span>
+      ${isAdmin ? '<span style="color:var(--accent);font-size:11px;font-weight:700;margin-left:4px">ADMIN</span>' : ''}
+      <span style="color:var(--text-muted);font-size:12px;margin-left:2px">▾</span>`;
+    wrap.appendChild(btn);
+
+    const drop = document.createElement('div');
+    drop.className = 'user-dropdown';
+    drop.id = 'user-dropdown';
+
+    const items = [
+      { label: '👤 Мой профиль',       action: () => { window.location = '/profile'; } },
+      { label: '✉️ Личные сообщения',  action: () => { window.location = '/inbox'; } },
+      { label: '⚙️ Настройки',          action: () => { window.location = '/settings'; } },
+    ];
+    if (isAdmin) {
+      items.push({ label: '🛡 Панель Admin', action: () => { window.location = '/admin'; } });
+    }
+    items.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'dropdown-item';
+      el.textContent = item.label;
+      el.addEventListener('click', item.action);
+      drop.appendChild(el);
+    });
+    drop.appendChild(document.createElement('hr'));
+    const logoutEl = document.createElement('div');
+    logoutEl.className = 'dropdown-item danger';
+    logoutEl.textContent = '🚪 Выйти';
+    logoutEl.addEventListener('click', () => {
+      currentUser = null;
+      // Серверный логаут очищает HttpOnly-cookie ch_token.
+      apiPost('/logout', {}).catch(() => {}).finally(() => { window.location = '/'; });
+    });
+    drop.appendChild(logoutEl);
+
+    wrap.appendChild(drop);
+    headerRight.innerHTML = '';
+    headerRight.appendChild(wrap);
+
+  } else {
+    headerRight.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="window.location='/'">Войти</button>
+      <button class="btn btn-primary btn-sm" onclick="window.location='/'">Регистрация</button>`;
+  }
+}
+
+function toggleUserMenu() { document.getElementById('user-dropdown')?.classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.user-menu')) document.getElementById('user-dropdown')?.classList.remove('open'); });
+
+// ─── SOCKET ───────────────────────────────────────────────────
+function connectSocket() {
+  if (!currentUser || socket) return;
+  // Сокет сам читает HttpOnly-cookie ch_token из заголовков handshake на
+  // сервере — withCredentials гарантирует, что cookie доедет до сервера.
+  socket = io({ withCredentials: true });
+  socket.on('connect', () => socket.emit('auth'));
+
+  socket.on('online_count', count => {
+    const el = document.getElementById('online-count');
+    if (el) el.textContent = count;
+  });
+
+  // Incoming DM via socket
+  socket.on('dm_message', (msg) => {
+    // msg: { from, to, text, ts, id }
+    const isForMe = msg.to === currentUser.username;
+    const isMine  = msg.from === currentUser.username;
+    if (!isForMe && !isMine) return;
+
+    const partner = isForMe ? msg.from : msg.to;
+
+    // Update conv list
+    updateConvLastMsg(partner, msg.text, msg.ts, isForMe);
+
+    // Если это МОЁ сообщение — оно уже отрисовано оптимистично в sendDm().
+    // Только добавляем в массив messages[] чтобы polling не дублировал.
+    if (isMine) {
+      if (!messages.find(m => m.id === msg.id)) {
+        messages.push(msg);
+      }
+      return;
+    }
+
+    if (isForMe && activePartner !== partner) {
+      showDmNotif(msg.from, msg.text);
+      const c = conversations.find(c => c.partner === partner);
+      if (c) { c.unread = (c.unread || 0) + 1; renderConvList(); }
+    }
+
+    // Чужое сообщение в открытом чате — добавляем
+    if (activePartner === partner) {
+      // Защита от дубля (на случай гонки с polling)
+      if (!messages.find(m => m.id === msg.id)) {
+        messages.push(msg);
+        appendMessageToChat(msg, false);
+        markRead(partner);
+      }
+      const c = conversations.find(c => c.partner === partner);
+      if (c) c.unread = 0;
+      renderConvList();
+    }
+  });
+
+  socket.on('dm_read', ({ by }) => {
+    // The other person read our messages — update read receipts if needed
+  });
+}
+
+// ─── LOAD CONVERSATIONS ───────────────────────────────────────
+async function loadConversations() {
+  if (!currentUser) { renderNotLogged(); return; }
+  try {
+    const data = await apiGet('/dm/conversations');
+    conversations = data || [];
+    renderConvList();
+  } catch (e) {
+    document.getElementById('inbox-list').innerHTML =
+      `<div class="inbox-empty-state"><div class="empty-icon">${WARNING_ICON}</div><p>${escapeHtml(e.message)}</p></div>`;
+  }
+}
+
+function updateConvLastMsg(partner, text, ts, incoming) {
+  let c = conversations.find(c => c.partner === partner);
+  if (c) {
+    c.lastMsg = text;
+    c.lastTs = ts;
+    if (incoming && activePartner !== partner) c.unread = (c.unread || 0) + 1;
+  } else {
+    conversations.unshift({ partner, lastMsg: text, lastTs: ts, unread: incoming ? 1 : 0 });
+  }
+  conversations.sort((a, b) => new Date(b.lastTs) - new Date(a.lastTs));
+  renderConvList();
+}
+
+// ─── RENDER CONV LIST ──────────────────────────────────────────
+let convFilter = '';
+function filterConvs(q) { convFilter = q.toLowerCase(); renderConvList(); }
+
+function renderConvList() {
+  const list = document.getElementById('inbox-list');
+  if (!list) return;
+
+  const filtered = conversations.filter(c =>
+    !convFilter || c.partner.toLowerCase().includes(convFilter)
+  );
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="inbox-empty-state">
+      <div class="empty-icon">
+        <svg class="ico ico-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+          <circle class="typing-dot" cx="8.5" cy="12" r="1.1" fill="currentColor" stroke="none"></circle>
+          <circle class="typing-dot" cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"></circle>
+          <circle class="typing-dot" cx="15.5" cy="12" r="1.1" fill="currentColor" stroke="none"></circle>
+        </svg>
+      </div>
+      <p>${convFilter ? 'Ничего не найдено' : 'У вас пока нет переписок'}</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'inbox-conv-item' + (c.partner === activePartner ? ' active' : '');
+    row.dataset.partner = c.partner;
+
+    const isOnline = onlineUsers.has(c.partner);
+    const isSystem = isSystemPartner(c.partner);
+
+    row.innerHTML = `
+      <div class="inbox-conv-avatar">
+        ${isSystem ? '📢' : escapeHtml(c.partner[0].toUpperCase())}
+        ${isOnline && !isSystem ? '<div class="online-dot-sm"></div>' : ''}
+      </div>
+      <div class="inbox-conv-info">
+        <div class="inbox-conv-name">${escapeHtml(c.partner)}${isSystem ? ' <span style="font-size:10.5px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:middle">СИСТЕМА</span>' : ''}</div>
+        <div class="inbox-conv-preview">${c.blocked ? '🚫 Заблокирован' : escapeHtml(c.lastMsg || '')}</div>
+      </div>
+      <div class="inbox-conv-meta">
+        <div class="inbox-conv-time">${c.lastTs ? relativeTime(c.lastTs) : ''}</div>
+        ${c.unread ? `<div class="inbox-unread-badge">${c.unread > 99 ? '99+' : c.unread}</div>` : ''}
+      </div>`;
+
+    row.addEventListener('click', () => openConversation(c.partner));
+    list.appendChild(row);
+  });
+}
+
+// ─── OPEN CONVERSATION ────────────────────────────────────────
+async function openConversation(partner) {
+  if (!currentUser) return;
+
+  // Self-chat guard
+  if (partner === currentUser.username) {
+    toast('Нельзя переписываться с самим собой', 'error');
+    return;
+  }
+
+  activePartner = partner;
+  renderConvList(); // highlight active
+
+  const chatArea = document.getElementById('inbox-chat');
+
+  // Mobile
+  document.getElementById('inbox-sidebar')?.classList.remove('visible');
+  chatArea.classList.add('visible');
+
+  // Loading state
+  chatArea.innerHTML = `
+    <div class="inbox-chat-header">
+      <button class="back-btn" onclick="mobileBack()">← Назад</button>
+      <div class="inbox-conv-avatar" style="width:40px;height:40px;font-size:16px">${escapeHtml(partner[0].toUpperCase())}</div>
+      <div class="chat-user-info">
+        <div class="chat-user-name" onclick="window.location='/profile/${escapeHtml(partner)}'">${escapeHtml(partner)}</div>
+        <div class="chat-user-status">загрузка...</div>
+      </div>
+      <div class="inbox-chat-actions">
+        <button class="icon-btn" title="Заблокировать" onclick="confirmBlock('${escapeHtml(partner)}')">🚫 Блок</button>
+      </div>
+    </div>
+    <div class="inbox-loading"><div class="spinner" style="margin:0 auto"></div> Загрузка сообщений...</div>`;
+
+  try {
+    const data = await apiGet('/dm/messages/' + encodeURIComponent(partner));
+    messages = data.messages || [];
+    const conv = conversations.find(c => c.partner === partner) || {};
+    conv.unread = 0;
+    renderConvList();
+
+    // Mark as read
+    markRead(partner);
+
+    // Build chat UI
+    buildChatUI(partner, data);
+
+  } catch (e) {
+    chatArea.innerHTML = `<div class="inbox-welcome">
+      <div class="welcome-icon">${WARNING_ICON}</div>
+      <h3>Ошибка</h3>
+      <p>${escapeHtml(e.message)}</p>
+    </div>`;
+  }
+
+  // Start polling for new messages
+  clearInterval(pollingTimer);
+  pollingTimer = setInterval(() => pollMessages(partner), 4000);
+}
+
+function buildChatUI(partner, data) {
+  const chatArea = document.getElementById('inbox-chat');
+  const conv = conversations.find(c => c.partner === partner) || {};
+  const isBlocked = conv.blocked;
+  const isBlockedBy = data.blockedByPartner;
+  const isOnline = onlineUsers.has(partner);
+  const isSystem = isSystemPartner(partner);
+  const profileClick = isSystem ? '' : `onclick="window.location='/profile/${escapeHtml(partner)}'"`;
+
+  chatArea.innerHTML = `
+    <div class="inbox-chat-header">
+      <button class="back-btn" onclick="mobileBack()">← Назад</button>
+      <div class="inbox-conv-avatar" style="width:40px;height:40px;font-size:16px;${isSystem ? '' : 'cursor:pointer'}" ${profileClick}>${isSystem ? '📢' : escapeHtml(partner[0].toUpperCase())}${isOnline && !isSystem ? '<div class="online-dot-sm"></div>' : ''}</div>
+      <div class="chat-user-info">
+        <div class="chat-user-name" ${isSystem ? '' : 'style="cursor:pointer"'} ${profileClick}>${escapeHtml(partner)}</div>
+        <div class="chat-user-status ${isOnline && !isSystem ? 'chat-online-status' : ''}">${isSystem ? 'Системные уведомления' : (isOnline ? '● онлайн' : 'не в сети')}</div>
+      </div>
+      <div class="inbox-chat-actions">
+        ${isSystem ? '' : (isBlocked
+          ? `<button class="icon-btn" style="color:var(--green);border-color:var(--green)" onclick="unblockUser('${escapeHtml(partner)}')">✅ Разблокировать</button>`
+          : `<button class="icon-btn" onclick="confirmBlock('${escapeHtml(partner)}')">🚫 Заблокировать</button>`)
+        }
+      </div>
+    </div>
+    <div class="inbox-messages" id="msg-list"></div>
+    <div class="blocked-bar" id="blocked-bar" style="${!isSystem && (isBlocked || isBlockedBy) ? 'display:block' : ''}">
+      ${isBlocked
+        ? `Вы заблокировали этого пользователя. <a onclick="unblockUser('${escapeHtml(partner)}')">Разблокировать</a>`
+        : isBlockedBy
+          ? 'Этот пользователь закрыл переписку с вами.'
+          : ''
+      }
+    </div>
+    ${isSystem ? `<div class="blocked-bar" style="display:block">📢 Это системное сообщение. Ответить на него нельзя.</div>` : ''}
+    <div class="inbox-input-area" id="input-area" style="${isSystem || isBlocked || isBlockedBy ? 'display:none' : ''}">
+      <textarea class="inbox-text-input" id="dm-input" placeholder="Написать ${escapeHtml(partner)}..." maxlength="500" rows="1"
+        oninput="autoResize(this)" onkeydown="dmInputKeydown(event)"></textarea>
+      <button class="send-btn" id="send-btn" onclick="sendDm()" title="Отправить">${SEND_ICON}</button>
+    </div>`;
+
+  renderMessages();
+  scrollMsgsToBottom();
+  if (!isSystem) document.getElementById('dm-input')?.focus();
+}
+
+function renderMessages() {
+  const list = document.getElementById('msg-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  let lastDay = '';
+
+  messages.forEach((msg, idx) => {
+    const isMine = msg.from === currentUser.username;
+    const day = formatDay(msg.ts);
+
+    if (day !== lastDay) {
+      const divider = document.createElement('div');
+      divider.className = 'msg-day-divider';
+      divider.innerHTML = `<span>${day}</span>`;
+      list.appendChild(divider);
+      lastDay = day;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'msg-row' + (isMine ? ' mine' : '');
+    row.id = 'msg-' + msg.id;
+
+    const av = document.createElement('div');
+    av.className = 'msg-avatar-sm' + (isMine ? ' mine-av' : '');
+    av.textContent = isSystemPartner(msg.from) ? '📢' : msg.from[0].toUpperCase();
+    av.title = msg.from;
+
+    const wrap = document.createElement('div');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = msg.text;
+
+    const time = document.createElement('div');
+    time.className = 'msg-time';
+    time.textContent = formatTime(msg.ts);
+
+    wrap.appendChild(bubble);
+    wrap.appendChild(time);
+
+    row.appendChild(av);
+    row.appendChild(wrap);
+    list.appendChild(row);
+  });
+}
+
+function appendMessageToChat(msg, isMine) {
+  const list = document.getElementById('msg-list');
+  if (!list) return;
+
+  // Check if need day divider
+  const lastDividers = list.querySelectorAll('.msg-day-divider');
+  const today = formatDay(msg.ts);
+  const lastDivText = lastDividers.length ? lastDividers[lastDividers.length - 1].querySelector('span')?.textContent : '';
+
+  if (lastDivText !== today) {
+    const divider = document.createElement('div');
+    divider.className = 'msg-day-divider';
+    divider.innerHTML = `<span>${today}</span>`;
+    list.appendChild(divider);
+  }
+
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isMine ? ' mine' : '');
+  row.id = 'msg-' + msg.id;
+
+  const av = document.createElement('div');
+  av.className = 'msg-avatar-sm' + (isMine ? ' mine-av' : '');
+  av.textContent = isSystemPartner(msg.from) ? '📢' : msg.from[0].toUpperCase();
+
+  const wrap = document.createElement('div');
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  bubble.textContent = msg.text;
+  const time = document.createElement('div');
+  time.className = 'msg-time';
+  time.textContent = formatTime(msg.ts);
+
+  wrap.appendChild(bubble);
+  wrap.appendChild(time);
+  row.appendChild(av);
+  row.appendChild(wrap);
+  list.appendChild(row);
+
+  scrollMsgsToBottom();
+}
+
+function scrollMsgsToBottom() {
+  requestAnimationFrame(() => {
+    const list = document.getElementById('msg-list');
+    if (list) list.scrollTop = list.scrollHeight;
+  });
+}
+
+// ─── POLLING (fallback when socket is unavailable) ────────────
+let lastPollTs = null;
+async function pollMessages(partner) {
+  if (!currentUser || activePartner !== partner) return;
+  try {
+    const url = '/dm/messages/' + encodeURIComponent(partner) + (lastPollTs ? '?since=' + encodeURIComponent(lastPollTs) : '');
+    const data = await apiGet(url);
+    const newMsgs = data.messages || [];
+    // Добавляем только сообщения которых нет в messages[] (по id)
+    const knownIds = new Set(messages.map(m => m.id));
+    const added = newMsgs.filter(m => !knownIds.has(m.id));
+    if (added.length) {
+      added.forEach(m => {
+        messages.push(m);
+        appendMessageToChat(m, m.from === currentUser.username);
+      });
+      markRead(partner);
+    }
+  } catch {}
+}
+
+// ─── SEND DM ──────────────────────────────────────────────────
+// ─── Rate limit: не более 2 сообщений в секунду ──────────────
+const _dmSendTimes = [];
+function dmRateLimitOk() {
+  const now = Date.now();
+  // Оставляем только отметки за последнюю секунду
+  while (_dmSendTimes.length && now - _dmSendTimes[0] > 1000) _dmSendTimes.shift();
+  if (_dmSendTimes.length >= 2) return false;
+  _dmSendTimes.push(now);
+  return true;
+}
+
+async function sendDm() {
+  const input = document.getElementById('dm-input');
+  if (!input || !activePartner) return;
+  if (isSystemPartner(activePartner)) return; // системному аккаунту ответить нельзя
+  const text = input.value.trim();
+  if (!text) return;
+
+  if (!dmRateLimitOk()) {
+    toast('Не так быстро — максимум 2 сообщения в секунду', 'error');
+    return;
+  }
+
+  input.value = '';
+  input.style.height = '';
+
+  const btn = document.getElementById('send-btn');
+  if (btn) btn.disabled = true;
+
+  // Оптимистичный рендер: показываем сообщение сразу с временным id
+  const tempId = 'temp_' + Date.now();
+  const tempMsg = {
+    id:   tempId,
+    from: currentUser.username,
+    to:   activePartner,
+    text,
+    ts:   new Date().toISOString(),
+    read: false
+  };
+  messages.push(tempMsg);
+  appendMessageToChat(tempMsg, true);
+  updateConvLastMsg(activePartner, text, tempMsg.ts, false);
+
+  try {
+    const msg = await apiPost('/dm/send', { to: activePartner, text });
+
+    // Заменяем временный id на настоящий (чтобы socket/polling не дублировали)
+    const idx = messages.findIndex(m => m.id === tempId);
+    if (idx !== -1) messages[idx] = msg;
+
+    // Обновляем id у DOM-элемента
+    const tempEl = document.getElementById('msg-' + tempId);
+    if (tempEl) tempEl.id = 'msg-' + msg.id;
+
+  } catch (e) {
+    toast(e.message || 'Ошибка отправки', 'error');
+    // Откатываем оптимистичный рендер
+    input.value = text;
+    const idx = messages.findIndex(m => m.id === tempId);
+    if (idx !== -1) messages.splice(idx, 1);
+    const tempEl = document.getElementById('msg-' + tempId);
+    if (tempEl) tempEl.remove();
+  } finally {
+    if (btn) btn.disabled = false;
+    input.focus();
+  }
+}
+
+function dmInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendDm();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ─── MARK READ ────────────────────────────────────────────────
+async function markRead(partner) {
+  try { await apiPost('/dm/read', { partner }); } catch {}
+}
+
+// ─── BLOCK / UNBLOCK ──────────────────────────────────────────
+let blockTarget = null;
+
+function confirmBlock(username) {
+  blockTarget = username;
+  const conv = conversations.find(c => c.partner === username);
+  const isBlocked = conv?.blocked;
+
+  if (isBlocked) {
+    unblockUser(username);
+    return;
+  }
+
+  document.getElementById('block-modal-title').textContent = 'Заблокировать ' + username + '?';
+  document.getElementById('block-modal-text').textContent =
+    username + ' не сможет отправлять вам сообщения.';
+  document.getElementById('block-modal-confirm').textContent = '🚫 Заблокировать';
+  document.getElementById('block-modal-confirm').onclick = () => blockUser(username);
+  document.getElementById('block-modal').classList.add('open');
+}
+
+function closeBlockModal() {
+  document.getElementById('block-modal').classList.remove('open');
+  blockTarget = null;
+}
+
+async function blockUser(username) {
+  closeBlockModal();
+  try {
+    await apiPost('/dm/block', { username });
+    toast(username + ' заблокирован', 'success');
+    const c = conversations.find(c => c.partner === username);
+    if (c) c.blocked = true;
+    if (activePartner === username) openConversation(username);
+    else renderConvList();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function unblockUser(username) {
+  try {
+    await apiPost('/dm/unblock', { username });
+    toast(username + ' разблокирован', 'success');
+    const c = conversations.find(c => c.partner === username);
+    if (c) c.blocked = false;
+    if (activePartner === username) openConversation(username);
+    else renderConvList();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ─── MOBILE BACK ──────────────────────────────────────────────
+function mobileBack() {
+  activePartner = null;
+  clearInterval(pollingTimer);
+  document.getElementById('inbox-sidebar')?.classList.add('visible');
+  document.getElementById('inbox-chat')?.classList.remove('visible');
+  document.getElementById('inbox-chat').innerHTML = '';
+  renderConvList();
+}
+
+// ─── OPEN FROM URL ────────────────────────────────────────────
+function handleUrlRoute() {
+  // /inbox           → show list
+  // /inbox/username  → open conversation with username
+  const path = location.pathname;
+  const match = path.match(/^\/inbox\/(.+)$/);
+  if (match) {
+    const partner = decodeURIComponent(match[1]);
+    // Wait for conversations to load, then open
+    const tryOpen = () => {
+      if (currentUser && partner !== currentUser.username) {
+        openConversation(partner);
+      } else if (!currentUser) {
+        setTimeout(tryOpen, 200);
+      }
+    };
+    setTimeout(tryOpen, 400);
+  }
+}
+
+// ─── NOT LOGGED ───────────────────────────────────────────────
+function renderNotLogged() {
+  document.getElementById('inbox-list').innerHTML =
+    `<div class="inbox-empty-state"><div class="empty-icon">${LOCK_ICON}</div><p>Войдите, чтобы видеть переписки</p></div>`;
+
+  document.getElementById('inbox-chat').innerHTML = `
+    <div class="not-logged-screen">
+      <div class="nl-icon">${MAIL_ICON_XL}</div>
+      <h3>Личные сообщения</h3>
+      <p>Чтобы переписываться с игроками, необходимо войти в аккаунт.</p>
+      <a href="/" class="btn btn-primary">Войти</a>
+    </div>`;
+}
+
+// ─── ONLINE POLLING ───────────────────────────────────────────
+async function pollOnline() {
+  try {
+    const d = await apiGet('/online/users');
+    onlineUsers = new Set(d.map(u => u.username));
+    const el = document.getElementById('online-count');
+    if (el) el.textContent = onlineUsers.size;
+    renderConvList();
+    // update status in open chat
+    if (activePartner) {
+      const statusEl = document.querySelector('.chat-user-status');
+      if (statusEl) {
+        const online = onlineUsers.has(activePartner);
+        statusEl.textContent = online ? '● онлайн' : 'не в сети';
+        statusEl.className = 'chat-user-status' + (online ? ' chat-online-status' : '');
+      }
+    }
+  } catch {}
+}
+
+// ─── CONV LIST POLLING ────────────────────────────────────────
+async function pollConversations() {
+  if (!currentUser) return;
+  try {
+    const data = await apiGet('/dm/conversations');
+    const old = JSON.stringify(conversations.map(c => ({ p: c.partner, u: c.unread, t: c.lastTs })));
+    const fresh = JSON.stringify(data.map(c => ({ p: c.partner, u: c.unread, t: c.lastTs })));
+    if (old !== fresh) {
+      // Check for new unread messages to show notification
+      data.forEach(newC => {
+        const old = conversations.find(c => c.partner === newC.partner);
+        if (newC.unread > (old?.unread || 0) && newC.partner !== activePartner) {
+          showDmNotif(newC.partner, newC.lastMsg || 'Новое сообщение');
+        }
+      });
+      conversations = data;
+      renderConvList();
+    }
+  } catch {}
+}
+
+// ─── INIT ──────────────────────────────────────────────────────
+async function init() {
+  CH.initHeader();
+  // CH will be updated after auth resolves
+
+  // Auto-login: сервер сам читает токен из HttpOnly-cookie.
+  try {
+    currentUser = await apiGet('/me');
+    CH.setCurrentUser(currentUser);
+    CH.setActivePage('inbox');
+  } catch (e) {
+    currentUser = null;
+  }
+
+  updateAuthUI();
+
+  if (currentUser) {
+    connectSocket();
+    await loadConversations();
+    handleUrlRoute();
+
+    // Polling timers
+    setInterval(pollOnline, 8000);
+    setInterval(pollConversations, 5000);
+    pollOnline();
+  } else {
+    renderNotLogged();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// ─── WRITE_TO_USER  (called from other pages via URL) ─────────
+window.openDMWith = function(username) {
+  if (!currentUser) { window.location = '/'; return; }
+  if (username === currentUser.username) { toast('Нельзя писать самому себе', 'error'); return; }
+  window.location = '/inbox/' + encodeURIComponent(username);
+};
+
+</script>
+
+<script src="/js/online-widget.js"></script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,3997 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Home — Шахматная платформа</title>
+  <meta name="description" content="Chess Home — современная шахматная платформа с анализом, редактором и онлайн-игрой">
+  <link rel="stylesheet" href="/css/main.css">
+<link rel="icon" type="image/png" href="../img/logo/favicon.png">
+  <style>
+
+    /* ══════════════════════════════════════════════════════
+   ОНБОРДИНГ (WELCOME ТУР) — ДЕСКТОП И МОБИЛКА
+══════════════════════════════════════════════════════ */
+#ch-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(15, 15, 20, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: var(--font-sans, sans-serif);
+}
+
+#ch-onboarding.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ФОНОВЫЕ АНИМАЦИИ (Только для ПК) */
+.onboard-bg-shapes { display: none; }
+@media (min-width: 769px) {
+  .onboard-bg-shapes {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .onboard-shape {
+    position: absolute;
+    font-size: 80px;
+    color: rgba(201, 168, 76, 0.05);
+    filter: drop-shadow(0 0 20px rgba(201, 168, 76, 0.2));
+    animation: floatPiece 20s infinite linear;
+  }
+  .onboard-shape:nth-child(1) { top: 10%; left: 15%; animation-duration: 25s; }
+  .onboard-shape:nth-child(2) { top: 70%; left: 10%; animation-duration: 22s; animation-delay: -5s; font-size: 120px; }
+  .onboard-shape:nth-child(3) { top: 20%; right: 15%; animation-duration: 28s; animation-delay: -10s; }
+  .onboard-shape:nth-child(4) { top: 60%; right: 10%; animation-duration: 24s; animation-delay: -15s; font-size: 100px; }
+  .onboard-shape:nth-child(5) { top: 40%; left: 50%; animation-duration: 35s; animation-delay: -2s; font-size: 150px; opacity: 0.5; }
+  
+  @keyframes floatPiece {
+    0% { transform: translateY(100vh) rotate(0deg) scale(0.8); }
+    100% { transform: translateY(-30vh) rotate(360deg) scale(1.2); }
+  }
+  
+  #ch-onboarding.active {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* КАРТОЧКА СЛАЙДА */
+.onboard-container {
+  position: relative;
+  z-index: 10;
+  width: min(90vw, 500px);
+  height: min(80vh, 600px);
+  background: linear-gradient(145deg, rgba(30,30,46,0.9), rgba(20,20,30,0.95));
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(40px) scale(0.95);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#ch-onboarding.active .onboard-container {
+  transform: translateY(0) scale(1);
+}
+
+/* Декоративное свечение карточки (Десктоп) */
+@media (min-width: 769px) {
+  .onboard-container::before {
+    content: ''; position: absolute; inset: -50%; z-index: -1;
+    background: conic-gradient(from 0deg, transparent 0%, rgba(201,168,76,0.1) 25%, transparent 50%, rgba(201,168,76,0.1) 75%, transparent 100%);
+    animation: rotateGlow 10s linear infinite;
+  }
+  @keyframes rotateGlow { 100% { transform: rotate(360deg); } }
+}
+
+/* СЛАЙДЫ */
+.onboard-slides {
+  flex: 1;
+  position: relative;
+}
+.onboard-slide {
+  position: absolute;
+  inset: 0;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(40px);
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.onboard-slide.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+}
+.onboard-slide.prev {
+  transform: translateX(-40px);
+}
+
+/* КОНТЕНТ СЛАЙДОВ */
+.onboard-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 10px 20px rgba(201, 168, 76, 0.4));
+  animation: pulseIcon 3s infinite ease-in-out alternate;
+}
+@keyframes pulseIcon {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.08) translateY(-8px); }
+}
+
+.onboard-slide h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 16px;
+  line-height: 1.2;
+  background: linear-gradient(to right, #fff, var(--accent, #c9a84c));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.onboard-slide p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary, #a0a0b0);
+  margin-bottom: 20px;
+}
+
+.onboard-list {
+  text-align: left;
+  width: 100%;
+  background: rgba(0,0,0,0.2);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.onboard-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.onboard-list-item:last-child { margin-bottom: 0; }
+.onboard-list-icon { font-size: 20px; line-height: 1.2; }
+.onboard-list-text { font-size: 14px; color: #d0d0d0; line-height: 1.4; }
+
+/* НИЖНЯЯ ПАНЕЛЬ (Прогресс и Кнопка) */
+.onboard-footer {
+  padding: 24px 30px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.onboard-progress {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.onboard-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: all 0.3s ease;
+}
+.onboard-dot.active {
+  background: var(--accent, #c9a84c);
+  width: 24px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(201,168,76,0.5);
+}
+
+.onboard-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  background: var(--accent, #c9a84c);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(201,168,76,0.3);
+}
+.onboard-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(201,168,76,0.5);
+  background: #d4b55c;
+}
+.onboard-btn:active { transform: translateY(1px); }
+
+/* Мобильная оптимизация (Убираем тяжести) */
+@media (max-width: 480px) {
+  .onboard-container {
+    width: 100vw;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+    transform: translateY(20px);
+  }
+  .onboard-slide { padding: 30px 20px; }
+  .onboard-icon { font-size: 56px; animation: none; /* Убираем пульс ради FPS */ }
+  .onboard-slide h2 { font-size: 24px; }
+  .onboard-footer { padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+}
+
+/* ══════════════════════════════════════════════════════
+   ОПОВЕЩЕНИЕ ОБ ОБНОВЛЕНИИ БЕЗОПАСНОСТИ (JWT)
+══════════════════════════════════════════════════════ */
+#ch-security-alert {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+  background: rgba(15, 15, 20, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  font-family: var(--font-sans, sans-serif);
+}
+#ch-security-alert.active {
+  opacity: 1;
+  pointer-events: all;
+}
+@media (min-width: 769px) {
+  #ch-security-alert.active {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+.security-alert-container {
+  position: relative;
+  z-index: 10;
+  width: min(90vw, 460px);
+  height: auto;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: linear-gradient(145deg, rgba(30,30,46,0.9), rgba(20,20,30,0.95));
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 24px;
+  box-shadow: 0 25px 80px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(40px) scale(0.95);
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#ch-security-alert.active .security-alert-container {
+  transform: translateY(0) scale(1);
+}
+.security-alert-body {
+  padding: 36px 30px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.security-alert-icon {
+  font-size: 56px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 10px 20px rgba(201, 168, 76, 0.4));
+}
+.security-alert-body h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 16px;
+  line-height: 1.25;
+  background: linear-gradient(to right, #fff, var(--accent, #c9a84c));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.security-alert-body p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary, #a0a0b0);
+  margin-bottom: 0;
+}
+@media (max-width: 480px) {
+  .security-alert-container { width: 92vw; }
+  .security-alert-body { padding: 30px 20px 6px; }
+  .security-alert-icon { font-size: 48px; }
+  .security-alert-body h2 { font-size: 21px; }
+}
+    /* ── ПРЕЙМУВ ───────────────────────────────────────────── */
+    .square.premove {
+      background-color: rgba(255, 120, 0, 0.55) !important;
+    }
+    .square.premove.light { background-color: rgba(255, 150, 50, 0.65) !important; }
+    .square.premove.dark  { background-color: rgba(210, 90, 0, 0.65) !important; }
+
+    /* ── ДОСКА: красивее клетки ───────────────────────────── */
+    .square {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: filter 0.08s;
+    }
+    .square:hover { filter: brightness(1.12); }
+    .square.selected {
+      background-color: rgba(100, 200, 100, 0.65) !important;
+      box-shadow: inset 0 0 0 3px rgba(50,180,50,0.9);
+    }
+    .square.last-move.light { background-color: rgba(205, 210, 106, 0.75) !important; }
+    .square.last-move.dark  { background-color: rgba(170, 162, 58, 0.75) !important; }
+    .square.in-check { background-color: rgba(220, 50, 50, 0.75) !important; }
+
+    /* Подсказки ходов — точки вместо оверлея */
+    .square.legal-move::after {
+      content: '';
+      position: absolute;
+      width: 28%;
+      height: 28%;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.22);
+      pointer-events: none;
+    }
+    .square.legal-capture::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,0.28);
+      pointer-events: none;
+    }
+
+    /* ── ЧАСЫ: крупнее, ярче ──────────────────────────────── */
+    .player-clock {
+      font-size: 22px !important;
+      font-weight: 800 !important;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      padding: 6px 14px !important;
+      border-radius: 8px !important;
+      background: var(--bg-secondary, #1e1e2e) !important;
+      border: 2px solid transparent !important;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+      min-width: 80px;
+      text-align: center;
+    }
+    .player-clock.active {
+      border-color: var(--accent, #c9a84c) !important;
+      background: rgba(201, 168, 76, 0.13) !important;
+      color: #fff !important;
+    }
+    .player-clock.low {
+      color: #e74c3c !important;
+      animation: clock-pulse 1s infinite;
+    }
+    @keyframes clock-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* ── PLAYER INFO: компактнее ─────────────────────────── */
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 4px;
+    }
+    .player-name {
+      font-weight: 700;
+      font-size: 15px;
+    }
+    .player-rating {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ── ФИГУРЫ: плавнее ─────────────────────────────────── */
+    .piece {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .piece img {
+      width: 82%;
+      height: 82%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45));
+      transition: transform 0.08s;
+    }
+    .piece img:hover { transform: scale(1.07); }
+
+    /* ── СПИСОК ХОДОВ ─────────────────────────────────────── */
+    .move-cell {
+      cursor: pointer;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: background 0.12s;
+    }
+    .move-cell:hover { background: rgba(255,255,255,0.08); }
+    .move-cell.current {
+      background: var(--accent, #c9a84c) !important;
+      color: #1a1a2e !important;
+      font-weight: 700;
+      border-radius: 4px;
+    }
+
+    /* ── КНОПКИ НАВИГАЦИИ ─────────────────────────────────── */
+    .nav-btn-row {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      padding: 4px 0;
+    }
+    .nav-btn-row .btn {
+      font-size: 16px;
+      padding: 6px 10px;
+      min-width: 36px;
+    }
+
+    /* ── ПРЕЙМУВ: индикатор в UI ──────────────────────────── */
+    #premove-indicator {
+      display: none;
+      font-size: 12px;
+      color: rgba(255,150,50,0.9);
+      text-align: center;
+      padding: 3px 0;
+      cursor: pointer;
+    }
+    #premove-indicator.visible { display: block; }
+    #premove-indicator:hover { text-decoration: underline; }
+
+    /* ── BOARD SIZE CONTROL (lichess style) ───────────────────── */
+    .board-size-control {
+      margin-top: 8px;
+      padding: 10px 14px 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      user-select: none;
+    }
+    .board-size-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+    .board-size-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .board-size-icon-sm { font-size: 9px; color: var(--text-muted); line-height: 1; }
+    .board-size-icon-lg { font-size: 14px; color: var(--text-muted); line-height: 1; }
+    .board-size-value-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 5px;
+    }
+    .board-size-label {
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      background: rgba(201,168,76,.12);
+      padding: 1px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(201,168,76,.25);
+      min-width: 52px;
+      text-align: center;
+    }
+
+    /* Range track & thumb */
+    .board-size-range {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(
+        to right,
+        var(--accent) 0%,
+        var(--accent) var(--pct, 50%),
+        rgba(255,255,255,.12) var(--pct, 50%),
+        rgba(255,255,255,.12) 100%
+      );
+      cursor: pointer;
+      outline: none;
+    }
+    .board-size-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid #1a1a2e;
+      box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,.5);
+      cursor: grab;
+      transition: box-shadow .15s, transform .15s;
+    }
+    .board-size-range::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.2);
+      box-shadow: 0 0 0 4px rgba(201,168,76,.35), 0 2px 12px rgba(0,0,0,.6);
+    }
+    .board-size-range::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid #1a1a2e;
+      box-shadow: 0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,.5);
+      cursor: grab;
+    }
+    .board-size-range:focus::-webkit-slider-thumb {
+      box-shadow: 0 0 0 4px rgba(201,168,76,.4), 0 2px 12px rgba(0,0,0,.6);
+    }
+
+    /* ── BOARD RESIZE HANDLE (lichess corner) ─────────────────── */
+    .board-resize-handle {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 18px;
+      height: 18px;
+      cursor: nwse-resize;
+      z-index: 20;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 2px;
+      background: linear-gradient(135deg, transparent 40%, rgba(201,168,76,.55) 40%);
+      border-bottom-right-radius: 4px;
+    }
+    .board-resize-handle::after {
+      content: '';
+      display: block;
+      width: 8px;
+      height: 8px;
+      background: repeating-linear-gradient(
+        135deg,
+        var(--accent) 0px, var(--accent) 1.5px,
+        transparent 1.5px, transparent 4px
+      );
+      opacity: .8;
+    }
+    .board-wrapper { position: relative; display: inline-block; }
+
+    /* ══════════════════════════════════════════════════════
+       МОБИЛЬНАЯ АДАПТАЦИЯ — полная
+    ══════════════════════════════════════════════════════ */
+
+    /* ── HAMBURGER MENU ─────────────────────────────────── */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 8px;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .hamburger:hover { background: rgba(255,255,255,0.08); }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--text-primary, #fff);
+      border-radius: 2px;
+      transition: transform 0.25s, opacity 0.2s;
+    }
+    .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── MOBILE NAV OVERLAY ──────────────────────────────── */
+    #mobile-nav-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 199;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    #mobile-nav-overlay.visible { opacity: 1; }
+
+    #mobile-nav-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(320px, 85vw);
+      height: 100dvh;
+      background: var(--bg-card, #1a1a2e);
+      border-left: 1px solid var(--border, rgba(255,255,255,0.1));
+      z-index: 200;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0, 0.15, 1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+    }
+    #mobile-nav-drawer.open { transform: translateX(0); }
+
+    .mobile-nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+    .mobile-nav-logo {
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent, #c9a84c);
+      font-family: var(--font-display, serif);
+    }
+    .mobile-nav-close {
+      background: none;
+      border: none;
+      color: var(--text-muted, #888);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .mobile-nav-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+    .mobile-nav-links {
+      list-style: none;
+      padding: 12px 12px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      overflow-y: auto;
+    }
+    .mobile-nav-links li a,
+    .mobile-nav-links li button {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+      color: var(--text-primary, #fff);
+      font-size: 15px;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+      width: 100%;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+    }
+    .mobile-nav-links li a:hover,
+    .mobile-nav-links li button:hover {
+      background: rgba(201,168,76,0.1);
+      color: var(--accent, #c9a84c);
+    }
+    .mobile-nav-links .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+
+    .mobile-nav-footer {
+      padding: 16px 20px 20px;
+      border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+    }
+    .mobile-nav-online {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted, #888);
+      margin-bottom: 12px;
+    }
+
+    /* ── BOTTOM NAV BAR ─────────────────────────────────── */
+    #bottom-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 58px;
+      background: var(--bg-card, #1a1a2e);
+      border-top: 1px solid var(--border, rgba(255,255,255,0.1));
+      z-index: 100;
+      align-items: stretch;
+      justify-content: space-around;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      flex: 1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted, #888);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 6px 4px;
+      transition: color 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .bottom-nav-item .bn-icon {
+      font-size: 20px;
+      line-height: 1;
+      transition: transform 0.15s;
+    }
+    .bottom-nav-item:active .bn-icon { transform: scale(0.88); }
+    .bottom-nav-item.active { color: var(--accent, #c9a84c); }
+    .bottom-nav-item.active .bn-icon { filter: drop-shadow(0 0 6px rgba(201,168,76,0.5)); }
+
+    @media (max-width: 768px) {
+
+      /* Показываем мобильные элементы */
+      .hamburger { display: flex; }
+      #bottom-nav {
+        display: flex;
+        /* На десктопе этот блок и так display:none, так что здесь можно
+           безопасно облегчить только мобильную версию: fixed-элемент с
+           backdrop-filter:blur(20px), который перерисовывается на КАЖДЫЙ
+           кадр скролла — одна из главных причин тормозов на слабых
+           телефонах. Снижаем радиус блюра, не трогая базовое правило
+           #bottom-nav выше (оно ни для десктопа, ни для чего другого
+           больше не используется). */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      /* Прячем десктопную навигацию */
+      header nav,
+      header .nav-links { display: none !important; }
+
+      /* Header компактный */
+      header {
+        padding: 0 12px !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 150 !important;
+      }
+
+      /* Убираем излишки из header-right */
+      #header-right {
+        display: flex !important;
+        gap: 6px !important;
+        align-items: center !important;
+      }
+      /* Онлайн-бейдж компактный */
+      .online-badge {
+        font-size: 11px !important;
+        padding: 4px 8px !important;
+      }
+      #online-badge-btn { margin-left: 4px !important; }
+
+      /* Добавляем отступ снизу для bottom-nav */
+      #app { padding-bottom: 58px; }
+
+      /* ── HOME PAGE ─────────────────────── */
+      .hero {
+        flex-direction: column !important;
+        padding: 24px 16px 16px !important;
+        gap: 24px !important;
+        min-height: auto !important;
+      }
+      .hero-text { max-width: 100% !important; text-align: center !important; }
+      .hero-title {
+        font-size: clamp(28px, 8vw, 44px) !important;
+        line-height: 1.15 !important;
+      }
+      .hero-eyebrow { font-size: 12px !important; margin-bottom: 10px !important; }
+      .hero-subtitle { font-size: 14px !important; }
+      .hero-actions {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+      }
+      .hero-actions .btn { width: 100% !important; max-width: 280px !important; }
+      .hero-visual {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+      }
+      .hero-board-wrap {
+        width: min(260px, 70vw) !important;
+        height: min(260px, 70vw) !important;
+      }
+
+      /* Features */
+      .features { padding: 20px 16px 24px !important; }
+      .features-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+      }
+      .feature-card {
+        padding: 16px 12px !important;
+      }
+      .feature-icon { font-size: 24px !important; margin-bottom: 8px !important; }
+      .feature-card h3 { font-size: 13px !important; }
+      .feature-card p { font-size: 12px !important; line-height: 1.5 !important; }
+      .section-title { font-size: 22px !important; }
+
+      /* Game modes grid */
+      .modes-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+      }
+      .mode-card { padding: 16px 12px !important; }
+      .mode-icon { font-size: 28px !important; }
+      .mode-card h3 { font-size: 13px !important; }
+      .mode-card p { font-size: 12px !important; }
+      .game-modes { padding: 0 16px 24px !important; }
+
+      /* Chat в Home */
+      .game-modes + div,
+      [style*="max-width:1200px"] { padding: 0 16px 24px !important; }
+
+      /* ── LOBBY ─────────────────────────── */
+      .lobby-layout {
+        flex-direction: column !important;
+        gap: 16px !important;
+      }
+      .lobby-panel { padding: 16px !important; }
+      .panel-title { font-size: 14px !important; }
+      .time-control-select {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+      }
+      .tc-btn {
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+        flex: 1 !important;
+        min-width: 60px !important;
+      }
+      #page-lobby > div { padding: 16px !important; }
+
+      /* ── GAME PAGE ─────────────────────── */
+      .game-layout {
+        flex-direction: column !important;
+        gap: 0 !important;
+        padding: 0 !important;
+      }
+      .eval-bar-container {
+        display: none !important; /* спрятать на мобиле */
+      }
+      .board-area {
+        width: 100% !important;
+        padding: 8px !important;
+      }
+      .board-wrapper {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+      }
+      #chess-board,
+      #game-board-container {
+        width: min(calc(100vw - 16px), 480px) !important;
+        height: min(calc(100vw - 16px), 480px) !important;
+        max-width: 100% !important;
+      }
+      /* Размер доски слайдер — скрываем на мобиле */
+      .board-size-control { display: none !important; }
+      /* Ресайз хендл — убираем */
+      .board-resize-handle { display: none !important; }
+
+      .player-info {
+        padding: 6px 4px !important;
+        gap: 8px !important;
+      }
+      .player-name { font-size: 13px !important; }
+      .player-rating { font-size: 11px !important; }
+      .player-clock {
+        font-size: 18px !important;
+        padding: 4px 10px !important;
+        min-width: 64px !important;
+      }
+
+      /* Game panel — горизонтальный скролл вкладок */
+      .game-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-left: none !important;
+        border-top: 1px solid var(--border, rgba(255,255,255,0.08)) !important;
+      }
+      .moves-list { max-height: 140px !important; }
+
+      /* Кнопки навигации */
+      .nav-btn-row .btn {
+        font-size: 14px !important;
+        padding: 8px 10px !important;
+        min-width: 40px !important;
+      }
+
+      /* Действия в игре */
+      .game-actions {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        padding: 4px 8px !important;
+      }
+      .game-actions .btn { font-size: 12px !important; padding: 7px 10px !important; }
+
+      /* Чат в игре — скрыть по умолчанию */
+      .game-chat-panel { display: none !important; }
+
+      /* ── ANALYSIS ──────────────────────── */
+      .analysis-layout {
+        flex-direction: column !important;
+        padding: 0 !important;
+      }
+      #page-analysis > div { padding: 12px !important; }
+      .engine-panel { padding: 14px !important; }
+      .eval-score { font-size: 28px !important; }
+
+      /* ── EDITOR ────────────────────────── */
+      .editor-layout {
+        flex-direction: column !important;
+        gap: 12px !important;
+      }
+      #page-editor > div { padding: 12px !important; }
+      .piece-palette {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        order: 2 !important;
+      }
+      #editor-board {
+        width: min(calc(100vw - 24px), 480px) !important;
+        height: min(calc(100vw - 24px), 480px) !important;
+      }
+      .palette-pieces {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 4px !important;
+      }
+
+      /* ── PROFILE ───────────────────────── */
+      #page-profile > div { padding: 20px 16px !important; }
+      #profile-data .settings-section [style*="grid-template-columns:repeat(4"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+      }
+
+      /* ── SETTINGS ──────────────────────── */
+      #page-settings > div { padding: 20px 16px !important; }
+      .settings-row {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 12px !important;
+      }
+
+      /* ── MODALS ────────────────────────── */
+      .modal {
+        margin: 16px !important;
+        max-height: calc(100dvh - 32px) !important;
+        overflow-y: auto !important;
+        width: calc(100vw - 32px) !important;
+        max-width: none !important;
+      }
+      .promo-modal { padding: 24px !important; }
+      .promo-pieces { gap: 10px !important; }
+      .promo-piece-btn {
+        width: 60px !important;
+        height: 60px !important;
+      }
+
+      /* ── БАННЕР ВОЗВРАТА ───────────────── */
+      #rejoin-banner {
+        bottom: 68px !important; /* над bottom-nav */
+        left: 12px !important;
+        right: 12px !important;
+        transform: none !important;
+        min-width: 0 !important;
+      }
+
+      /* ── TOAST ─────────────────────────── */
+      #toast-container {
+        bottom: 70px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: max-content !important;
+        max-width: calc(100vw - 24px) !important;
+      }
+
+      /* ── ПОИСК ИГРОКА ──────────────────── */
+      #player-search { font-size: 16px !important; } /* избегаем zoom на iOS */
+
+      /* ── ОНЛАЙН ПОЛЬЗОВАТЕЛИ ───────────── */
+      #modal-online-users .modal {
+        max-width: 100% !important;
+        width: 100% !important;
+        border-radius: 20px 20px 0 0 !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        margin: 0 !important;
+        max-height: 75dvh !important;
+      }
+
+      /* ── PAGE HEADER ───────────────────── */
+      .page-header { padding: 16px 0 12px !important; }
+      .page-header h1 { font-size: 22px !important; }
+      .page-header p { font-size: 13px !important; }
+
+      /* ── LEGAL PAGES ───────────────────── */
+      .legal-content { font-size: 14px !important; }
+      .legal-content h1 { font-size: 22px !important; }
+      .legal-content h2 { font-size: 16px !important; }
+    }
+
+    /* Extra small phones */
+    @media (max-width: 380px) {
+      .features-grid {
+        grid-template-columns: 1fr !important;
+      }
+      .modes-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .hero-title { font-size: 26px !important; }
+    }
+
+    /* Landscape mobile */
+    @media (max-width: 768px) and (orientation: landscape) {
+      #chess-board,
+      #game-board-container {
+        width: min(calc(100vh - 120px), 360px) !important;
+        height: min(calc(100vh - 120px), 360px) !important;
+      }
+      .game-layout {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+      }
+      .board-area { width: auto !important; }
+      .game-panel {
+        width: auto !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        border-left: 1px solid var(--border) !important;
+        border-top: none !important;
+        max-height: calc(100vh - 52px - 58px) !important;
+        overflow-y: auto !important;
+      }
+    }
+
+    /* Планшеты */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .hero { padding: 40px 24px !important; gap: 30px !important; }
+      .hero-title { font-size: 40px !important; }
+      .features-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    }
+
+    /* ── HERO ANIMATED BOARD ──────────────────────────────────── */
+    .hero-board-wrap {
+      position: relative;
+      width: min(420px, 42vw);
+      height: min(420px, 42vw);
+      border-radius: 8px;
+      overflow: visible;
+      flex-shrink: 0;
+    }
+    .hero-board-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      box-shadow:
+        0 0 0 2px rgba(201,168,76,0.35),
+        0 8px 40px rgba(0,0,0,0.65),
+        0 2px 8px rgba(0,0,0,0.5);
+    }
+    .hero-board-glow {
+      position: absolute;
+      inset: -18px;
+      border-radius: 18px;
+      background: radial-gradient(ellipse at 50% 50%,
+        rgba(201,168,76,0.18) 0%,
+        rgba(201,168,76,0.06) 45%,
+        transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+      animation: boardGlowPulse 4s ease-in-out infinite;
+    }
+    @keyframes boardGlowPulse {
+      0%, 100% { opacity: 0.7; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+
+        /* ══ PUZZLE STYLES ══════════════════════════════════════════ */
+    .puzzle-topics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 14px;
+    }
+    .puzzle-topic-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 16px;
+      cursor: pointer;
+      transition: border-color 0.18s, transform 0.15s, box-shadow 0.18s;
+    }
+    .puzzle-topic-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .puzzle-topic-icon { font-size: 30px; margin-bottom: 10px; line-height: 1; }
+    .puzzle-topic-name { font-weight: 800; font-size: 14px; color: var(--text-primary); margin-bottom: 4px; }
+    .puzzle-topic-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 10px; }
+    .puzzle-topic-count {
+      font-size: 11px; color: var(--accent); font-weight: 700;
+      background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 6px; padding: 2px 8px; display: inline-block;
+    }
+    .puzzle-list { display: flex; flex-direction: column; gap: 8px; }
+    .puzzle-list-item {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 16px;
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .puzzle-list-item:hover { border-color: var(--accent); background: rgba(201,168,76,0.04); }
+    .puzzle-list-item.solved  { border-left-color: #2ecc71; }
+    .puzzle-list-item.attempted { border-left-color: var(--accent); }
+    .puzzle-list-num { font-size: 13px; color: var(--text-muted); font-weight: 600; min-width: 28px; }
+    .puzzle-list-info { flex: 1; min-width: 0; }
+    .puzzle-list-title { font-weight: 700; font-size: 14px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .puzzle-list-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .puzzle-diff-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+    .puzzle-diff-badge.easy   { background: rgba(46,204,113,0.15);  color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+    .puzzle-diff-badge.medium { background: rgba(241,196,15,0.15);  color: #f1c40f; border: 1px solid rgba(241,196,15,0.3); }
+    .puzzle-diff-badge.hard   { background: rgba(231,76,60,0.15);   color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+    .puzzle-solve-layout { display: flex; gap: 20px; align-items: flex-start; }
+    .puzzle-board-area { flex-shrink: 0; }
+    #puzzle-board {
+      display: grid; grid-template-columns: repeat(8,1fr); grid-template-rows: repeat(8,1fr);
+      border: 3px solid var(--accent-dark,#8a6914); border-radius: 4px; overflow: hidden;
+      width: min(460px, calc(100vw - 360px)); height: min(460px, calc(100vw - 360px));
+    }
+    .puzzle-solve-panel { flex: 1; min-width: 220px; max-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+    .puzzle-feedback {
+      padding: 14px 18px; border-radius: 12px;
+      font-weight: 700; font-size: 15px; text-align: center;
+      animation: fb-in 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes fb-in { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+    .puzzle-feedback.correct { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.4); color: #2ecc71; }
+    .puzzle-feedback.wrong   { background: rgba(231,76,60,0.12);  border: 1px solid rgba(231,76,60,0.3);  color: #e74c3c; }
+    .pz-nav-btn { min-width:40px; font-size:14px; padding:4px 10px; transition: opacity .15s; }
+    .pz-nav-btn:disabled { opacity:.3; cursor:default; }
+    .puzzle-lb-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.12s;
+    }
+    .puzzle-lb-row:hover { background: rgba(255,255,255,0.04); }
+    .puzzle-lb-row:last-child { border-bottom: none; }
+    .puzzle-lb-rank { font-size: 12px; font-weight: 800; color: var(--text-muted); min-width: 22px; text-align: right; }
+    .puzzle-lb-name { flex: 1; font-weight: 600; font-size: 13px; }
+    .puzzle-lb-rating { font-size: 13px; font-weight: 700; color: var(--accent); }
+    /* mobile puzzles */
+    @media (max-width: 768px) {
+      .puzzle-topics-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+      .puzzle-topic-card { padding: 14px 10px !important; }
+      .puzzle-topic-icon { font-size: 22px !important; }
+      .puzzle-topic-name { font-size: 12px !important; }
+      .puzzle-topic-desc { display: none; }
+      #puzzles-sidebar { display: none !important; }
+      #puzzles-main-grid { grid-template-columns: 1fr !important; }
+      .puzzle-solve-layout { flex-direction: column !important; }
+      #puzzle-board { width: min(340px,calc(100vw - 32px)) !important; height: min(340px,calc(100vw - 32px)) !important; }
+      .puzzle-solve-panel { max-width: 100% !important; width: 100% !important; }
+      #puzzle-daily-card { padding: 14px !important; }
+    }
+
+    /* ══════════════════════════════════════════════════════
+       FAQ — ЧАСТЫЕ ВОПРОСЫ
+    ══════════════════════════════════════════════════════ */
+    .faq-wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+    .faq-hero { text-align: center; margin-bottom: 28px; }
+    .faq-hero-icon {
+      font-size: 44px; margin-bottom: 10px;
+      filter: drop-shadow(0 6px 14px rgba(201,168,76,0.35));
+    }
+    .faq-hero h1 {
+      font-size: 30px; font-weight: 800; margin-bottom: 6px;
+      background: linear-gradient(to right, #fff, var(--accent, #c9a84c));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .faq-hero p { color: var(--text-secondary, #a0a0b0); font-size: 14px; margin-bottom: 20px; }
+    .faq-search-box {
+      display: flex; align-items: center; gap: 10px;
+      max-width: 420px; margin: 0 auto;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 14px; padding: 12px 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .faq-search-box:focus-within {
+      border-color: var(--accent, #c9a84c);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+    }
+    .faq-search-icon { font-size: 14px; opacity: 0.6; }
+    #faq-search-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: #fff; font-size: 14px; font-family: inherit;
+    }
+    #faq-search-input::placeholder { color: var(--text-muted, #6b6b7a); }
+
+    .faq-categories {
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+      margin-bottom: 24px;
+    }
+    .faq-cat-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border, rgba(255,255,255,0.1));
+      color: var(--text-secondary, #a0a0b0);
+      padding: 8px 14px; border-radius: 999px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.18s;
+    }
+    .faq-cat-btn:hover { border-color: var(--accent, #c9a84c); color: #fff; }
+    .faq-cat-btn.active {
+      background: var(--accent, #c9a84c); color: #1a1a2e; border-color: var(--accent, #c9a84c);
+    }
+
+    .faq-list { display: flex; flex-direction: column; gap: 10px; }
+    .faq-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 14px; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .faq-item:hover { border-color: rgba(201,168,76,0.35); }
+    .faq-q {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; background: none; border: none; cursor: pointer;
+      padding: 16px 18px; text-align: left;
+      color: #fff; font-size: 14.5px; font-weight: 600; font-family: inherit;
+    }
+    .faq-chevron { flex-shrink: 0; transition: transform 0.25s ease; color: var(--accent, #c9a84c); font-size: 18px; }
+    .faq-item.open .faq-chevron { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 18px;
+    }
+    .faq-item.open .faq-a { max-height: 300px; padding: 0 18px 18px; }
+    .faq-a p { color: var(--text-secondary, #a0a0b0); font-size: 13.5px; line-height: 1.6; }
+    .faq-a kbd {
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px; padding: 1px 6px; font-size: 12px; font-family: inherit;
+    }
+    .faq-empty { text-align: center; padding: 40px 0; color: var(--text-muted, #6b6b7a); font-size: 14px; }
+    .faq-cta {
+      margin-top: 32px; text-align: center; padding: 24px;
+      background: linear-gradient(145deg, rgba(201,168,76,0.08), rgba(201,168,76,0.02));
+      border: 1px solid rgba(201,168,76,0.2); border-radius: 16px;
+    }
+    .faq-cta-title { font-weight: 700; margin-bottom: 4px; }
+    .faq-cta p { color: var(--text-secondary, #a0a0b0); font-size: 13px; margin-bottom: 14px; }
+
+    /* ══════════════════════════════════════════════════════
+       АПЕЛЛЯЦИЯ — ОБРАЩЕНИЯ / ТИКЕТЫ
+    ══════════════════════════════════════════════════════ */
+    .appeal-wrap { max-width: 760px; margin: 0 auto; padding: 32px 20px 60px; }
+    .appeal-hero { text-align: center; margin-bottom: 28px; }
+    .appeal-hero-icon { font-size: 44px; margin-bottom: 10px; filter: drop-shadow(0 6px 14px rgba(201,168,76,0.35)); }
+    .appeal-hero h1 {
+      font-size: 30px; font-weight: 800; margin-bottom: 6px;
+      background: linear-gradient(to right, #fff, var(--accent, #c9a84c));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .appeal-hero p { color: var(--text-secondary, #a0a0b0); font-size: 14px; }
+
+    .appeal-status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .appeal-status-pill.st-wait-admin { background: rgba(224,85,85,0.16); color: var(--red, #e05555); }
+    .appeal-status-pill.st-wait-user  { background: rgba(76,175,114,0.16); color: var(--green, #4caf72); }
+    .appeal-status-pill.st-closed     { background: rgba(255,255,255,0.06); color: var(--text-muted, #6b6b7a); }
+
+    .appeal-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 14px; overflow: hidden; margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .appeal-item:hover { border-color: rgba(201,168,76,0.35); }
+    .appeal-item-head {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; background: none; border: none; cursor: pointer;
+      padding: 16px 18px; text-align: left; color: #fff; font-family: inherit;
+    }
+    .appeal-item-head-left { display: flex; flex-direction: column; gap: 4px; }
+    .appeal-item-reason { font-size: 14.5px; font-weight: 600; }
+    .appeal-item-date { font-size: 12px; color: var(--text-muted, #6b6b7a); }
+    .appeal-item-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .appeal-item.open .appeal-item-body { max-height: 2000px; }
+    .appeal-thread { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+
+    .appeal-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }
+    .appeal-msg .appeal-msg-meta { font-size: 11px; opacity: 0.65; margin-bottom: 3px; font-weight: 600; }
+    .appeal-msg.from-user  { align-self: flex-end; background: rgba(201,168,76,0.16); border: 1px solid rgba(201,168,76,0.25); border-bottom-right-radius: 3px; }
+    .appeal-msg.from-admin { align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid var(--border, rgba(255,255,255,0.1)); border-bottom-left-radius: 3px; }
+
+    .appeal-reply-box { display: flex; gap: 8px; margin-top: 4px; }
+    .appeal-reply-box textarea {
+      flex: 1; resize: vertical; min-height: 44px; max-height: 160px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border, rgba(255,255,255,0.1));
+      border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 13.5px; font-family: inherit;
+    }
+    .appeal-locked-note {
+      font-size: 12.5px; color: var(--text-muted, #6b6b7a); text-align: center;
+      padding: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-top: 4px;
+    }
+
+    .appeal-new-form { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Список тикетов в админке — переиспользует .appeal-item/.appeal-status-pill */
+    .admin-appeal-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+      background: rgba(0,0,0,0.15); border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; margin-bottom: 8px; transition: border-color 0.15s;
+    }
+    .admin-appeal-row:hover { border-color: rgba(201,168,76,0.35); }
+    .admin-appeal-row .aa-user { font-weight: 700; cursor: pointer; }
+    .admin-appeal-row .aa-reason { font-size: 12.5px; color: var(--text-secondary, #a0a0b0); }
+    .admin-appeal-row .aa-date { font-size: 11.5px; color: var(--text-muted, #6b6b7a); margin-left: auto; }
+
+    #modal-appeal-detail .modal { max-width: 560px; width: 95vw; max-height: 85vh; display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+    #modal-appeal-detail .appeal-detail-head { padding: 18px 20px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    #modal-appeal-detail .appeal-detail-thread { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+    #modal-appeal-detail .appeal-detail-footer { padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+    /* ══════════════════════════════════════════════════════
+       БЫСТРЫЙ ПОИСК (Command Palette) — Ctrl+K
+    ══════════════════════════════════════════════════════ */
+    #ch-quick-launcher {
+      position: fixed; right: 20px; bottom: 20px; z-index: 99990;
+      width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(145deg, rgba(30,30,46,0.95), rgba(20,20,30,0.98));
+      border: 1px solid rgba(201,168,76,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; cursor: pointer; color: var(--accent, #c9a84c);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 0 0 rgba(201,168,76,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    #ch-quick-launcher:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.5), 0 0 20px rgba(201,168,76,0.35);
+    }
+    @media (max-width: 768px) { #ch-quick-launcher { bottom: 76px; right: 16px; width: 44px; height: 44px; font-size: 17px; } }
+
+    #ch-cmdk-overlay {
+      position: fixed; inset: 0; z-index: 999997;
+      background: rgba(10,10,14,0.7);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: 12vh;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #ch-cmdk-overlay.active { opacity: 1; pointer-events: all; }
+    .cmdk-box {
+      width: min(92vw, 560px); max-height: 60vh;
+      background: linear-gradient(160deg, rgba(28,28,42,0.97), rgba(18,18,28,0.98));
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 16px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.7);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform: translateY(-12px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+    }
+    #ch-cmdk-overlay.active .cmdk-box { transform: translateY(0) scale(1); }
+    .cmdk-input-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .cmdk-input-row span { opacity: 0.6; }
+    #ch-cmdk-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      color: #fff; font-size: 16px; font-family: inherit;
+    }
+    #ch-cmdk-input::placeholder { color: var(--text-muted, #6b6b7a); }
+    .cmdk-esc-hint {
+      font-size: 11px; color: var(--text-muted, #6b6b7a);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 2px 6px;
+    }
+    .cmdk-results { overflow-y: auto; padding: 8px; }
+    .cmdk-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 12px; border-radius: 10px; cursor: pointer;
+      color: #e0e0e6; font-size: 14px;
+    }
+    .cmdk-item .cmdk-icon { font-size: 17px; width: 22px; text-align: center; }
+    .cmdk-item .cmdk-group { margin-left: auto; font-size: 11px; color: var(--text-muted, #6b6b7a); }
+    .cmdk-item.active { background: rgba(201,168,76,0.16); color: #fff; }
+    .cmdk-item.active .cmdk-group { color: var(--accent, #c9a84c); }
+    .cmdk-empty { padding: 24px; text-align: center; color: var(--text-muted, #6b6b7a); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div id="ch-onboarding">
+  <div class="onboard-bg-shapes">
+    <div class="onboard-shape">♚</div>
+    <div class="onboard-shape">♞</div>
+    <div class="onboard-shape">♛</div>
+    <div class="onboard-shape">♜</div>
+    <div class="onboard-shape">♟</div>
+  </div>
+
+  <div class="onboard-container">
+    <div class="onboard-slides" id="onboard-slides-container">
+      
+      <div class="onboard-slide active">
+        <div class="onboard-icon"><img src="img/logo/favicon.png" alt="♚" width="200px" height="200px"></div>
+        <h2>Добро пожаловать<br>в Chess Home!</h2>
+        <p>Новая платформа для шахматных баталий, общения, глубокого анализа со Stockfish и решения тактических задач.</p>
+      </div>
+
+      <div class="onboard-slide">
+        <div class="onboard-icon">🛡️</div>
+        <h2>Ваши данные под защитой</h2>
+        <p>Мы ценим вашу приватность и не передаем лишних данных третьим лицам. Рекомендуем ознакомиться с нашими документами, чтобы играть спокойно.</p>
+        <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
+          <a href="#" onclick="showPage('privacy'); return false;" style="color:var(--accent); font-size:13px; text-decoration:underline;">Конфиденциальность</a>
+          <span style="color:#555">•</span>
+          <a href="#" onclick="showPage('terms'); return false;" style="color:var(--accent); font-size:13px; text-decoration:underline;">Соглашение</a>
+        </div>
+      </div>
+
+      <div class="onboard-slide">
+        <div class="onboard-icon">💡</div>
+        <h2>Полезные советы</h2>
+        <div class="onboard-list">
+          <div class="onboard-list-item">
+            <div class="onboard-list-icon">🏆</div>
+            <div class="onboard-list-text"><strong>Вы можете рисовать стрелочки, кружочки на доске и ставить преймувы</strong> — всё для удобства!</div>
+          </div>
+          <div class="onboard-list-item">
+            <div class="onboard-list-icon">⚙️</div>
+            <div class="onboard-list-text"><strong>Тонкая настройка</strong> — перейдите во вкладку «Ещё» (Настройки), чтобы изменить цвет доски, звуки и анимации под себя.</div>
+          </div>
+          <div class="onboard-list-item">
+            <div class="onboard-list-icon">🧩</div>
+            <div class="onboard-list-text"><strong>Puzzle Storm</strong> — отличный способ разогреть мозг перед партией!</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="onboard-slide">
+        <div class="onboard-icon">🚀</div>
+        <h2>Всё готово!</h2>
+        <p>Желаем красивых партий, блестящих тактических ходов и ярких побед на доске.</p>
+        <p style="font-weight:700; color:var(--text-primary); margin-top:10px;">Поехали!</p>
+      </div>
+
+    </div>
+
+    <div class="onboard-footer">
+      <div class="onboard-progress" id="onboard-dots">
+        <div class="onboard-dot active"></div>
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot"></div>
+        <div class="onboard-dot"></div>
+      </div>
+      <button class="onboard-btn" id="onboard-next-btn" onclick="nextOnboardSlide()">Далее</button>
+    </div>
+  </div>
+</div>
+
+<!-- Оповещение об обновлении безопасности (показывается один раз после велком-окна) -->
+<div id="ch-security-alert">
+  <div class="security-alert-container">
+    <div class="security-alert-body">
+      <div class="security-alert-icon">🔐</div>
+      <h2>Мы обновили безопасность</h2>
+      <p>Если у вас уже был аккаунт и вы были в него залогинены — пожалуйста, перезайдите заново. Часть функций не будет работать, пока вы не перезайдёте в свой аккаунт: мы серьёзно обновили систему безопасности, в том числе JWT-токен. При нахождении любого бага - пишите нам о нём. Спасибо за понимание!</p>
+    </div>
+    <div class="onboard-footer">
+      <button class="onboard-btn" onclick="closeSecurityAlert()">Понятно, перезайду</button>
+    </div>
+  </div>
+</div>
+
+<!-- header injected by /js/header.js -->
+
+<nav id="bottom-nav" aria-label="Основная навигация">
+  <button class="bottom-nav-item active" id="bn-home" onclick="showPage('home');setBottomNav('bn-home')">
+    <span class="bn-icon">♚</span><span>Главная</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-lobby" onclick="showPage('lobby');setBottomNav('bn-lobby')">
+    <span class="bn-icon">🏆</span><span>Играть</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-puzzles" onclick="showPage('puzzles');setBottomNav('bn-puzzles')">
+    <span class="bn-icon">🧩</span><span>Задачи</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-analysis" onclick="showPage('analysis');setBottomNav('bn-analysis')">
+    <span class="bn-icon">🔍</span><span>Анализ</span>
+  </button>
+  <button class="bottom-nav-item" id="bn-settings" onclick="location.href='/settings'">
+    <span class="bn-icon">⚙️</span><span>Ещё</span>
+  </button>
+</nav>
+
+<div id="app">
+
+  <div id="page-home" class="page">
+    <div class="hero">
+      <div class="hero-text">
+        <div class="hero-eyebrow">♟ Шахматная платформа нового поколения</div>
+        <h1 class="hero-title">
+          Играй.<br>
+          Анализируй.<br>
+          <span class="accent">Побеждай.</span>
+        </h1>
+        <p class="hero-subtitle">
+          Chess Home — это шахматная платформа с интеллектуальным анализом Stockfish, 
+          удобным редактором позиций и онлайн-игрой в реальном времени.
+          Только на русском, только для лучших.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-lg" onclick="showPage('lobby')">
+            Начать игру!
+          </button>
+          <button class="btn btn-secondary btn-lg" onclick="showPage('analysis')">
+            🔍 Анализировать
+          </button>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-board-wrap" id="hero-board">
+          <canvas id="hero-chess-canvas"></canvas>
+          <div class="hero-board-glow"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="features" style="padding-top:0">
+      <h2 class="section-title">Почему <span>Chess Home</span>?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3>Анализ Stockfish</h3>
+          <p>Движок мирового класса анализирует каждый ход прямо в браузере. Оценка позиции, лучший ход, линии на 20+ ходов.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎮</span>
+          <h3>Онлайн-игра</h3>
+          <p>Играй с живыми соперниками в реальном времени. Система рейтинга Эло, разные контроли времени.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">✏️</span>
+          <h3>Редактор позиций</h3>
+          <p>Создай любую позицию с нуля, загрузи через FEN и немедленно анализируй с движком.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">📚</span>
+          <h3>История партий</h3>
+          <p>Полная запись ходов в формате PGN с навигацией по дереву ходов. Прокручивай любую позицию.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🏆</span>
+          <h3>Рейтинг Эло</h3>
+          <p>Честная система рейтинга. Побеждай, улучшай своё место. Ищи соперников своего уровня.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🇷🇺</span>
+          <h3>Полностью на русском</h3>
+          <p>Первый шахматный сайт, разработанный изначально для русскоязычного сообщества.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:100%;max-width:1200px;margin:0 auto;padding:0 24px 60px">
+      <h2 class="section-title">Живой <span>чат</span></h2>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)">
+
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite"></div>
+          <span style="font-weight:700;font-size:14px">Общий чат</span>
+          <span id="chat-online-count" style="font-size:12px;color:var(--text-muted)"></span>
+        </div>
+
+        <div id="global-chat-messages" style="height:320px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:1px"></div>
+
+        <div style="border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;align-items:center">
+          <div id="chat-not-logged" style="display:none;font-size:13px;color:var(--text-muted);flex:1">
+            <a href="/" style="color:var(--accent)">Войдите</a>, чтобы писать в чат
+          </div>
+          <input class="form-input" id="global-chat-input" placeholder="Написать сообщение..." maxlength="50"
+            onkeydown="if(event.key==='Enter')sendGlobalChatMsg()"
+            style="flex:1;padding:8px 14px;font-size:14px;display:none">
+          <button class="btn btn-primary btn-sm" id="chat-send-btn" onclick="sendGlobalChatMsg()" style="display:none">
+            Отправить
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="game-modes">
+      <h2 class="section-title">Выбери <span>режим</span></h2>
+      <div class="modes-grid">
+        <div class="mode-card" onclick="showPage('lobby')">
+          <div class="mode-icon">⚔️</div>
+          <h3>Онлайн</h3>
+          <p>Против живого соперника</p>
+        </div>
+        <div class="mode-card" onclick="showPage('game'); chessBoard.newLocalGame()">
+          <div class="mode-icon">👤</div>
+          <h3>Локальная игра</h3>
+          <p>На одном устройстве</p>
+        </div>
+        <div class="mode-card" onclick="showPage('analysis')">
+          <div class="mode-icon">🔭</div>
+          <h3>Анализ партии</h3>
+          <p>Разбор со Stockfish</p>
+        </div>
+        <div class="mode-card" onclick="showPage('editor')">
+          <div class="mode-icon">🎨</div>
+          <h3>Редактор доски</h3>
+          <p>Своя позиция</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-lobby" class="page">
+    <div style="padding:24px;max-width:1100px;margin:0 auto">
+      <div class="page-header">
+        <h1>🏆 Игровой зал</h1>
+        <p>Брось вызов или прими чужой — и начни партию</p>
+      </div>
+
+      <div style="position:relative;max-width:400px;margin-bottom:20px">
+        <input class="form-input" id="player-search" type="text"
+          placeholder="🔍 Найти игрока по нику..."
+          oninput="searchUsers(this.value)"
+          autocomplete="off">
+        <div id="search-results" class="search-results" style="display:none"></div>
+      </div>
+
+      <div class="lobby-layout">
+        <div>
+          <div class="lobby-panel">
+            <div class="panel-title">⚡ Создать вызов</div>
+
+            <div class="form-group">
+              <div class="form-label">Контроль времени</div>
+              <div class="time-control-select">
+                <button class="tc-btn" data-tc="1+0" onclick="selectTC('1+0')">1+0</button>
+                <button class="tc-btn" data-tc="3+0" onclick="selectTC('3+0')">3+0</button>
+                <button class="tc-btn" data-tc="5+0" onclick="selectTC('5+0')">5+0</button>
+                <button class="tc-btn selected" data-tc="10+0" onclick="selectTC('10+0')">10+0</button>
+                <button class="tc-btn" data-tc="15+10" onclick="selectTC('15+10')">15+10</button>
+                <button class="tc-btn" data-tc="30+0" onclick="selectTC('30+0')">30+0</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="form-label">Цвет</div>
+              <div class="time-control-select">
+                <button class="tc-btn color-btn selected" data-color="random" onclick="selectColor('random')">🎲 Случайный</button>
+                <button class="tc-btn color-btn" data-color="white" onclick="selectColor('white')">⬜ Белые</button>
+                <button class="tc-btn color-btn" data-color="black" onclick="selectColor('black')">⬛ Чёрные</button>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width:100%" onclick="postChallenge()">
+              🚀 Бросить вызов в зал
+            </button>
+
+            <div class="divider"></div>
+
+            <div style="font-size:13px;color:var(--text-secondary)">
+              Или <a href="#" onclick="showPage('game');chessBoard.newLocalGame()">сыграй локально</a> прямо сейчас
+            </div>
+          </div>
+        </div>
+
+        <div class="lobby-panel">
+          <div class="panel-title">📋 Открытые вызовы <span id="challenges-count" style="color:var(--text-muted);font-weight:400"></span></div>
+          <div class="challenge-list" id="challenge-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">🏰</div>
+              <p>Нет открытых вызовов.<br>Создай первый!</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-game" class="page">
+    <div class="game-layout">
+
+      <div class="eval-bar-container" id="eval-bar-container" style="display:none">
+        <div class="eval-bar-fill" id="eval-bar-fill" style="height:50%"></div>
+      </div>
+
+      <div class="board-area">
+        <div class="player-info">
+          <div class="player-avatar" id="avatar-top">♟</div>
+          <div>
+            <div class="player-name" id="player-top-name">Чёрные ♟</div>
+            <div class="player-rating" id="rating-top">Рейтинг: —</div>
+          </div>
+          <div class="captured-pieces" id="captured-top"></div>
+          <div class="player-clock" id="clock-black">10:00</div>
+        </div>
+
+        <div class="board-wrapper" id="game-board-container">
+          <div id="chess-board"></div>
+          <div class="board-resize-handle" id="board-resize-handle" title="Тяни чтобы изменить размер"></div>
+        </div>
+
+        <div class="player-info">
+          <div class="player-avatar" id="avatar-bottom">♙</div>
+          <div>
+            <div class="player-name" id="player-bottom-name">Белые ♙</div>
+            <div class="player-rating" id="rating-bottom">Рейтинг: —</div>
+          </div>
+          <div class="captured-pieces" id="captured-bottom"></div>
+          <div class="player-clock" id="clock-white">10:00</div>
+        </div>
+      </div>
+
+      <div class="game-panel">
+        <div class="moves-list">
+          <table class="moves-table">
+            <tbody id="moves-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="nav-btn-row">
+          <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoFirst()" title="Начало">⏮</button>
+          <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoPrev()" title="Назад">◀</button>
+          <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoNext()" title="Вперёд">▶</button>
+          <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoLast()" title="Конец">⏭</button>
+          <button class="btn btn-ghost btn-sm" onclick="chessBoard.flipBoard()" title="Перевернуть">↕</button>
+        </div>
+        <div id="premove-indicator" onclick="chessBoard.clearPremove();chessBoard.render()" title="Нажми чтобы отменить">
+          🟠 Преймув запланирован — <u>отменить</u>
+        </div>
+
+        <div class="game-actions">
+          <button class="btn btn-ghost btn-sm" onclick="chessBoard.offerDraw()" title="Предложить ничью">🤝</button>
+          <button class="btn btn-danger btn-sm" onclick="chessBoard.resign()">🏳 Сдаться</button>
+          <button class="btn btn-secondary btn-sm" onclick="showPage('analysis');chessBoard.loadAnalysis()">🔍 Анализ</button>
+        </div>
+
+
+        <div class="board-size-control">
+          <div class="board-size-header">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="opacity:.6"><rect x="1" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="1" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="1" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/><rect x="8" y="8" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.4"/></svg>
+            <span>Размер доски</span>
+          </div>
+          <div class="board-size-slider-row">
+            <span class="board-size-icon-sm">▫</span>
+            <input type="range" id="board-size-slider" min="280" max="800" step="10" value="500" class="board-size-range">
+            <span class="board-size-icon-lg">▪</span>
+          </div>
+          <div class="board-size-value-row">
+            <span id="board-size-label" class="board-size-label">Авто</span>
+          </div>
+        </div>
+
+        <div class="game-chat-panel">
+          <div class="chat-messages" id="chat-messages"></div>
+          <div class="chat-input-row">
+            <input class="chat-input" id="chat-input" placeholder="Сообщение..." maxlength="100"
+              onkeydown="if(event.key==='Enter')sendChatMsg()">
+            <button class="btn btn-primary btn-sm" onclick="sendChatMsg()">→</button>
+          </div>
+        </div>
+
+        <div style="font-size:11px;color:var(--text-muted);word-break:break-all" id="current-fen"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-analysis" class="page">
+    <div style="padding:16px;max-width:1100px;margin:0 auto">
+      <div class="page-header">
+        <h1>🔍 Анализ партии</h1>
+        <p>Движок Stockfish анализирует позицию в реальном времени</p>
+      </div>
+
+      <div class="analysis-layout">
+        <div class="board-area">
+          <div class="board-wrapper" id="analysis-board-container">
+            </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoFirst()">⏮</button>
+            <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoPrev()">◀</button>
+            <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoNext()">▶</button>
+            <button class="btn btn-ghost btn-sm" onclick="chessBoard.gotoLast()">⏭</button>
+            <button class="btn btn-ghost btn-sm" onclick="chessBoard.flipBoard()">↕</button>
+          </div>
+        </div>
+
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+
+          <div class="engine-panel">
+            <div class="engine-status">
+              <div class="engine-dot loading" id="engine-dot"></div>
+              <span id="engine-status-text">Загрузка движка...</span>
+            </div>
+            <div class="eval-score" id="eval-score">+0.00</div>
+            <div class="depth-line" id="eval-depth">Глубина: —</div>
+            <div class="best-move">
+              Лучший ход: <span id="best-move-uci">—</span>
+            </div>
+            <div style="margin-top:12px;font-size:12px;color:var(--text-muted);font-weight:600;margin-bottom:4px">Главная линия:</div>
+            <div class="pv-line" id="pv-line">—</div>
+          </div>
+
+          <div class="moves-list" style="max-height:220px">
+            <table class="moves-table">
+              <tbody id="moves-table-body"></tbody>
+            </table>
+          </div>
+
+          <div class="lobby-panel" style="padding:14px">
+            <div class="panel-title" style="margin-bottom:10px">📋 Загрузить FEN</div>
+            <div style="display:flex;gap:8px">
+              <input class="form-input" id="analysis-fen-input" placeholder="Вставьте FEN..." style="font-family:var(--font-mono);font-size:12px">
+              <button class="btn btn-primary btn-sm" onclick="loadAnalysisFEN()">→</button>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-muted)">
+              Текущий FEN: <span id="analysis-current-fen" style="font-family:var(--font-mono);word-break:break-all"></span>
+            </div>
+          </div>
+
+          <div class="lobby-panel" style="padding:14px">
+            <div class="panel-title" style="margin-bottom:10px">📝 Загрузить PGN</div>
+            <textarea class="form-input" id="pgn-input" rows="4" placeholder="Вставьте PGN..." style="resize:vertical;font-family:var(--font-mono);font-size:12px"></textarea>
+            <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="loadPGN()">Загрузить PGN</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-editor" class="page">
+    <div style="padding:16px;max-width:1100px;margin:0 auto">
+      <div class="page-header">
+        <h1>✏️ Редактор доски</h1>
+        <p>Создай любую позицию и анализируй её</p>
+      </div>
+
+      <div class="editor-layout">
+
+        <div class="piece-palette">
+          <div class="palette-section">
+            <div class="palette-label">⬜ Белые фигуры</div>
+            <div class="palette-pieces" id="palette-white"></div>
+          </div>
+          <div class="palette-section">
+            <div class="palette-label">⬛ Чёрные фигуры</div>
+            <div class="palette-pieces" id="palette-black"></div>
+          </div>
+          <button class="eraser-btn" onclick="BoardEditor.selectEraser()">🗑 Ластик</button>
+          <div style="margin-top:16px;font-size:12px;color:var(--text-muted)">Нажми фигуру,<br>потом клетку</div>
+        </div>
+
+        <div>
+          <div class="board-wrapper">
+            <div id="editor-board" style="width:min(480px,calc(100vw - 220px));
+  height:min(480px,calc(100vw - 220px));
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  grid-template-rows:repeat(8,1fr);
+  border:3px solid var(--accent-dark);
+  border-radius:4px;overflow:hidden">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+            <button class="btn btn-secondary btn-sm" onclick="BoardEditor.initFromStart()">♟ Начальная</button>
+            <button class="btn btn-secondary btn-sm" onclick="BoardEditor.initEmpty()">🔲 Пустая</button>
+            <button class="btn btn-secondary btn-sm" onclick="BoardEditor.clearBoard()">🗑 Очистить</button>
+          </div>
+        </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;min-width:200px">
+          <div class="editor-options">
+            <div class="panel-title" style="margin-bottom:12px">⚙️ Параметры</div>
+
+            <div class="form-label">Чья очередь</div>
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <button class="tc-btn turn-btn selected" data-turn="w" onclick="BoardEditor.setTurn('w')">⬜ Белые</button>
+              <button class="tc-btn turn-btn" data-turn="b" onclick="BoardEditor.setTurn('b')">⬛ Чёрные</button>
+            </div>
+
+            <div class="form-label">FEN позиции</div>
+            <input class="form-input" id="editor-fen" style="font-family:var(--font-mono);font-size:11px;margin-bottom:8px" placeholder="FEN">
+            <button class="btn btn-secondary btn-sm" onclick="BoardEditor.loadFromFEN()" style="width:100%;margin-bottom:12px">
+              Загрузить из FEN
+            </button>
+
+            <button class="btn btn-primary" style="width:100%" onclick="BoardEditor.analyzePosition()">
+              🔍 Анализировать позицию
+            </button>
+          </div>
+
+          <div class="lobby-panel" style="padding:14px">
+            <div class="panel-title">💡 Подсказки</div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+              • Выбери фигуру из палитры<br>
+              • Кликни на клетку доски<br>
+              • Перетаскивай фигуры<br>
+              • Ластик удаляет фигуру<br>
+              • «Анализировать» → Stockfish
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-settings" class="page">
+    <div style="padding:40px 24px;max-width:700px;margin:0 auto">
+      <div class="page-header">
+        <h1>⚙️ Настройки</h1>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">🎮 Игра</div>
+
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-name">Звуковые эффекты</div>
+            <div class="settings-label-desc">Звуки ходов, взятий, шаха</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="set-sounds" onchange="saveSetting('sounds',this.checked)">
+            <div class="toggle-slider"></div>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-name">Подсказки ходов</div>
+            <div class="settings-label-desc">Показывать возможные ходы</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="set-hints" onchange="saveSetting('hints',this.checked)">
+            <div class="toggle-slider"></div>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-name">Координаты на доске</div>
+            <div class="settings-label-desc">Буквы и цифры по краям</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="set-coords" onchange="saveSetting('coords',this.checked)">
+            <div class="toggle-slider"></div>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-name">Анимация ходов</div>
+            <div class="settings-label-desc">Плавное перемещение фигур</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="set-animation" onchange="saveSetting('animation',this.checked)">
+            <div class="toggle-slider"></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">🎨 Доска</div>
+        <div class="settings-row">
+          <div class="settings-label">
+            <div class="settings-label-name">Тема доски</div>
+          </div>
+          <div class="color-options">
+            <div class="color-option" style="background:#f0d9b5;border:2px solid #b58863" title="Классическая" onclick="setBoardTheme('#f0d9b5','#b58863')"></div>
+            <div class="color-option" style="background:#dee3e6;border:2px solid #8ca2ad" title="Синяя" onclick="setBoardTheme('#dee3e6','#8ca2ad')"></div>
+            <div class="color-option" style="background:#e8e9b7;border:2px solid #6e8149" title="Зелёная" onclick="setBoardTheme('#e8e9b7','#6e8149')"></div>
+            <div class="color-option" style="background:#f1c79c;border:2px solid #c07030" title="Оранжевая" onclick="setBoardTheme('#f1c79c','#c07030')"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">👤 Аккаунт</div>
+        <div id="settings-account-info">
+          <div style="color:var(--text-secondary);font-size:14px" id="account-info-text">Войдите в аккаунт для управления профилем</div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">🔗 Информация</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <a class="btn btn-ghost btn-sm" href="#" data-page="about" onclick="showPage('about')">О сайте</a>
+          <a class="btn btn-ghost btn-sm" href="#" data-page="faq" onclick="showPage('faq')">Частые вопросы</a>
+          <a class="btn btn-ghost btn-sm" href="#" data-page="appeal" onclick="goToAppealPage()">Апелляция</a>
+          <a class="btn btn-ghost btn-sm" href="#" data-page="privacy" onclick="showPage('privacy')">Конфиденциальность</a>
+          <a class="btn btn-ghost btn-sm" href="#" data-page="terms" onclick="showPage('terms')">Соглашение</a>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">Chess Home v1.0.0 · Made with ♥ in Russia</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-privacy" class="page">
+    <div style="padding:40px 24px;max-width:800px;margin:0 auto">
+      <div class="legal-content">
+        <h1>Политика конфиденциальности</h1>
+        <div class="last-updated">Последнее обновление: 15 марта 2025 года</div>
+
+        <h2>1. Общие положения</h2>
+        <p>Chess Home («мы», «наш», «платформа») уважает конфиденциальность пользователей и обязуется защищать персональные данные. Настоящая Политика конфиденциальности описывает, как мы собираем, используем и защищаем вашу информацию.</p>
+
+        <h2>2. Какие данные мы собираем</h2>
+        <ul>
+          <li><strong>Данные регистрации:</strong> имя пользователя, адрес электронной почты, хэш пароля</li>
+          <li><strong>Игровые данные:</strong> история партий, рейтинг, статистика</li>
+          <li><strong>Технические данные:</strong> IP-адрес, тип браузера, время подключения</li>
+        </ul>
+
+        <h2>3. Как мы используем данные</h2>
+        <p>Собранные данные используются исключительно для:</p>
+        <ul>
+          <li>Предоставления игрового сервиса и ведения рейтинга</li>
+          <li>Обеспечения безопасности аккаунтов</li>
+          <li>Улучшения работы платформы</li>
+          <li>Связи с пользователями по вопросам аккаунта</li>
+        </ul>
+
+        <h2>4. Хранение данных</h2>
+        <p>Пароли хранятся в зашифрованном виде с использованием алгоритма bcrypt. Мы не передаём ваши персональные данные третьим лицам без вашего согласия, за исключением случаев, предусмотренных законодательством.</p>
+
+        <h2>5. Удаление данных</h2>
+        <p>Вы можете запросить удаление своего аккаунта и всех связанных данных, написав в поддержку. Удаление будет произведено в течение 30 дней.</p>
+
+        <h2>6. Файлы cookie</h2>
+        <p>Мы используем только технически необходимые HttpOnly cookies для хранения токена авторизации — они недоступны для JavaScript на странице. Мы не используем рекламные или аналитические cookies.</p>
+
+        <h2>7. Безопасность</h2>
+        <p>Все соединения с сервером осуществляются по зашифрованному протоколу. Мы регулярно проводим аудит безопасности и обновляем защитные меры.</p>
+
+        <h2>8. Контакты</h2>
+        <p>По вопросам конфиденциальности обращайтесь: <a href="/cdn-cgi/l/email-protection#a4d4d6cdd2c5c7dde4c7ccc1d7d7cccbc9c18ac5d4d4"><span class="__cf_email__" data-cfemail="7101031807101208311219140202191e1c145f100101">[email&#160;protected]</span></a></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-terms" class="page">
+    <div style="padding:40px 24px;max-width:800px;margin:0 auto">
+      <div class="legal-content">
+        <h1>Пользовательское соглашение</h1>
+        <div class="last-updated">Последнее обновление: 15 марта 2025 года</div>
+
+        <h2>1. Принятие условий</h2>
+        <p>Используя Chess Home, вы соглашаетесь с настоящим Пользовательским соглашением. Если вы не согласны с условиями, пожалуйста, не используйте платформу.</p>
+
+        <h2>2. Регистрация и аккаунт</h2>
+        <ul>
+          <li>Для регистрации необходимо быть не моложе 13 лет</li>
+          <li>Один человек — один аккаунт</li>
+          <li>Вы несёте ответственность за безопасность своего пароля</li>
+          <li>Запрещено передавать аккаунт третьим лицам</li>
+        </ul>
+
+        <h2>3. Правила поведения</h2>
+        <p>На платформе запрещено:</p>
+        <ul>
+          <li>Использование читерских программ или движков во время рейтинговых партий</li>
+          <li>Преднамеренный разрыв соединения для избежания поражения</li>
+          <li>Оскорбления и нецензурные выражения в чате</li>
+          <li>Создание множественных аккаунтов для накрутки рейтинга</li>
+          <li>Спам и флуд в игровом чате</li>
+        </ul>
+
+        <h2>4. Рейтинговая система</h2>
+        <p>Рейтинг рассчитывается по системе Эло. Администрация оставляет за собой право корректировать рейтинг в случае выявления нарушений.</p>
+
+        <h2>5. Санкции за нарушения</h2>
+        <p>При нарушении правил платформа вправе:</p>
+        <ul>
+          <li>Выдать предупреждение</li>
+          <li>Временно заблокировать аккаунт</li>
+          <li>Навсегда заблокировать аккаунт</li>
+          <li>Аннулировать рейтинговые очки</li>
+        </ul>
+
+        <h2>6. Интеллектуальная собственность</h2>
+        <p>Весь контент Chess Home (логотип, дизайн, код) является собственностью платформы. Партии, сыгранные на платформе, могут быть использованы в обезличенном виде для обучения и анализа.</p>
+
+        <h2>7. Изменение условий</h2>
+        <p>Мы оставляем за собой право изменять условия соглашения. О существенных изменениях пользователи будут уведомлены на сайте.</p>
+
+        <h2>8. Контакты</h2>
+        <p>По вопросам соглашения: <a href="/cdn-cgi/l/email-protection#cfa3aaa8aea38faca7aabcbca7a0a2aae1aebfbf"><span class="__cf_email__" data-cfemail="1d71787a7c715d7e75786e6e75727078337c6d6d">[email&#160;protected]</span></a></p>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-about" class="page">
+    <div style="padding:40px 24px;max-width:800px;margin:0 auto">
+      <div class="legal-content">
+        <h1>О Chess Home</h1>
+        <div class="last-updated">Версия 1.0.0 · 2025</div>
+
+        <h2>🏰 Наша миссия</h2>
+        <p>Chess Home создан для русскоязычного шахматного сообщества. Мы хотим сделать шахматы доступными, современными и удобными — без лишних сложностей.</p>
+
+        <h2>⚡ Технологии</h2>
+        <ul>
+          <li><strong>Движок анализа:</strong> Stockfish 16 (WebAssembly)</li>
+          <li><strong>Сервер:</strong> Node.js + Socket.io (реальное время)</li>
+          <li><strong>Рейтинг:</strong> Система Эло</li>
+          <li><strong>Фигуры:</strong> Набор Cburnett (открытая лицензия)</li>
+        </ul>
+
+        <h2>🎮 Возможности</h2>
+        <ul>
+          <li>Полная шахматная логика: рокировка, взятие на проходе, превращение</li>
+          <li>Онлайн-игра через WebSocket в реальном времени</li>
+          <li>Анализ позиций движком Stockfish с глубиной до 25+ ходов</li>
+          <li>Редактор доски с поддержкой FEN</li>
+          <li>Запись партий в формате PGN</li>
+          <li>Рейтинговая система Эло</li>
+          <li>Поиск игроков</li>
+          <li>Настройки цветов доски и интерфейса</li>
+        </ul>
+
+        <h2>🔮 Планы на будущее</h2>
+        <ul>
+          <li>Игра против компьютера (разные уровни)</li>
+          <li>Обучающие курсы и задачи</li>
+          <li>Турниры</li>
+          <li>Мобильное приложение</li>
+          <li>Стриминг партий</li>
+        </ul>
+
+        <h2>📬 Связь</h2>
+        <p>Обратная связь и предложения: <a href="/cdn-cgi/l/email-protection#cea6aba2a2a18eada6abbdbda6a1a3abe0afbebe"><span class="__cf_email__" data-cfemail="9df5f8f1f1f2ddfef5f8eeeef5f2f0f8b3fceded">[email&#160;protected]</span></a></p>
+      </div>
+    </div>
+  </div>
+  <div id="page-faq" class="page">
+    <div class="faq-wrap">
+      <div class="faq-hero">
+        <div class="faq-hero-icon">♞</div>
+        <h1>Частые вопросы</h1>
+        <p>Всё, что нужно знать о Chess Home — коротко и по делу</p>
+        <div class="faq-search-box">
+          <span class="faq-search-icon">🔍</span>
+          <input type="text" id="faq-search-input" placeholder="Найти ответ..." oninput="filterFaq(this.value)">
+        </div>
+      </div>
+
+      <div class="faq-categories" id="faq-categories">
+        <button class="faq-cat-btn active" data-cat="all" onclick="setFaqCategory('all', this)">Все</button>
+        <button class="faq-cat-btn" data-cat="account" onclick="setFaqCategory('account', this)">👤 Аккаунт</button>
+        <button class="faq-cat-btn" data-cat="rating" onclick="setFaqCategory('rating', this)">📈 Рейтинг</button>
+        <button class="faq-cat-btn" data-cat="tools" onclick="setFaqCategory('tools', this)">🔍 Инструменты</button>
+        <button class="faq-cat-btn" data-cat="safety" onclick="setFaqCategory('safety', this)">🛡️ Безопасность</button>
+      </div>
+
+      <div class="faq-list" id="faq-list">
+
+        <div class="faq-item" data-cat="safety">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Я проиграл читеру — что будет?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Мы рассмотрим ваши партии и, если жалоба подтвердится, по возможности вернём потерянный рейтинг.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="safety">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Есть ли у меня второй шанс, если меня забанили?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Зависит от причины бана. Вы можете обратиться к модераторам — откройте обращение на странице <a href="#" onclick="goToAppealPage(); return false;">«Апелляция»</a>.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="account">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Можно ли создавать несколько аккаунтов?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Зависит от того, для чего вы их создаёте. За абьюз мультиаккаунтов (обход бана, накрутку рейтинга и т.п.) мы можем заблокировать все связанные аккаунты.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="safety">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Как стать модератором?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Мы не принимаем заявки на роль модератора. Если мы считаем, что кто-то может хорошо справиться с этой ролью, то связываемся с ним сами.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="account">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Могу ли я изменить своё имя пользователя?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Нет, изменить имя пользователя нельзя.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="rating">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Я проиграл из-за пропадания сети. Могу ли я вернуть очки рейтинга?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Нет, за поражение из-за обрыва соединения рейтинг не возвращается — если партия была рейтинговой, результат засчитывается как обычное поражение.</p>
+          </div>
+        </div>
+
+        <div class="faq-item" data-cat="tools">
+          <button class="faq-q" onclick="toggleFaq(this)">
+            <span>Есть ли быстрый переход по разделам сайта?</span>
+            <span class="faq-chevron">⌄</span>
+          </button>
+          <div class="faq-a">
+            <p>Да! Нажмите <kbd>Ctrl</kbd>+<kbd>K</kbd> (на Mac — <kbd>⌘</kbd>+<kbd>K</kbd>) в любой момент — откроется быстрый поиск по всем разделам: игра, задачи, анализ, редактор, настройки и т.д. Также есть плавающая кнопка поиска в правом нижнем углу.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="faq-empty" id="faq-empty" style="display:none">
+        <div style="font-size:40px;margin-bottom:8px">🤔</div>
+        <div>Ничего не найдено. Попробуйте другой запрос.</div>
+      </div>
+
+      <div class="faq-cta">
+        <div class="faq-cta-title">Не нашли ответ?</div>
+        <p>Напишите нам — раздел «О сайте» содержит контакты для связи и предложений.</p>
+        <button class="btn btn-primary" onclick="showPage('about')">Связаться с нами</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-appeal" class="page">
+    <div class="appeal-wrap">
+      <div class="appeal-hero">
+        <div class="appeal-hero-icon">📩</div>
+        <h1>Апелляция</h1>
+        <p>Обращение к администрации: баны, читеры, спорные ситуации</p>
+      </div>
+
+      <!-- Не авторизован -->
+      <div id="appeal-auth-required" style="display:none;text-align:center;padding:40px 20px">
+        <div style="font-size:44px;margin-bottom:10px">🔒</div>
+        <h2 style="margin-bottom:8px">Войдите в аккаунт</h2>
+        <p style="color:var(--text-muted);margin-bottom:20px">Чтобы отправить обращение, нужно войти</p>
+        <button class="btn btn-primary" onclick="openModal('modal-login')">Войти</button>
+      </div>
+
+      <!-- Авторизован -->
+      <div id="appeal-content" style="display:none">
+
+        <!-- Форма нового обращения -->
+        <div class="settings-section" id="appeal-new-wrap">
+          <div class="settings-title">✏️ Новое обращение</div>
+          <div class="appeal-new-form">
+            <div class="form-group">
+              <label class="form-label">Тема обращения</label>
+              <select class="form-input" id="appeal-reason-select">
+                <option value="ban">🚫 Обжалование бана</option>
+                <option value="cheater">🤖 Проиграл читеру</option>
+                <option value="rating">📈 Вопрос по рейтингу</option>
+                <option value="other">❓ Другое</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Сообщение</label>
+              <textarea class="form-input" id="appeal-new-message" rows="4" maxlength="1000" placeholder="Опишите ситуацию подробно: когда, что произошло, ссылки на партии и т.п."></textarea>
+            </div>
+            <button class="btn btn-primary" id="appeal-submit-btn" onclick="submitAppeal()">📨 Отправить обращение</button>
+          </div>
+        </div>
+
+        <!-- Уже есть открытое обращение -->
+        <div class="settings-section" id="appeal-open-notice" style="display:none;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">⏳</div>
+          <div style="font-weight:700;margin-bottom:4px">У вас уже есть открытое обращение</div>
+          <p style="color:var(--text-muted);font-size:13px">Дождитесь ответа администратора, прежде чем создавать новое — оно уже в списке ниже.</p>
+        </div>
+
+        <!-- История обращений -->
+        <div class="settings-section" style="margin-top:20px">
+          <div class="settings-title">🗂 Мои обращения <span id="appeal-mine-count" style="color:var(--text-muted);font-weight:400;font-size:14px"></span></div>
+          <div id="appeal-mine-list">
+            <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+<div id="page-profile" class="page">
+  <!-- Профиль загружается как отдельная страница -->
+</div>
+
+      <div id="profile-auth-required" style="display:none;text-align:center;padding:60px">
+        <div style="font-size:48px;margin-bottom:12px">🔒</div>
+        <h2 style="margin-bottom:8px">Войдите в аккаунт</h2>
+        <p style="color:var(--text-muted);margin-bottom:20px">Чтобы просматривать профили, нужно войти</p>
+        <button class="btn btn-primary" onclick="openModal('modal-login')">Войти</button>
+      </div>
+
+      <div id="profile-notfound" style="display:none;text-align:center;padding:60px">
+        <div style="font-size:48px;margin-bottom:12px">🔍</div>
+        <h2 style="margin-bottom:8px">Пользователь не найден</h2>
+        <p style="color:var(--text-muted)">Такого игрока не существует</p>
+        <button class="btn btn-primary" onclick="showPage('home')">На главную</button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div id="page-admin" class="page">
+    <div style="padding:40px 24px;max-width:900px;margin:0 auto">
+      <div class="page-header">
+        <h1>🛡 Панель администратора</h1>
+        <p>Управление пользователями Chess Home</p>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">🔍 Найти пользователя</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input class="form-input" id="admin-search-input" placeholder="Введите ник..." oninput="adminSearchUsers(this.value)">
+        </div>
+        <div id="admin-search-results"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">👥 Все пользователи <span id="admin-users-count" style="color:var(--text-muted);font-weight:400;font-size:14px"></span></div>
+        <div id="admin-users-list">
+          <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-top: 30px;">
+        <div class="settings-title">⚠️ Активные жалобы (Репорты)</div>
+        <div style="margin-bottom:12px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadAdminReports('new')">Только новые</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadAdminReports('')">Все репорты</button>
+        </div>
+        <div id="admin-reports-list" style="display:flex; flex-direction:column; gap:10px;">
+          <div class="empty-state">Нажмите для загрузки репортов</div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="margin-top: 30px;">
+        <div class="settings-title">
+          📩 Обращения (тикеты)
+          <span id="admin-appeals-count" style="color:var(--text-muted);font-weight:400;font-size:14px"></span>
+        </div>
+        <div style="margin-bottom:12px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadAdminAppeals('open')">Открытые</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadAdminAppeals('closed')">Закрытые</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadAdminAppeals('')">Все</button>
+        </div>
+        <div id="admin-appeals-list">
+          <div class="empty-state">Нажмите, чтобы загрузить обращения</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="modal-overlay" id="modal-login">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
+    <h2>♚ Вход</h2>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Имя пользователя</label>
+        <input class="form-input" id="login-username" placeholder="Ваш ник" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input class="form-input" id="login-password" type="password" placeholder="Пароль" autocomplete="current-password">
+      </div>
+      <div class="form-error" id="login-error"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-login');openModal('modal-register')">Нет аккаунта?</button>
+        <button type="submit" class="btn btn-primary">Войти</button>
+      </div>
+    </form>
+    <div class="g-recaptcha" data-sitekey="6LdJZyUtAAAAABNEO9ah9rjVHMgjpBdSZijdPGdj"></div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-register">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('modal-register')">✕</button>
+    <h2>♟ Регистрация</h2>
+    <form onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label class="form-label">Имя пользователя</label>
+        <input class="form-input" id="reg-username" placeholder="Ваш ник (мин. 3 символа)" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email <span style="color:var(--red);font-size:11px">*обязателен</span></label>
+        <input class="form-input" id="reg-email" type="email" placeholder="email@example.com" autocomplete="email" required>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Нужен для защиты от мультиаккаунтинга. Один email — один аккаунт.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пароль</label>
+        <input class="form-input" id="reg-password" type="password" placeholder="Мин. 6 символов" autocomplete="new-password">
+      </div>
+      <div class="form-group" style="text-align:left;">
+        <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--text-secondary,#a0a0b0); cursor:pointer; margin-bottom:10px;">
+          <input type="checkbox" id="reg-agree-terms" onchange="updateRegisterButtonState()" style="margin-top:2px; flex-shrink:0;">
+          <span>Я согласен с <a href="#" onclick="showPage('privacy'); return false;" style="color:var(--accent);">политикой конфиденциальности</a> и <a href="#" onclick="showPage('terms'); return false;" style="color:var(--accent);">пользовательским соглашением</a> сайта</span>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; color:var(--text-secondary,#a0a0b0); cursor:pointer;">
+          <input type="checkbox" id="reg-agree-fair" onchange="updateRegisterButtonState()" style="margin-top:2px; flex-shrink:0;">
+          <span>Я не буду создавать несколько аккаунтов и читерить (использовать посторонние подсказки/движки во время партий)</span>
+        </label>
+      </div>
+      <div class="form-error" id="reg-error"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-register');openModal('modal-login')">Уже есть аккаунт?</button>
+        <button type="submit" class="btn btn-primary" id="reg-submit-btn" disabled style="opacity:0.5; cursor:not-allowed;">Создать аккаунт</button>
+      </div>
+          <div class="g-recaptcha" data-sitekey="6LdJZyUtAAAAABNEO9ah9rjVHMgjpBdSZijdPGdj"></div>
+
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-promotion">
+  <div class="modal promo-modal">
+    <div class="promo-icon">👑</div>
+    <h2>Превращение пешки</h2>
+    <p style="color:var(--text-secondary);font-size:14px">Выберите фигуру</p>
+    <div class="promo-pieces">
+      <button class="promo-piece-btn" data-piece="Q"><img src="" alt="Q"></button>
+      <button class="promo-piece-btn" data-piece="R"><img src="" alt="R"></button>
+      <button class="promo-piece-btn" data-piece="B"><img src="" alt="B"></button>
+      <button class="promo-piece-btn" data-piece="N"><img src="" alt="N"></button>
+    </div>
+  </div>
+</div>
+
+<div id="page-puzzles" class="page">
+    <div style="padding:24px;max-width:1100px;margin:0 auto">
+      <div class="page-header">
+        <h1>🧩 Задачи</h1>
+        <p>Тренируй тактику — решай задачи по темам и улучшай рейтинг</p>
+      </div>
+
+      <!-- Storm banner → отдельная страница storm.html -->
+      <a href="/storm.html" style="display:flex;text-decoration:none;cursor:pointer;margin-bottom:24px;background:linear-gradient(135deg,rgba(255,160,0,0.15),rgba(255,100,0,0.07));border:1px solid rgba(255,160,0,0.4);border-radius:16px;padding:18px 22px;align-items:center;gap:16px;transition:border-color .2s,transform .15s" onmouseover="this.style.transform='translateY(-2px)';this.style.borderColor='rgba(255,160,0,0.7)'" onmouseout="this.style.transform='';this.style.borderColor='rgba(255,160,0,0.4)'">
+        <div style="font-size:36px;filter:drop-shadow(0 0 12px rgba(255,160,0,0.6));animation:stormBolt 1.8s ease-in-out infinite alternate">⚡</div>
+        <div style="flex:1">
+          <div style="font-size:17px;font-weight:900;color:var(--text-primary);margin-bottom:2px">Puzzle Storm</div>
+          <div style="font-size:13px;color:var(--text-secondary)">3 минуты · как можно больше задач · борьба за рекорд</div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#ffa500;white-space:nowrap">Играть →</div>
+      </a>
+
+      <div id="puzzle-daily-card" style="display:none;margin-bottom:28px;background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));border:1px solid rgba(201,168,76,0.35);border-radius:16px;padding:20px 24px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <span style="font-size:24px">☀️</span>
+          <div>
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700">Задача дня</div>
+            <div id="daily-puzzle-title" style="font-weight:800;font-size:17px;color:var(--text-primary)">Загрузка...</div>
+          </div>
+          <div style="margin-left:auto"><span id="daily-puzzle-diff" class="puzzle-diff-badge"></span></div>
+        </div>
+        <div id="daily-puzzle-desc" style="font-size:13px;color:var(--text-secondary);margin-bottom:14px"></div>
+        <button class="btn btn-primary btn-sm" onclick="openDailyPuzzle()">Решить →</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start" id="puzzles-main-grid">
+        <div>
+          <h2 style="font-size:17px;font-weight:800;margin-bottom:14px">📚 Темы задач</h2>
+          <div id="puzzle-topics-grid" class="puzzle-topics-grid">
+            <div style="height:130px;background:var(--bg-secondary);border-radius:14px;animation:sk 1.4s infinite"></div>
+            <div style="height:130px;background:var(--bg-secondary);border-radius:14px;animation:sk 1.4s infinite"></div>
+            <div style="height:130px;background:var(--bg-secondary);border-radius:14px;animation:sk 1.4s infinite"></div>
+            <div style="height:130px;background:var(--bg-secondary);border-radius:14px;animation:sk 1.4s infinite"></div>
+          </div>
+        </div>
+        <div style="min-width:230px;max-width:260px;width:100%" id="puzzles-sidebar">
+          <h2 style="font-size:17px;font-weight:800;margin-bottom:14px">🏅 Топ игроков</h2>
+          <div class="lobby-panel" style="padding:0;overflow:hidden">
+            <div id="puzzle-leaderboard-mini" style="max-height:340px;overflow-y:auto">
+              <div style="padding:16px;color:var(--text-muted);font-size:13px;text-align:center">Загрузка...</div>
+            </div>
+            <div style="padding:10px 16px;border-top:1px solid var(--border);text-align:center">
+              <button class="btn btn-ghost btn-sm" onclick="showPage('puzzle-leaderboard')">Весь рейтинг →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-puzzle-topic" class="page">
+    <div style="padding:24px;max-width:860px;margin:0 auto">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:14px" onclick="showPage('puzzles')">← Все темы</button>
+      <div class="page-header" style="margin-bottom:20px">
+        <h1 id="puzzle-topic-title">Задачи</h1>
+        <p id="puzzle-topic-desc"></p>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap" id="puzzle-diff-filter">
+        <button class="tc-btn selected" data-diff="" onclick="filterPuzzleDiff('')">Все</button>
+        <button class="tc-btn" data-diff="easy"   onclick="filterPuzzleDiff('easy')">🟢 Лёгкие</button>
+        <button class="tc-btn" data-diff="medium" onclick="filterPuzzleDiff('medium')">🟡 Средние</button>
+        <button class="tc-btn" data-diff="hard"   onclick="filterPuzzleDiff('hard')">🔴 Сложные</button>
+      </div>
+      <div id="puzzle-list" class="puzzle-list"></div>
+      <div id="puzzle-load-more" style="text-align:center;margin-top:18px;display:none">
+        <button class="btn btn-secondary" onclick="loadMorePuzzles()">Загрузить ещё</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-puzzle-solve" class="page">
+    <div style="padding:16px;max-width:1000px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="goBackFromPuzzle()">← Назад</button>
+        <div style="flex:1">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700" id="puzzle-solve-topic"></div>
+          <div style="font-size:18px;font-weight:800;color:var(--text-primary)" id="puzzle-solve-title">Задача</div>
+        </div>
+        <span id="puzzle-solve-diff" class="puzzle-diff-badge"></span>
+      </div>
+      <div class="puzzle-solve-layout">
+        <div class="puzzle-board-area">
+          <div id="puzzle-board"></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="puzzleFlip()">↕ Повернуть</button>
+            <button class="btn btn-ghost btn-sm" onclick="puzzleReset()">↺ Заново</button>
+          </div>
+          <div style="display:flex;gap:4px;margin-top:8px;justify-content:center">
+            <button id="pz-nav-first" class="btn btn-ghost btn-sm pz-nav-btn" onclick="pzNavFirst()" title="В начало (↑)">⏮</button>
+            <button id="pz-nav-prev"  class="btn btn-ghost btn-sm pz-nav-btn" onclick="pzNavPrev()"  title="Назад (←)">◀</button>
+            <button id="pz-nav-next"  class="btn btn-ghost btn-sm pz-nav-btn" onclick="pzNavNext()"  title="Вперёд (→)">▶</button>
+            <button id="pz-nav-last"  class="btn btn-ghost btn-sm pz-nav-btn" onclick="pzNavLast()"  title="В конец (↓)">⏭</button>
+          </div>
+        </div>
+        <div class="puzzle-solve-panel">
+          <div class="lobby-panel" style="padding:14px">
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px" id="puzzle-solve-desc"></div>
+            <div style="font-weight:700;font-size:14px" id="puzzle-whose-turn"></div>
+          </div>
+          <div id="puzzle-feedback" class="puzzle-feedback" style="display:none"></div>
+          <div id="puzzle-rating-change" style="display:none;text-align:center;padding:12px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">Рейтинг задач</div>
+            <div id="puzzle-rating-delta" style="font-size:22px;font-weight:900"></div>
+            <div id="puzzle-new-rating" style="font-size:13px;color:var(--text-secondary)"></div>
+          </div>
+          <div id="puzzle-nav-btns" style="display:none;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="puzzleNext()" style="flex:1">Следующая →</button>
+            <button class="btn btn-ghost" onclick="goBackFromPuzzle()">Все задачи</button>
+          </div>
+          <div class="lobby-panel" style="padding:12px">
+            <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--text-muted);margin-bottom:6px">Ходы</div>
+            <div id="puzzle-moves-list" style="font-family:var(--font-mono,monospace);font-size:13px;color:var(--text-secondary)">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-puzzle-leaderboard" class="page">
+    <div style="padding:24px;max-width:700px;margin:0 auto">
+      <button class="btn btn-ghost btn-sm" style="margin-bottom:14px" onclick="showPage('puzzles')">← Назад</button>
+      <div class="page-header"><h1>🏅 Рейтинг задач</h1><p>Топ игроков по решению тактических задач</p></div>
+      <div class="lobby-panel" style="padding:0;overflow:hidden">
+        <div id="puzzle-leaderboard-full">
+          <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px">Загрузка...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+<style>@keyframes sk{0%,100%{opacity:.4}50%{opacity:.9}}</style>
+
+</div>
+
+<div class="modal-overlay" id="modal-game-result">
+  <div class="modal" style="text-align:center;position:relative">
+    <button class="modal-close" onclick="closeModal('modal-game-result')">✕</button>
+    <div style="font-size:48px;margin-bottom:12px">🏆</div>
+    <h2 id="result-title">Игра завершена</h2>
+    <p id="result-subtitle" style="color:var(--text-secondary);margin-top:8px"></p>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:24px">
+      <button id="result-tournament-btn" class="btn btn-primary" style="display:none"
+        onclick="closeModal('modal-game-result');window.location.href='/tournament/'+this.dataset.tid">
+        🏆 В турнир
+      </button>
+      <button class="btn btn-primary" onclick="closeModal('modal-game-result');showPage('lobby')">🎮 Играть снова</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-game-result');showPage('analysis')">🔍 Анализировать</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Баннер обновления политики -->
+<div id="policy-banner" style="display:none;position:fixed;bottom:24px;right:24px;z-index:9999;background:#1a2a3a;border:1px solid #3a5a7a;border-radius:12px;padding:16px 20px;max-width:380px;width:calc(100vw - 48px);box-shadow:0 8px 32px rgba(0,0,0,0.5);flex-direction:column;gap:10px">
+  <div style="display:flex;align-items:flex-start;gap:12px">
+    <span style="font-size:22px;flex-shrink:0">📋</span>
+    <div>
+      <div style="font-weight:700;color:#e0e0e0;margin-bottom:4px">Мы обновили документы</div>
+      <div style="color:#a0b8c8;font-size:13px;line-height:1.5">Пользовательское соглашение и политика конфиденциальности обновлены 12 июня 2025 года. Продолжая пользоваться Chess Home, вы принимаете новые условия.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <a href="/terms.html" style="font-size:13px;color:#7c9cbf;text-decoration:none;padding:6px 12px;border:1px solid #3a5a7a;border-radius:6px">Читать</a>
+    <button onclick="dismissPolicyBanner()" style="font-size:13px;background:#3a6a9a;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer">Понятно</button>
+  </div>
+</div>
+<script>
+// ── Policy update banner (one-time, cross-page via localStorage) ──
+const POLICY_VERSION = 'v1.1-2025-06-12';
+function dismissPolicyBanner() {
+  localStorage.setItem('ch_policy_seen', POLICY_VERSION);
+  const b = document.getElementById('policy-banner');
+  if (b) { b.style.transition='opacity 0.3s'; b.style.opacity='0'; setTimeout(()=>b.style.display='none',300); }
+}
+(function() {
+  if (localStorage.getItem('ch_policy_seen') !== POLICY_VERSION) {
+    const b = document.getElementById('policy-banner');
+    if (b) { b.style.display='flex'; }
+  }
+})();
+</script>
+
+<div id="rejoin-banner" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:linear-gradient(135deg,#1a2a1a,#1e3a1e);border:1px solid #2ecc71;border-radius:14px;padding:14px 22px;box-shadow:0 8px 32px rgba(0,0,0,0.5);align-items:center;gap:14px;min-width:300px;max-width:90vw">
+  <span style="font-size:22px">&#9823;</span>
+  <div style="flex:1">
+    <div style="font-weight:700;font-size:15px;color:#fff">&#x26A0; У вас незавершённая партия!</div>
+    <div id="rejoin-info" style="font-size:12px;color:#2ecc71;margin-top:2px"></div>
+  </div>
+  <button id="rejoin-btn" class="btn btn-primary btn-sm" style="background:#2ecc71;color:#000;font-weight:700;white-space:nowrap" onclick="doRejoin()">Вернуться &#x2192;</button>
+  <button onclick="hideRejoinBanner()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:18px;padding:0 2px;line-height:1" title="Закрыть">&#x2715;</button>
+</div>
+
+<div id="modal-online-users" class="modal-overlay" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" style="max-width:460px;width:95vw;max-height:80vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <div>
+        <h2 style="margin:0;font-size:18px;font-family:var(--font-display)">&#x1F7E2; Сейчас онлайн</h2>
+        <div id="online-modal-subtitle" style="font-size:12px;color:var(--text-muted);margin-top:3px"></div>
+      </div>
+      <button onclick="document.getElementById('modal-online-users').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;padding:4px">&#x2715;</button>
+    </div>
+    <div id="online-users-list" style="overflow-y:auto;padding:12px 16px;flex:1"></div>
+  </div>
+</div>
+
+<script src="/js/header.js"></script>
+<script src="/js/pieces.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/chess-engine.js"></script>
+<script src="/js/app.js"></script>
+<script src="/js/ping-widget.js"></script>
+<script src="/js/board.js"></script>
+<script src="/js/stockfish-ui.js"></script>
+<script src="/js/editor.js"></script>
+<script>
+// ── HERO ANIMATED CHESS BOARD ───────────────────────────────
+(function() {
+  'use strict';
+
+  // SVG piece images (uses your actual piece files)
+  const PIECE_SVG = {
+    wK:'/img/pieces/wK.svg', wQ:'/img/pieces/wQ.svg',
+    wR:'/img/pieces/wR.svg', wB:'/img/pieces/wB.svg',
+    wN:'/img/pieces/wN.svg', wP:'/img/pieces/wP.svg',
+    bK:'/img/pieces/bK.svg', bQ:'/img/pieces/bQ.svg',
+    bR:'/img/pieces/bR.svg', bB:'/img/pieces/bB.svg',
+    bN:'/img/pieces/bN.svg', bP:'/img/pieces/bP.svg',
+  };
+  // Preload all images
+  const IMG_CACHE = {};
+  let imgsLoaded = 0, imgsTotal = 12;
+  function preloadImages(cb) {
+    Object.entries(PIECE_SVG).forEach(([key, src]) => {
+      const img = new Image();
+      img.onload = img.onerror = () => { imgsLoaded++; if(imgsLoaded>=imgsTotal) cb(); };
+      img.src = src;
+      IMG_CACHE[key] = img;
+    });
+  }
+
+  // Move notation helpers
+  const f={'a':0,'b':1,'c':2,'d':3,'e':4,'f':5,'g':6,'h':7};
+  function m(from, to) {
+    const ff=f[from[0]], fr=parseInt(from[1])-1;
+    const tf=f[to[0]], tr=parseInt(to[1])-1;
+    return [fr*8+ff, tr*8+tf];
+  }
+
+  // Full games reaching middlegame / endgame
+  // ИСПРАВЛЕНО: убраны ходы с пустых клеток, неправильные ходы конём, некорректные рокировки
+  const GAME_SEQUENCES = [
+    // Game 1: Бессмертная партия (Андерссен - Кизерицкий, 1851) — Королевский гамбит
+    [m('e2','e4'),m('e7','e5'),m('f2','f4'),m('e5','f4'),
+     m('f1','c4'),m('d8','h4'),m('e1','f1'),m('b7','b5'),
+     m('c4','b5'),m('g8','f6'),m('g1','f3'),m('h4','h6'),
+     m('d2','d3'),m('f6','h5'),m('f3','h4'),m('h6','g5'),
+     m('h4','f5'),m('c7','c6'),m('g2','g4'),m('h5','f6'),
+     m('h1','g1'),m('c6','b5'),m('h2','h4'),m('g5','g6'),
+     m('h4','h5'),m('g6','g5'),m('d1','f3'),m('f6','g8'),
+     m('c1','f4'),m('g5','f6'),m('b1','c3'),m('f8','c5'),
+     m('f4','d6'),m('c5','b6'),m('f5','g7'),m('e8','d8'),
+     m('f3','f6'),m('g8','f6'),m('d6','e7')],
+
+    // Game 2: Испанская партия (Обмен) — упрощённая
+    [m('e2','e4'),m('e7','e5'),m('g1','f3'),m('b8','c6'),
+     m('f1','b5'),m('a7','a6'),m('b5','c6'),m('d7','c6'),
+     m('e1','g1'),m('f7','f6'),m('d2','d4'),m('e5','d4'),
+     m('f3','d4'),m('c6','c5'),m('d4','f5'),m('g7','g6'),
+     m('f5','h6'),m('f8','h6'),m('d1','h5'),m('e8','f8'),
+     m('c1','e3'),m('d8','e7'),m('b1','d2'),m('c8','e6'),
+     m('f1','d1'),m('h8','d8'),m('d1','d8'),m('h6','d2'),
+     m('e3','d2'),m('a8','d8'),m('h5','g6'),m('d8','d2'),
+     m('g6','f6'),m('e7','f6'),m('a2','a4'),m('d2','d4'),
+     m('f2','f3'),m('c5','c4'),m('g1','h2'),m('d4','d2'),
+     m('h2','g3'),m('d2','d3'),m('g3','f4'),m('f6','g7')],
+
+    // Game 3: Сицилианская защита — Найдорф
+    [m('e2','e4'),m('c7','c5'),m('g1','f3'),m('d7','d6'),
+     m('d2','d4'),m('c5','d4'),m('f3','d4'),m('g8','f6'),
+     m('b1','c3'),m('a7','a6'),m('c1','e3'),m('e7','e5'),
+     m('d4','b3'),m('c8','e6'),m('f2','f3'),m('f8','e7'),
+     m('d1','d2'),m('e8','g8'),m('e1','c1'),m('b8','d7'),
+     m('g2','g4'),m('b7','b5'),m('g4','g5'),m('b5','b4'),
+     m('c3','d5'),m('f6','d5'),m('e4','d5'),m('e6','d5'),
+     m('f1','d3'),m('a6','a5'),m('h2','h4'),m('a5','a4'),
+     m('b3','d4'),m('e5','d4'),m('e3','d4'),m('d7','e5'),
+     m('d4','e5'),m('d6','e5'),m('d3','e4'),m('d5','e4'),
+     m('f3','e4'),m('d8','b6'),m('c1','b1'),m('h8','d8'),
+     m('d2','e2'),m('b6','b3'),m('a2','b3'),m('a4','b3')],
+
+    // Game 4: Ферзевый гамбит (правильная рокировка до хода слона)
+    [m('d2','d4'),m('d7','d5'),m('c2','c4'),m('e7','e6'),
+     m('b1','c3'),m('g8','f6'),m('c1','g5'),m('f8','e7'),
+     m('e2','e3'),m('e8','g8'),m('g1','f3'),m('h7','h6'),
+     m('g5','h4'),m('b7','b6'),m('c4','d5'),m('f6','d5'),
+     m('h4','e7'),m('d8','e7'),m('c3','d5'),m('e6','d5'),
+     m('d1','b3'),m('c7','c5'),m('d4','c5'),m('b6','c5'),
+     m('b3','b7'),m('b8','d7'),m('b7','c6'),m('a8','b8'),
+     m('f3','d2'),m('f8','b8'),m('c6','d5'),m('b8','b2'),
+     m('d2','b3'),m('c5','c4'),m('b3','c1'),m('d7','b6'),
+     m('d5','c5'),m('b2','a2'),m('c5','c6'),m('b6','a4'),
+     m('c6','d6'),m('e7','f6'),m('f1','e2'),m('c4','c3'),
+     m('e1','g1'),m('c3','c2'),m('d6','d1'),m('a2','a1'),
+     m('d1','a1'),m('c2','c1'),m('a1','c1'),m('a4','c3'),
+     m('e2','d3'),m('f6','e5')],
+  ];
+
+  // Starting position
+  function startBoard() {
+    const b = new Array(64).fill(null);
+    const back = ['R','N','B','Q','K','B','N','R'];
+    for(let f=0;f<8;f++){
+      b[f]='w'+back[f]; b[8+f]='wP';
+      b[48+f]='bP'; b[56+f]='b'+back[f];
+    }
+    return b;
+  }
+
+  // Move application — поддержка рокировки, превращения и взятия на проходе
+  function applyMove(board, from, to) {
+    const nb = board.slice();
+    const piece = nb[from];
+    if (!piece) return nb; // защита от пустой клетки
+    const captured = nb[to];
+    nb[to] = piece;
+    nb[from] = null;
+
+    // Превращение пешки
+    if (piece === 'wP' && Math.floor(to / 8) === 7) nb[to] = 'wQ';
+    if (piece === 'bP' && Math.floor(to / 8) === 0) nb[to] = 'bQ';
+
+    // Взятие на проходе: пешка ходит по диагонали на пустую клетку
+    if (piece === 'wP' && !captured) {
+      const df = (to % 8) - (from % 8);
+      if (df !== 0) nb[to - 8] = null; // убираем взятую пешку
+    }
+    if (piece === 'bP' && !captured) {
+      const df = (to % 8) - (from % 8);
+      if (df !== 0) nb[to + 8] = null;
+    }
+
+    // Рокировка: двигаем ладью
+    if (piece === 'wK' && from === 4) {
+      if (to === 6) { nb[7] = null; nb[5] = 'wR'; }
+      if (to === 2) { nb[0] = null; nb[3] = 'wR'; }
+    }
+    if (piece === 'bK' && from === 60) {
+      if (to === 62) { nb[63] = null; nb[61] = 'bR'; }
+      if (to === 58) { nb[56] = null; nb[59] = 'bR'; }
+    }
+    return nb;
+  }
+
+  // Canvas drawing
+  const LIGHT = '#f0d9b5';
+  const DARK  = '#b58863';
+  const ACCENT= '#c9a84c';
+  const LAST_L= 'rgba(205,210,106,0.72)';
+  const LAST_D= 'rgba(170,162,58,0.72)';
+
+  // ── Мобильная оптимизация ────────────────────────────────────
+  // На телефонах этот canvas рисуется 60 раз в секунду вечно (даже
+  // если раздел не виден), и на каждую фигуру считается ctx.shadowBlur —
+  // это дорогая, не GPU-ускоренная операция Canvas2D. На ПК ничего
+  // из следующего не меняется (isMobile === false → все ветки ниже
+  // идут по старым, нетронутым путям).
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const MOBILE_MIN_FRAME_MS = 1000 / 30; // на мобиле ограничиваем до ~30 fps
+  let lastFrameAt = 0;
+  let heroVisible = true; // на мобиле — только когда блок реально виден на экране
+
+  let canvas, ctx, size, sqSize;
+  let board = startBoard();
+  let gameIdx = 0;
+  let moveIdx = 0;
+  let moves = GAME_SEQUENCES[0];
+  let lastFrom = -1, lastTo = -1;
+  let animPiece = null; // {piece, fromX, fromY, toX, toY, progress, from, to}
+  let animRAF = null;
+  let gameOverAlpha = 0;
+  let gameOverPhase = false; // showing game over
+  let gameOverTimer = 0;
+  let boardFadeAlpha = 1;
+  let boardFadeIn = false;
+
+  function getSize() {
+    const wrap = document.getElementById('hero-board');
+    if (!wrap) return 320;
+    return Math.min(wrap.clientWidth, wrap.clientHeight, 480);
+  }
+
+  function resize() {
+    if (!canvas) return;
+    size = getSize();
+    canvas.width  = size;
+    canvas.height = size;
+    sqSize = size / 8;
+    drawBoard();
+  }
+
+  function squareToXY(sq) {
+    const file = sq % 8;
+    const rank = Math.floor(sq / 8);
+    return { x: file * sqSize, y: (7 - rank) * sqSize };
+  }
+
+  function drawBoard(anim) {
+    if (!ctx) return;
+    ctx.save();
+    ctx.globalAlpha = boardFadeAlpha;
+
+    // Draw squares
+    for (let r = 7; r >= 0; r--) {
+      for (let ff = 0; ff < 8; ff++) {
+        const s = r * 8 + ff;
+        const light = (r + ff) % 2 !== 0;
+        const x = ff * sqSize, y = (7 - r) * sqSize;
+
+        // Base color
+        if (s === lastFrom || s === lastTo) {
+          ctx.fillStyle = light ? LAST_L : LAST_D;
+        } else {
+          ctx.fillStyle = light ? LIGHT : DARK;
+        }
+        ctx.fillRect(x, y, sqSize, sqSize);
+      }
+    }
+
+    // Draw pieces (skip animated piece's origin)
+    for (let r = 7; r >= 0; r--) {
+      for (let ff = 0; ff < 8; ff++) {
+        const s = r * 8 + ff;
+        if (anim && s === anim.from) continue; // skip — drawn as floating
+        const p = board[s];
+        if (!p) continue;
+        const x = ff * sqSize, y = (7 - r) * sqSize;
+        drawPiece(p, x, y, sqSize);
+      }
+    }
+
+    // Draw animated piece floating
+    if (anim) {
+      const t = easeInOut(anim.progress);
+      const cx = anim.fromX + (anim.toX - anim.fromX) * t;
+      const cy = anim.fromY + (anim.toY - anim.fromY) * t;
+      // Shadow under floating piece
+      ctx.save();
+      ctx.globalAlpha = 0.25 * boardFadeAlpha;
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(cx + sqSize/2, cy + sqSize * 0.92, sqSize*0.32, sqSize*0.1, 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+      drawPiece(anim.piece, cx, cy, sqSize, 1.12);
+    }
+
+    // Game Over overlay
+    if (gameOverAlpha > 0) {
+      ctx.save();
+      // Dark vignette
+      const grd = ctx.createRadialGradient(size/2, size/2, size*0.15, size/2, size/2, size*0.72);
+      grd.addColorStop(0, `rgba(0,0,0,${0.55 * gameOverAlpha})`);
+      grd.addColorStop(1, `rgba(0,0,0,${0.82 * gameOverAlpha})`);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, size, size);
+
+      // Panel
+      const pw = size * 0.72, ph = size * 0.28;
+      const px = (size - pw) / 2, py = (size - ph) / 2;
+      ctx.globalAlpha = gameOverAlpha;
+      ctx.fillStyle = 'rgba(20,16,12,0.92)';
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 2;
+      roundRect(ctx, px, py, pw, ph, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      // Text
+      ctx.fillStyle = ACCENT;
+      ctx.font = `bold ${Math.round(size*0.09)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Конец партии', size/2, size/2 - size*0.04);
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = `${Math.round(size*0.046)}px sans-serif`;
+      ctx.fillText('Новая партия...', size/2, size/2 + size*0.06);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawPiece(piece, x, y, sz, scale) {
+    scale = scale || 1;
+    const img = IMG_CACHE[piece];
+    if (!img || !img.complete || !img.naturalWidth) return;
+    const pad = sz * 0.08;
+    const draw = sz * scale;
+    const off = (draw - sz) / 2;
+    ctx.save();
+    // ctx.shadowBlur — самая дорогая часть отрисовки (не ускоряется GPU
+    // в Canvas2D), а фигур на доске до 16 штук каждый кадр. На мобиле
+    // просто не рисуем тень — на ПК всё как было.
+    if (!isMobile) {
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = sz * 0.13 * scale;
+      ctx.shadowOffsetY = sz * 0.05;
+    }
+    ctx.drawImage(img, x - off + pad/2, y - off + pad/2, draw - pad, draw - pad);
+    ctx.restore();
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  function easeInOut(t) {
+    return t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+  }
+
+  // ── Animation loop ──
+  let lastTime = 0;
+  let phase = 'idle'; // idle | moving | gameover_in | gameover_hold | gameover_out | fadein
+  let phaseTimer = 0;
+  let moveDuration = 520; // ms per move
+  let pauseBetween = 900; // pause ms
+  let gameoverHold = 2200;
+  let fadeTime = 500;
+
+  function tick(now) {
+    animRAF = requestAnimationFrame(tick);
+
+    // Мобильный троттлинг: пропускаем кадр, если не набежало нужное
+    // время (~30fps вместо 60) или блок сейчас не виден на экране/
+    // вкладка свёрнута — тогда просто не считаем и не рисуем ничего.
+    // На ПК (isMobile === false) это условие всегда ложно, и tick()
+    // работает ровно как раньше.
+    if (isMobile) {
+      if (!heroVisible || document.hidden) return;
+      if (now - lastFrameAt < MOBILE_MIN_FRAME_MS) return;
+      lastFrameAt = now;
+    }
+
+    const dt = Math.min(now - lastTime, 80);
+    lastTime = now;
+
+    if (phase === 'idle') {
+      phaseTimer -= dt;
+      if (phaseTimer <= 0) {
+        startNextMove();
+      } else {
+        drawBoard();
+      }
+
+    } else if (phase === 'moving') {
+      phaseTimer += dt;
+      const prog = Math.min(phaseTimer / moveDuration, 1);
+      animPiece.progress = prog;
+      drawBoard(animPiece);
+      if (prog >= 1) {
+        // Finish move
+        board = applyMove(board, animPiece.from, animPiece.to);
+        animPiece = null;
+        moveIdx++;
+        if (moveIdx >= moves.length) {
+          // Game over
+          phase = 'gameover_in';
+          phaseTimer = 0;
+          gameOverAlpha = 0;
+        } else {
+          phase = 'idle';
+          phaseTimer = pauseBetween;
+        }
+      }
+
+    } else if (phase === 'gameover_in') {
+      phaseTimer += dt;
+      gameOverAlpha = Math.min(phaseTimer / 500, 1);
+      drawBoard();
+      if (gameOverAlpha >= 1) {
+        phase = 'gameover_hold';
+        phaseTimer = 0;
+      }
+
+    } else if (phase === 'gameover_hold') {
+      phaseTimer += dt;
+      drawBoard();
+      if (phaseTimer >= gameoverHold) {
+        phase = 'gameover_out';
+        phaseTimer = 0;
+      }
+
+    } else if (phase === 'gameover_out') {
+      phaseTimer += dt;
+      gameOverAlpha = Math.max(1 - phaseTimer / fadeTime, 0);
+      boardFadeAlpha = Math.max(1 - phaseTimer / fadeTime, 0);
+      drawBoard();
+      if (phaseTimer >= fadeTime) {
+        // Reset for next game
+        gameIdx = (gameIdx + 1) % GAME_SEQUENCES.length;
+        moves = GAME_SEQUENCES[gameIdx];
+        board = startBoard();
+        moveIdx = 0;
+        lastFrom = -1; lastTo = -1;
+        gameOverAlpha = 0;
+        boardFadeAlpha = 0;
+        phase = 'fadein';
+        phaseTimer = 0;
+      }
+
+    } else if (phase === 'fadein') {
+      phaseTimer += dt;
+      boardFadeAlpha = Math.min(phaseTimer / fadeTime, 1);
+      drawBoard();
+      if (phaseTimer >= fadeTime) {
+        boardFadeAlpha = 1;
+        phase = 'idle';
+        phaseTimer = pauseBetween * 1.5;
+      }
+    }
+  }
+
+  function startNextMove() {
+    // Пропускаем невалидные ходы (защита от рассинхрона)
+    while (moveIdx < moves.length) {
+      const [from, to] = moves[moveIdx];
+      if (board[from]) break; // нашли ход с непустой клетки
+      moveIdx++; // пропускаем ход с пустой клетки
+    }
+    if (moveIdx >= moves.length) { phase = 'gameover_in'; phaseTimer = 0; gameOverAlpha = 0; return; }
+    const [from, to] = moves[moveIdx];
+    const piece = board[from];
+    if (!piece) { phase = 'gameover_in'; phaseTimer = 0; gameOverAlpha = 0; return; }
+    lastFrom = from; lastTo = to;
+    const fxy = squareToXY(from);
+    const txy = squareToXY(to);
+    animPiece = { piece, from, to, fromX: fxy.x, fromY: fxy.y, toX: txy.x, toY: txy.y, progress: 0 };
+    phase = 'moving';
+    phaseTimer = 0;
+  }
+
+  function init() {
+    canvas = document.getElementById('hero-chess-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    size = getSize();
+    canvas.width  = size;
+    canvas.height = size;
+    sqSize = size / 8;
+    canvas.style.width  = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    canvas.style.borderRadius = '6px';
+    drawBoard();
+    phase = 'idle';
+    phaseTimer = 1200; // start delay
+    lastTime = performance.now();
+    animRAF = requestAnimationFrame(tick);
+    window.addEventListener('resize', resize, { passive: true });
+
+    // На мобиле дальше по странице (features/modes/чат и т.д.) блок
+    // с доской уходит за экран, а цикл tick() всё равно продолжал бы
+    // работать. Ставим на паузу, пока доской реально не видно —
+    // на ПК (isMobile === false) наблюдатель не создаётся вообще.
+    if (isMobile && 'IntersectionObserver' in window) {
+      const wrap = document.getElementById('hero-board');
+      const io = new IntersectionObserver((entries) => {
+        heroVisible = entries.some((e) => e.isIntersecting);
+      }, { threshold: 0 });
+      if (wrap) io.observe(wrap);
+    }
+  }
+
+  // Init after page load — preload SVG images first
+  function startWhenReady() {
+    preloadImages(function() {
+      init();
+    });
+  }
+  if (document.readyState === 'complete') { setTimeout(startWhenReady, 50); }
+  else { window.addEventListener('load', () => setTimeout(startWhenReady, 50)); }
+})();
+</script>
+
+<!-- Модалка выбора эмодзи -->
+<div id="modal-emoji" class="modal-overlay">
+  <div class="modal" style="max-width:500px">
+    <button class="modal-close" onclick="closeModal('modal-emoji')">✕</button>
+    <h2>Выберите эмодзи</h2>
+    <div id="emoji-grid" style="display:grid; grid-template-columns:repeat(8,1fr); gap:8px; font-size:28px; text-align:center; max-height:300px; overflow-y:auto; padding:8px"></div>
+  </div>
+</div>
+
+<!-- Модалка обращения (тикета) — админский просмотр/ответ -->
+<div id="modal-appeal-detail" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-appeal-detail')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-appeal-detail')">✕</button>
+    <div class="appeal-detail-head">
+      <h2 style="margin-bottom:4px" id="appeal-detail-title">Обращение</h2>
+      <div style="font-size:13px;color:var(--text-muted)" id="appeal-detail-sub"></div>
+    </div>
+    <div class="appeal-detail-thread" id="appeal-detail-thread">
+      <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+    </div>
+    <div class="appeal-detail-footer">
+      <div id="appeal-detail-closed-note" style="display:none;text-align:center;font-size:13px;color:var(--text-muted);margin-bottom:8px">Обращение закрыто</div>
+      <div class="appeal-reply-box">
+        <textarea id="appeal-detail-reply-input" placeholder="Ответ пользователю..."></textarea>
+        <button class="btn btn-primary" id="appeal-detail-reply-btn" onclick="adminReplyAppeal()">Отправить</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-secondary btn-sm" id="appeal-detail-close-btn" onclick="setAppealStatus('closed')">🔒 Закрыть обращение</button>
+        <button class="btn btn-secondary btn-sm" id="appeal-detail-reopen-btn" onclick="setAppealStatus('open')" style="display:none">🔓 Открыть заново</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Mobile nav delegated to header.js (CH API)
+  window.openMobileNav   = function() { if (window.CH) CH.openMobileNav(); };
+  window.closeMobileNav  = function() { if (window.CH) CH.closeMobileNav(); };
+  window.toggleMobileNav = function() {
+    var drawer = document.getElementById('ch-drawer');
+    if (drawer && drawer.classList.contains('open')) CH.closeMobileNav();
+    else if (window.CH) CH.openMobileNav();
+  };
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && window.CH) CH.closeMobileNav();
+  });
+
+  // Bottom nav active state
+  window.setBottomNav = function(activeId) {
+    document.querySelectorAll('.bottom-nav-item').forEach(function(btn) {
+      btn.classList.toggle('active', btn.id === activeId);
+    });
+  };
+
+  // Input font-size fix for iOS zoom prevention
+  document.querySelectorAll('input.form-input, input.chat-input').forEach(function(inp) {
+    if (!inp.style.fontSize) inp.style.fontSize = '16px';
+  });
+})();
+
+
+
+</script>
+
+<script src="/public/js/ping-widget.js"></script>
+
+  <script src="js/storm.js"></script>
+
+
+<script>
+// Проверяем, был ли уже выполнен ребут
+if (!sessionStorage.getItem('pageReloaded')) {
+    // Ставим метку, чтобы при следующей загрузке код не сработал
+    sessionStorage.setItem('pageReloaded', 'true');
+    
+    // Перезагружаем страницу один раз (с задержкой в 1 миллисекунду, как у вас)
+    setTimeout(() => {
+        location.reload();
+    }, 1);
+}
+</script>
+<style>
+/* Убиваем все отступы сверху на странице задач */
+#page-puzzles .page-header,
+#page-puzzles > div > *:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Если есть какой-то пустой div с высотой */
+#page-puzzles .page-header:empty,
+#page-puzzles .page-header:empty + * {
+  display: none !important;
+}
+
+#page-puzzles {
+  position: relative;
+  top: -900px; /* или любое значение, подбери */
+  margin-bottom: -40px; /* чтобы не создавать пустоту внизу */
+}
+</style>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+<style>
+  /* Контейнер капчи — центрируем, добавляем отступы */
+.g-recaptcha {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 8px;
+}
+
+/* Если внутри модалки есть лишние отступы — убираем */
+.modal .g-recaptcha {
+  margin: 18px 0 12px;
+}
+
+/* Плавное появление (опционально) */
+.modal .g-recaptcha > div {
+  transition: box-shadow 0.2s;
+  border-radius: 6px;
+}
+.modal .g-recaptcha > div:hover {
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.4);
+}
+
+/* Для мобилок — уменьшаем отступы */
+@media (max-width: 480px) {
+  .modal .g-recaptcha {
+    margin: 12px 0 8px;
+    transform: scale(0.92); /* если виджет слишком широкий */
+    transform-origin: center;
+  }
+}
+</style>
+
+<script>
+// ── ЧЕКБОКСЫ СОГЛАСИЯ ПРИ РЕГИСТРАЦИИ ────────────────────
+function updateRegisterButtonState() {
+  const terms = document.getElementById('reg-agree-terms');
+  const fair = document.getElementById('reg-agree-fair');
+  const btn = document.getElementById('reg-submit-btn');
+  if (!btn) return;
+  const allChecked = !!(terms && terms.checked && fair && fair.checked);
+  btn.disabled = !allChecked;
+  btn.style.opacity = allChecked ? '1' : '0.5';
+  btn.style.cursor = allChecked ? 'pointer' : 'not-allowed';
+}
+
+// ── ОПОВЕЩЕНИЕ ОБ ОБНОВЛЕНИИ БЕЗОПАСНОСТИ (JWT) ─────────
+const CH_SECURITY_ALERT_KEY = 'ch_security_notice_jwt_v1';
+
+function maybeShowSecurityAlert(delay) {
+  if (localStorage.getItem(CH_SECURITY_ALERT_KEY)) return;
+  const el = document.getElementById('ch-security-alert');
+  if (!el) return;
+  setTimeout(() => el.classList.add('active'), delay || 300);
+}
+
+function closeSecurityAlert() {
+  const el = document.getElementById('ch-security-alert');
+  localStorage.setItem(CH_SECURITY_ALERT_KEY, 'true'); // Больше не показываем
+  if (!el) return;
+  el.classList.remove('active');
+  setTimeout(() => el.remove(), 600);
+}
+
+// ── ЛОГИКА ОНБОРДИНГА ───────────────────────────────────
+(function() {
+  const overlay = document.getElementById('ch-onboarding');
+  if (!overlay) {
+    // Онбординга нет на странице — просто проверяем оповещение о безопасности
+    maybeShowSecurityAlert(300);
+    return;
+  }
+
+  // Проверяем, был ли юзер тут ранее
+  const isTourDone = localStorage.getItem('ch_tour_completed');
+  
+  if (!isTourDone) {
+    // Показываем тур, если зашел впервые
+    setTimeout(() => {
+      overlay.classList.add('active');
+    }, 300); // Небольшая задержка для плавности при загрузке страницы
+  } else {
+    // Удаляем из DOM, чтобы не висел в памяти
+    overlay.remove();
+    // Тур уже пройден раньше — показываем оповещение о безопасности сразу
+    maybeShowSecurityAlert(300);
+  }
+})();
+
+let currentOnboardSlide = 0;
+
+function nextOnboardSlide() {
+  const slides = document.querySelectorAll('.onboard-slide');
+  const dots = document.querySelectorAll('.onboard-dot');
+  const btn = document.getElementById('onboard-next-btn');
+  const overlay = document.getElementById('ch-onboarding');
+
+  // Если это последний слайд — закрываем
+  if (currentOnboardSlide >= slides.length - 1) {
+    overlay.classList.remove('active');
+    localStorage.setItem('ch_tour_completed', 'true'); // Сохраняем в память
+    setTimeout(() => overlay.remove(), 600); // Ждем конец анимации и удаляем
+    // Показываем оповещение о безопасности сразу после закрытия велком-тура
+    maybeShowSecurityAlert(700);
+    return;
+  }
+
+  // Сдвигаем текущий слайд влево
+  slides[currentOnboardSlide].classList.remove('active');
+  slides[currentOnboardSlide].classList.add('prev');
+  dots[currentOnboardSlide].classList.remove('active');
+
+  // Активируем следующий
+  currentOnboardSlide++;
+  slides[currentOnboardSlide].classList.add('active');
+  dots[currentOnboardSlide].classList.add('active');
+
+  // Меняем текст кнопки на последнем слайде
+  if (currentOnboardSlide === slides.length - 1) {
+    btn.innerHTML = 'Начнём!';
+    btn.style.background = '#2ecc71'; // Делаем кнопку зеленой в конце
+    btn.style.color = '#fff';
+    btn.style.boxShadow = '0 4px 15px rgba(46, 204, 113, 0.4)';
+  }
+}
+</script>
+
+<script>
+  // Загрузка репортов в админке
+  async function loadAdminReports(statusFilter = 'new') {
+    const list = document.getElementById('admin-reports-list');
+    list.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+    
+    try {
+      const res = await fetch(`/api/admin/reports${statusFilter ? '?status=' + statusFilter : ''}`, {
+        credentials: 'same-origin'
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        list.innerHTML = `<div style="color:var(--red)">${data.error}</div>`;
+        return;
+      }
+      
+      if (data.length === 0) {
+        list.innerHTML = '<div class="empty-state">Нет жалоб 🎉</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(r => `
+        <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); padding: 16px; border-radius: 8px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <strong>Нарушитель: <span style="color:#e74c3c">${appealEsc(r.targetUsername)}</span></strong>
+            <span style="font-size:12px; color:var(--text-muted)">${new Date(r.createdAt).toLocaleString()}</span>
+          </div>
+          <div style="font-size:13px; margin-bottom:4px;"><strong>Кто пожаловался:</strong> ${appealEsc(r.reporter)}</div>
+          <div style="font-size:13px; margin-bottom:4px;"><strong>Причина:</strong> ${appealEsc(r.reason)}</div>
+          <div style="font-size:14px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 4px; margin-bottom: 12px; word-wrap: break-word;">
+            ${appealEsc(r.details)}
+          </div>
+          ${r.status === 'new' 
+            ? `<button class="btn btn-secondary btn-sm" onclick="closeReport('${r.id}')">Пометить как "Проверено"</button>` 
+            : `<span style="color:#2ecc71; font-size:13px;">Проверено администратором: ${appealEsc(r.reviewedBy)}</span>`
+          }
+        </div>
+      `).join('');
+    } catch (e) {
+      list.innerHTML = '<div style="color:var(--red)">Ошибка загрузки</div>';
+    }
+  }
+
+  // Закрытие репорта
+  async function closeReport(reportId) {
+    if(!confirm('Отметить репорт как проверенный?')) return;
+    try {
+      const res = await fetch(`/api/admin/reports/${reportId}`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'reviewed' })
+      });
+      const data = await res.json();
+      if(data.ok) {
+        loadAdminReports('new'); // перезагружаем список
+      } else {
+        alert('Ошибка: ' + data.error);
+      }
+    } catch(e) {
+      alert('Ошибка при закрытии репорта');
+    }
+  }
+</script>
+
+<script>
+  // ══════════════════════════════════════════════════════════
+  // АПЕЛЛЯЦИЯ / ОБРАЩЕНИЯ (ТИКЕТЫ) — пользовательская сторона
+  // ══════════════════════════════════════════════════════════
+  const APPEAL_REASON_LABELS = { ban: '🚫 Обжалование бана', cheater: '🤖 Проиграл читеру', rating: '📈 Вопрос по рейтингу', other: '❓ Другое' };
+
+  function appealEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(m) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
+    });
+  }
+
+  function appealStatusPill(a) {
+    if (a.status === 'closed') return '<span class="appeal-status-pill st-closed">🔒 Закрыто</span>';
+    if (a.awaiting === 'admin') return '<span class="appeal-status-pill st-wait-admin">⏳ Ожидает ответа администратора</span>';
+    return '<span class="appeal-status-pill st-wait-user">✉️ Ожидает вашего ответа</span>';
+  }
+
+  function goToAppealPage() {
+    showPage('appeal');
+    loadMyAppeals();
+  }
+
+  async function loadMyAppeals() {
+    const authBlock = document.getElementById('appeal-auth-required');
+    const content = document.getElementById('appeal-content');
+    if (!authBlock || !content) return;
+
+    let me = null;
+    try {
+      const meRes = await fetch('/api/me', { credentials: 'same-origin' });
+      if (meRes.ok) me = await meRes.json();
+    } catch {}
+
+    if (!me) { authBlock.style.display = ''; content.style.display = 'none'; return; }
+    authBlock.style.display = 'none';
+    content.style.display = '';
+
+    const list = document.getElementById('appeal-mine-list');
+    const countEl = document.getElementById('appeal-mine-count');
+    const newWrap = document.getElementById('appeal-new-wrap');
+    const openNotice = document.getElementById('appeal-open-notice');
+    list.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+    try {
+      const res = await fetch('/api/appeals/mine', { credentials: 'same-origin' });
+      const appeals = await res.json();
+      if (!res.ok) throw new Error((appeals && appeals.error) || 'Ошибка загрузки');
+      if (countEl) countEl.textContent = '(' + appeals.length + ')';
+
+      const hasOpen = appeals.some(a => a.status === 'open');
+      newWrap.style.display = hasOpen ? 'none' : '';
+      openNotice.style.display = hasOpen ? '' : 'none';
+
+      if (!appeals.length) {
+        list.innerHTML = '<div class="empty-state">У вас пока нет обращений</div>';
+        return;
+      }
+
+      list.innerHTML = appeals.map(a => `
+        <div class="appeal-item" id="appeal-item-${a.id}">
+          <button class="appeal-item-head" onclick="toggleAppealItem('${a.id}')">
+            <div class="appeal-item-head-left">
+              <span class="appeal-item-reason">${appealEsc(APPEAL_REASON_LABELS[a.reason] || a.reason)}</span>
+              <span class="appeal-item-date">${new Date(a.createdAt).toLocaleString('ru')}</span>
+            </div>
+            ${appealStatusPill(a)}
+          </button>
+          <div class="appeal-item-body">
+            <div class="appeal-thread">
+              ${a.messages.map(m => `
+                <div class="appeal-msg ${m.isAdmin ? 'from-admin' : 'from-user'}">
+                  <div class="appeal-msg-meta">${m.isAdmin ? '🛡 Администратор' : 'Вы'} · ${new Date(m.createdAt).toLocaleString('ru')}</div>
+                  <div>${appealEsc(m.message)}</div>
+                </div>
+              `).join('')}
+              ${a.status === 'closed'
+                ? '<div class="appeal-locked-note">Обращение закрыто администратором</div>'
+                : a.awaiting === 'user'
+                  ? `<div class="appeal-reply-box">
+                       <textarea id="appeal-reply-${a.id}" maxlength="1000" placeholder="Ваш ответ..."></textarea>
+                       <button class="btn btn-primary" onclick="replyToAppeal('${a.id}')">Отправить</button>
+                     </div>`
+                  : '<div class="appeal-locked-note">⏳ Дождитесь ответа администратора — пока писать нельзя</div>'
+              }
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) {
+      list.innerHTML = '<div style="color:var(--red)">Ошибка загрузки: ' + appealEsc(e.message) + '</div>';
+    }
+  }
+
+  function toggleAppealItem(id) {
+    document.getElementById('appeal-item-' + id)?.classList.toggle('open');
+  }
+
+  function appealNotify(msg, type) {
+    if (typeof toast === 'function') toast(msg, type);
+    else if (type === 'error') alert(msg);
+  }
+
+  async function submitAppeal() {
+    const reason = document.getElementById('appeal-reason-select').value;
+    const msgEl = document.getElementById('appeal-new-message');
+    const message = (msgEl.value || '').trim();
+    const btn = document.getElementById('appeal-submit-btn');
+    if (!message) { appealNotify('Напишите сообщение', 'error'); return; }
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/appeals', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason, message })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      msgEl.value = '';
+      appealNotify('Обращение отправлено', 'success');
+      loadMyAppeals();
+    } catch(e) {
+      appealNotify(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function replyToAppeal(id) {
+    const el = document.getElementById('appeal-reply-' + id);
+    const message = (el.value || '').trim();
+    if (!message) return;
+    try {
+      const res = await fetch(`/api/appeals/${id}/reply`, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      loadMyAppeals();
+    } catch(e) {
+      appealNotify(e.message, 'error');
+    }
+  }
+
+  // Автозагрузка при прямом переходе по ссылке /appeal
+  if (location.pathname.replace(/\/$/, '') === '/appeal') {
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof showPage === 'function') showPage('appeal');
+      loadMyAppeals();
+    });
+  }
+</script>
+
+<script>
+  // ══════════════════════════════════════════════════════════
+  // АДМИНКА: ОБРАЩЕНИЯ (ТИКЕТЫ)
+  // ══════════════════════════════════════════════════════════
+  let currentAppealDetailId = null;
+
+  async function loadAdminAppeals(statusFilter = 'open') {
+    const list = document.getElementById('admin-appeals-list');
+    const countEl = document.getElementById('admin-appeals-count');
+    list.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+    try {
+      const res = await fetch(`/api/admin/appeals${statusFilter ? '?status=' + statusFilter : ''}`, { credentials: 'same-origin' });
+      const data = await res.json();
+      if (!res.ok) { list.innerHTML = `<div style="color:var(--red)">${appealEsc(data.error || 'Ошибка')}</div>`; return; }
+      if (countEl) countEl.textContent = '(' + data.length + ')';
+      if (!data.length) { list.innerHTML = '<div class="empty-state">Обращений нет 🎉</div>'; return; }
+
+      list.innerHTML = data.map(a => `
+        <div class="admin-appeal-row" onclick="openAppealDetail('${a.id}')">
+          <span class="aa-user" onclick="event.stopPropagation();window.open('/profile/${encodeURIComponent(a.username)}','_blank')">${appealEsc(a.username)}</span>
+          <span class="aa-reason">${appealEsc(APPEAL_REASON_LABELS[a.reason] || a.reason)}</span>
+          ${appealStatusPill(a)}
+          <span class="aa-date">${new Date(a.updatedAt).toLocaleString('ru')}</span>
+        </div>
+      `).join('');
+    } catch(e) {
+      list.innerHTML = '<div style="color:var(--red)">Ошибка загрузки</div>';
+    }
+  }
+
+  async function openAppealDetail(id) {
+    currentAppealDetailId = id;
+    openModal('modal-appeal-detail');
+    const threadEl = document.getElementById('appeal-detail-thread');
+    threadEl.innerHTML = '<div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>';
+    document.getElementById('appeal-detail-reply-input').value = '';
+    try {
+      const res = await fetch(`/api/admin/appeals/${id}`, { credentials: 'same-origin' });
+      const a = await res.json();
+      if (!res.ok) throw new Error(a.error || 'Ошибка');
+
+      document.getElementById('appeal-detail-title').textContent = '📩 Обращение от ' + a.username;
+      document.getElementById('appeal-detail-sub').textContent =
+        (APPEAL_REASON_LABELS[a.reason] || a.reason) + ' · ' + new Date(a.createdAt).toLocaleString('ru');
+
+      threadEl.innerHTML = a.messages.map(m => `
+        <div class="appeal-msg ${m.isAdmin ? 'from-admin' : 'from-user'}">
+          <div class="appeal-msg-meta">${m.isAdmin ? '🛡 ' + appealEsc(m.author) : appealEsc(m.author)} · ${new Date(m.createdAt).toLocaleString('ru')}</div>
+          <div>${appealEsc(m.message)}</div>
+        </div>
+      `).join('');
+      threadEl.scrollTop = threadEl.scrollHeight;
+
+      const closedNote = document.getElementById('appeal-detail-closed-note');
+      const replyInput  = document.getElementById('appeal-detail-reply-input');
+      const replyBtn    = document.getElementById('appeal-detail-reply-btn');
+      const closeBtn    = document.getElementById('appeal-detail-close-btn');
+      const reopenBtn   = document.getElementById('appeal-detail-reopen-btn');
+
+      if (a.status === 'closed') {
+        closedNote.style.display = '';
+        replyInput.disabled = true; replyBtn.disabled = true;
+        closeBtn.style.display = 'none'; reopenBtn.style.display = '';
+      } else {
+        closedNote.style.display = 'none';
+        replyInput.disabled = false; replyBtn.disabled = false;
+        closeBtn.style.display = ''; reopenBtn.style.display = 'none';
+      }
+    } catch(e) {
+      threadEl.innerHTML = '<div style="color:var(--red)">Ошибка: ' + appealEsc(e.message) + '</div>';
+    }
+  }
+
+  async function adminReplyAppeal() {
+    if (!currentAppealDetailId) return;
+    const input = document.getElementById('appeal-detail-reply-input');
+    const message = (input.value || '').trim();
+    if (!message) return;
+    const btn = document.getElementById('appeal-detail-reply-btn');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`/api/admin/appeals/${currentAppealDetailId}/reply`, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      input.value = '';
+      await openAppealDetail(currentAppealDetailId);
+      loadAdminAppeals('open');
+    } catch(e) {
+      alert('Ошибка: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function setAppealStatus(status) {
+    if (!currentAppealDetailId) return;
+    if (status === 'closed' && !confirm('Закрыть обращение?')) return;
+    try {
+      const res = await fetch(`/api/admin/appeals/${currentAppealDetailId}`, {
+        method: 'PATCH', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Ошибка');
+      await openAppealDetail(currentAppealDetailId);
+      loadAdminAppeals('open');
+    } catch(e) {
+      alert('Ошибка: ' + e.message);
+    }
+  }
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════
+// FAQ — аккордеон, категории, поиск
+// ══════════════════════════════════════════════════════════
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const wasOpen = item.classList.contains('open');
+  // закрываем остальные для аккуратности (можно оставить несколько открытыми)
+  item.classList.toggle('open', !wasOpen);
+}
+
+let _faqCurrentCat = 'all';
+
+function setFaqCategory(cat, btnEl) {
+  _faqCurrentCat = cat;
+  document.querySelectorAll('.faq-cat-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  applyFaqFilters();
+}
+
+function filterFaq(query) {
+  applyFaqFilters(query);
+}
+
+function applyFaqFilters(query) {
+  query = (query !== undefined ? query : (document.getElementById('faq-search-input')?.value || '')).trim().toLowerCase();
+  const items = document.querySelectorAll('.faq-item');
+  let visibleCount = 0;
+  items.forEach(item => {
+    const cat = item.getAttribute('data-cat');
+    const text = item.textContent.toLowerCase();
+    const matchesCat = (_faqCurrentCat === 'all' || cat === _faqCurrentCat);
+    const matchesQuery = (!query || text.includes(query));
+    const show = matchesCat && matchesQuery;
+    item.style.display = show ? '' : 'none';
+    if (show) visibleCount++;
+    if (query && show) item.classList.add('open');
+  });
+  const empty = document.getElementById('faq-empty');
+  if (empty) empty.style.display = visibleCount === 0 ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════
+// БЫСТРЫЙ ПОИСК ПО САЙТУ (Command Palette) — Ctrl+K / ⌘K
+// Лёгкая, но приятная фича: мгновенный переход по разделам сайта
+// ══════════════════════════════════════════════════════════
+(function () {
+  const COMMANDS = [
+    { id: 'home',      label: 'Главная',            icon: '♚', group: 'Навигация' },
+    { id: 'lobby',     label: 'Играть',              icon: '⚔️', group: 'Игра', href: '/lobby' },
+    { id: 'puzzles',   label: 'Задачи',              icon: '🧩', group: 'Задачи', href: '/puzzles' },
+    { id: 'storm',     label: 'Puzzle Storm',        icon: '⚡', group: 'Задачи', href: '/storm', spa: false },
+    { id: 'analysis',  label: 'Анализ партии',       icon: '🔍', group: 'Инструменты', href: '/analysis' },
+    { id: 'editor',    label: 'Редактор позиций',    icon: '✏️', group: 'Инструменты', href: '/editor' },
+    { id: 'tournaments', label: 'Турниры',           icon: '🏆', group: 'Игра', href: '/tournaments', spa: false },
+    { id: 'clubs',     label: 'Клубы',                icon: '🛡️', group: 'Сообщество', href: '/clubs', spa: false },
+    { id: 'blog',      label: 'Блоги',                icon: '📰', group: 'Сообщество', href: '/blog', spa: false },
+    { id: 'forum',     label: 'Форумы',               icon: '💬', group: 'Сообщество', href: '/forum', spa: false },
+    { id: 'settings',  label: 'Настройки',            icon: '⚙️', group: 'Аккаунт', href: '/settings' },
+    { id: 'profile',   label: 'Мой профиль',          icon: '👤', group: 'Аккаунт', href: '/profile' },
+    { id: 'appeal',    label: 'Связь с администрацией', icon: '✉️', group: 'Помощь',  href: '/appeal' },
+    { id: 'faq',       label: 'Частые вопросы',       icon: '❓', group: 'Помощь' },
+    { id: 'about',     label: 'О сайте',              icon: '🏰', group: 'Помощь' },
+    { id: 'privacy',   label: 'Конфиденциальность',   icon: '🔒', group: 'Помощь' },
+    { id: 'terms',     label: 'Соглашение',           icon: '📜', group: 'Помощь' },
+  ];
+
+  let cmdkActiveIndex = 0;
+  let cmdkFiltered = COMMANDS.slice();
+
+  function buildLauncher() {
+    if (document.getElementById('ch-quick-launcher')) return;
+    const btn = document.createElement('div');
+    btn.id = 'ch-quick-launcher';
+    btn.title = 'Быстрый поиск (Ctrl+K)';
+    btn.innerHTML = '🔍';
+    btn.onclick = openCmdk;
+    document.body.appendChild(btn);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'ch-cmdk-overlay';
+    overlay.innerHTML = `
+      <div class="cmdk-box">
+        <div class="cmdk-input-row">
+          <span>🔍</span>
+          <input id="ch-cmdk-input" type="text" placeholder="Куда перейти? Начните вводить..." autocomplete="off">
+          <span class="cmdk-esc-hint">Esc</span>
+        </div>
+        <div class="cmdk-results" id="ch-cmdk-results"></div>
+      </div>
+    `;
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeCmdk();
+    });
+    document.body.appendChild(overlay);
+
+    document.getElementById('ch-cmdk-input').addEventListener('input', function (e) {
+      renderCmdkResults(e.target.value);
+    });
+    document.getElementById('ch-cmdk-input').addEventListener('keydown', handleCmdkKeydown);
+  }
+
+  function renderCmdkResults(query) {
+    query = (query || '').trim().toLowerCase();
+    cmdkFiltered = COMMANDS.filter(c => !query || c.label.toLowerCase().includes(query));
+    cmdkActiveIndex = 0;
+    const box = document.getElementById('ch-cmdk-results');
+    if (!box) return;
+    if (cmdkFiltered.length === 0) {
+      box.innerHTML = '<div class="cmdk-empty">Ничего не найдено 🤔</div>';
+      return;
+    }
+    box.innerHTML = cmdkFiltered.map((c, i) => `
+      <div class="cmdk-item${i === 0 ? ' active' : ''}" data-idx="${i}" onclick="window.__chCmdkGo(${i})">
+        <span class="cmdk-icon">${c.icon}</span>
+        <span>${c.label}</span>
+        <span class="cmdk-group">${c.group}</span>
+      </div>
+    `).join('');
+  }
+
+  function handleCmdkKeydown(e) {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      cmdkActiveIndex = Math.min(cmdkActiveIndex + 1, cmdkFiltered.length - 1);
+      updateCmdkActive();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      cmdkActiveIndex = Math.max(cmdkActiveIndex - 1, 0);
+      updateCmdkActive();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      goToCommand(cmdkActiveIndex);
+    } else if (e.key === 'Escape') {
+      closeCmdk();
+    }
+  }
+
+  function updateCmdkActive() {
+    document.querySelectorAll('.cmdk-item').forEach(el => {
+      el.classList.toggle('active', parseInt(el.getAttribute('data-idx'), 10) === cmdkActiveIndex);
+    });
+    const activeEl = document.querySelector('.cmdk-item.active');
+    if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  function goToCommand(idx) {
+    const cmd = cmdkFiltered[idx];
+    if (!cmd) return;
+    closeCmdk();
+    if (window.showPage && cmd.spa !== false) {
+      showPage(cmd.id);
+    } else if (cmd.href) {
+      location.href = cmd.href;
+    } else if (window.showPage) {
+      showPage(cmd.id);
+    }
+  }
+  window.__chCmdkGo = goToCommand;
+
+  function openCmdk() {
+    const overlay = document.getElementById('ch-cmdk-overlay');
+    if (!overlay) return;
+    overlay.classList.add('active');
+    const input = document.getElementById('ch-cmdk-input');
+    input.value = '';
+    renderCmdkResults('');
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function closeCmdk() {
+    const overlay = document.getElementById('ch-cmdk-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
+  document.addEventListener('keydown', function (e) {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const shortcutPressed = (isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === 'k';
+    if (shortcutPressed) {
+      e.preventDefault();
+      const overlay = document.getElementById('ch-cmdk-overlay');
+      if (overlay && overlay.classList.contains('active')) {
+        closeCmdk();
+      } else {
+        openCmdk();
+      }
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildLauncher);
+  } else {
+    buildLauncher();
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,347 @@
+/* ══════════════════════════════════════════════════════════════
+   opening-database.css — Дебютная база данных
+   Использует токены темы сайта (--accent-dark, --board-dark,
+   --board-light, --shadow, --font-mono), если они уже определены
+   в main.css. Если нет — включены безопасные запасные значения,
+   которые НЕ переопределяют :root, чтобы не задеть остальной сайт.
+   ══════════════════════════════════════════════════════════════ */
+
+.od-widget {
+  --od-accent: var(--accent-dark, #cda43f);
+  --od-accent-soft: color-mix(in srgb, var(--od-accent) 20%, transparent);
+  --od-bg-panel: #171827;
+  --od-bg-panel-2: #1d1f33;
+  --od-border: #2b2d45;
+  --od-text: #e7e6f0;
+  --od-text-dim: #9a9ab2;
+  --od-board-light: var(--board-light, #ead9b8);
+  --od-board-dark: var(--board-dark, #7c5a3a);
+  --od-white-bar: #e9e6dd;
+  --od-draw-bar: #6b6f80;
+  --od-black-bar: #3a3540;
+  --od-shadow: var(--shadow, 0 10px 30px rgba(0, 0, 0, 0.45));
+
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+  color: var(--od-text);
+}
+
+.od-widget h1 {
+  font-size: 28px;
+  margin: 0 0 6px;
+  letter-spacing: 0.2px;
+}
+
+.od-subtitle {
+  color: var(--od-text-dim);
+  margin: 0 0 28px;
+  max-width: 640px;
+  line-height: 1.5;
+}
+
+.od-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 520px) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* ── Панель доски ─────────────────────────────────────────────── */
+.od-board-panel {
+  background: var(--od-bg-panel);
+  border: 1px solid var(--od-border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--od-shadow);
+}
+
+.od-board-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.od-board {
+  width: min(480px, 100%);
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  border: 3px solid var(--od-accent);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), var(--od-shadow);
+}
+
+.od-board-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 320px;
+  color: var(--od-text-dim);
+  text-align: center;
+  padding: 20px;
+}
+
+.od-square {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.od-square--light { background: var(--od-board-light); }
+.od-square--dark  { background: var(--od-board-dark); }
+
+.od-square--selected {
+  box-shadow: inset 0 0 0 3px var(--od-accent);
+}
+
+.od-square--last-move::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(205, 164, 63, 0.35);
+}
+
+.od-square--in-check::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(220, 60, 50, 0.75) 0%, rgba(220, 60, 50, 0.15) 70%);
+}
+
+.od-square--target::after {
+  content: '';
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: rgba(20, 20, 30, 0.32);
+  pointer-events: none;
+}
+
+.od-square--target-capture::after {
+  content: '';
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+  border: 4px solid rgba(20, 20, 30, 0.38);
+  background: transparent;
+  pointer-events: none;
+}
+
+.od-piece {
+  width: 86%;
+  height: 86%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 2;
+  user-select: none;
+}
+
+.od-piece img {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+}
+
+.od-coord {
+  position: absolute;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  opacity: 0.75;
+  z-index: 1;
+}
+.od-coord--rank { top: 3px; left: 3px; }
+.od-coord--file { right: 3px; bottom: 3px; }
+.od-square--light .od-coord { color: var(--od-board-dark); }
+.od-square--dark  .od-coord { color: var(--od-board-light); }
+
+.od-promotion-picker {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 10, 18, 0.92);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.od-promotion-btn {
+  flex: 1;
+  border: none;
+  background: var(--od-bg-panel-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: background 0.12s ease;
+}
+.od-promotion-btn:hover { background: var(--od-accent-soft); }
+.od-promotion-btn img { width: 80%; height: 80%; }
+.od-promotion-btn + .od-promotion-btn { border-top: 1px solid var(--od-border); }
+
+/* ── Контролы доски ───────────────────────────────────────────── */
+.od-board-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.od-board-controls button {
+  background: var(--od-bg-panel-2);
+  border: 1px solid var(--od-border);
+  color: var(--od-text);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+.od-board-controls button:hover {
+  border-color: var(--od-accent);
+  transform: translateY(-1px);
+}
+
+.od-breadcrumb {
+  margin-top: 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  color: var(--od-text-dim);
+  min-height: 18px;
+  word-break: break-word;
+}
+
+.od-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.od-form input {
+  flex: 1;
+  background: var(--od-bg-panel-2);
+  border: 1px solid var(--od-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--od-text);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+}
+.od-form input:focus {
+  outline: none;
+  border-color: var(--od-accent);
+}
+
+.od-form button {
+  background: var(--od-accent);
+  border: none;
+  color: #1a1305;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease;
+}
+.od-form button:hover { filter: brightness(1.08); }
+.od-form button:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Панель статистики ────────────────────────────────────────── */
+.od-stats-panel {
+  background: var(--od-bg-panel);
+  border: 1px solid var(--od-border);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--od-shadow);
+  min-height: 200px;
+}
+
+.od-opening-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--od-accent);
+  margin: 0 0 8px;
+}
+
+.od-status {
+  color: var(--od-text-dim);
+  font-size: 13px;
+  margin: 0 0 14px;
+  min-height: 18px;
+}
+.od-status--error { color: #e0685c; }
+
+.od-table-wrap { overflow-x: auto; }
+
+.od-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.od-table thead th {
+  text-align: left;
+  color: var(--od-accent);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--od-border);
+  white-space: nowrap;
+}
+
+.od-table tbody td,
+.od-table tfoot td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--od-border);
+  white-space: nowrap;
+}
+
+.od-row-clickable { cursor: pointer; transition: background 0.12s ease; }
+.od-row-clickable:hover { background: var(--od-bg-panel-2); }
+
+.od-cell-move { font-weight: 700; min-width: 60px; }
+.od-cell-total { color: var(--od-text-dim); }
+.od-cell-bar { min-width: 160px; }
+
+.od-pct-white { color: var(--od-white-bar); }
+.od-pct-draw  { color: var(--od-draw-bar); }
+.od-pct-black { color: #c9c6d8; }
+
+.od-bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--od-bg-panel-2);
+}
+.od-bar-white { background: var(--od-white-bar); }
+.od-bar-draw  { background: var(--od-draw-bar); }
+.od-bar-black { background: var(--od-black-bar); }
+
+tfoot#od-total-row td { font-weight: 700; border-bottom: none; border-top: 1px solid var(--od-border); }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .od-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .od-widget { padding: 20px 12px 48px; }
+  .od-form { flex-direction: column; }
+  .od-cell-bar { min-width: 110px; }
+}
