@@ -30,6 +30,35 @@ async function db(sql, params = []) {
   }
 }
 
+// ── Атомарные транзакции ──────────────────────────────────────
+// В отличие от db(), который берёт НОВОЕ соединение на каждый вызов
+// (а значит BEGIN/INSERT/UPDATE/COMMIT через db() выполняются на разных
+// соединениях и НЕ являются одной транзакцией), withTransaction держит
+// ОДНО соединение на весь колбэк: BEGIN, все запросы и COMMIT/ROLLBACK
+// идут через один и тот же client.
+//
+// Использование:
+//   await withTransaction(async (client) => {
+//     await client.query('INSERT INTO ...', [...]);
+//     await client.query('UPDATE ...', [...]);
+//   });
+// При исключении внутри колбэка — автоматический ROLLBACK, ошибка
+// пробрасывается наверх. client.release() вызывается всегда.
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
 // ── Email верификация ─────────────────────────────────────────
 const { Resend } = require('resend');
 
@@ -942,24 +971,23 @@ app.get('/api/donate/status/:id', async (req, res) => {
 
 async function checkRecaptcha(req, res, next) {
     const token = req.body['g-recaptcha-response'];
-    
-    // МЕНЯЕМ СТРОКУ НИЖЕ: вместо .send пишем .json
+
     if (!token) return res.status(400).json({ error: 'Пожалуйста, подтвердите, что вы не робот.' });
 
     try {
-        const verify = await fetch('https://www.google.com/recaptcha/api/siteverify', {  // ✅ ПРАВИЛЬНО
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `secret=${RECAPTCHA_SECRET_KEY}&response=${token}`
-});
+        const verify = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `secret=${RECAPTCHA_SECRET_KEY}&response=${token}&remoteip=${getIP(req)}`
+        });
         const result = await verify.json();
-        
+
         if (result.success) {
             return next();
         }
-        
-        // МЕНЯЕМ СТРОКУ НИЖЕ: вместо .send пишем .json
-        return res.status(403).json({ error: 'Капча не пройдена. Доступ заблокирован.' });
+
+        console.warn('[reCAPTCHA] Проверка не пройдена:', result['error-codes']);
+        return res.status(403).json({ error: 'Капча не пройдена. Обновите страницу и попробуйте снова.' });
     } catch (e) {
         console.error('Ошибка проверки капчи:', e);
         return res.status(500).json({ error: 'Внутренняя ошибка сервера при проверке капчи.' });
@@ -971,7 +999,7 @@ async function checkRecaptcha(req, res, next) {
 app.post('/api/register', 
   rateLimit(limiterRegStrict, 'Слишком много регистраций с вашего IP. Попробуйте позже.'), // 1. Проверяем лимиты по IP
   ipBanMiddleware,                                                                       // 2. Проверяем черный список IP
-//  checkRecaptcha,                                                                        // 3. Проверяем капчу от Google
+  checkRecaptcha,                                                                        // 3. Проверяем капчу (Google reCAPTCHA)
   async (req, res) => {                                                                  
     const ip = getIP(req);
     const { username, password, email, _hp } = req.body;
@@ -1090,15 +1118,54 @@ app.post('/api/verify-email',
   }
 );
 
+// Раньше не было выделенного лимита на /login — только общий limiterGeneral
+// (10000 запросов/мин на IP), что позволяло ~166 попыток пароля/сек с одного IP.
+const loginFailStreaks = new Map(); // username_low -> { count, resetAt }
+function getLoginFailStreak(usernameLow) {
+  const now = Date.now();
+  const entry = loginFailStreaks.get(usernameLow);
+  if (!entry || now > entry.resetAt) return 0;
+  return entry.count;
+}
+function bumpLoginFailStreak(usernameLow) {
+  const now = Date.now();
+  const entry = loginFailStreaks.get(usernameLow);
+  if (!entry || now > entry.resetAt) {
+    loginFailStreaks.set(usernameLow, { count: 1, resetAt: now + 15 * 60 * 1000 });
+  } else {
+    entry.count++;
+  }
+}
+function clearLoginFailStreak(usernameLow) {
+  loginFailStreaks.delete(usernameLow);
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of loginFailStreaks.entries()) if (now > v.resetAt) loginFailStreaks.delete(k);
+}, 10 * 60 * 1000);
+
 app.post('/api/login', 
-  ipBanMiddleware,                                             
-//  checkRecaptcha,                                              
+  rateLimit(limiterAuth, 'Слишком много попыток входа с вашего IP. Подождите минуту.'),
+  ipBanMiddleware,
+  async (req, res, next) => {
+    // Капча требуется только после 3 неудачных попыток входа подряд для
+    // этого конкретного аккаунта — так легитимные пользователи логинятся
+    // без капчи каждый раз, а брутфорс упирается в неё быстро.
+    const usernameLow = (req.body.username || '').toLowerCase();
+    if (getLoginFailStreak(usernameLow) >= 3) return checkRecaptcha(req, res, next);
+    next();
+  },
   async (req, res) => {
   const { username, password } = req.body;
-  const user = await getUser((username || '').toLowerCase());
-  if (!user) return res.status(401).json({ error: 'Неверное имя или пароль' });
+  const usernameLow = (username || '').toLowerCase();
+  const user = await getUser(usernameLow);
+  if (!user) { bumpLoginFailStreak(usernameLow); return res.status(401).json({ error: 'Неверное имя или пароль' }); }
   if (user.banned) return res.status(403).json({ error: `Заблокирован: ${user.banReason || ''}` });
-  if (!await bcrypt.compare(password, user.passwordHash)) return res.status(401).json({ error: 'Неверное имя или пароль' });
+  if (!await bcrypt.compare(password, user.passwordHash)) {
+    bumpLoginFailStreak(usernameLow);
+    return res.status(401).json({ error: 'Неверное имя или пароль' });
+  }
+  clearLoginFailStreak(usernameLow);
   const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
   res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
   res.json({ user: sanitizeUser(user) });
@@ -1379,56 +1446,88 @@ app.get('/api/quests/list', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Ошибка загрузки квестов' });
     }
 });
+// per-user (не per-IP) лимит: не больше 5 попыток в минуту на аккаунт —
+// внутри транзакции всё равно защищено FOR UPDATE + total_crystals_updated_at,
+// но это не даёт одному аккаунту засыпать пул запросами.
+const limiterQuests = new RateLimiter(60_000, 5);
+
 app.post('/api/quests/complete', authMiddleware, async (req, res) => {
+    const userId = req.user.userId;
+    const limCheck = limiterQuests.check(userId);
+    if (!limCheck.allowed) {
+        return res.status(429).json({ error: 'Слишком много попыток. Подождите немного.' });
+    }
+
     try {
-        const userId = req.user.userId;
         const { confirmed } = req.body;
         const currentDay = getCurrentSeasonDay();
         const now = Date.now();
         const todayStart = new Date().setHours(0, 0, 0, 0);
 
-        const user = await db('SELECT total_crystals_updated_at FROM users WHERE id = $1', [userId]);
-        const lastUpdated = user.rows[0]?.total_crystals_updated_at || 0;
-        if (lastUpdated >= todayStart) {
-            return res.status(400).json({ error: 'Сегодня вы уже выполнили квест' });
-        }
+        const result = await withTransaction(async (client) => {
+            // FOR UPDATE — блокирует строку пользователя до конца транзакции,
+            // так что два конкурентных запроса от одного юзера не смогут оба
+            // пройти проверку "квест ещё не выполнен сегодня" одновременно.
+            const user = await client.query(
+                'SELECT total_crystals_updated_at FROM users WHERE id = $1 FOR UPDATE',
+                [userId]
+            );
+            const lastUpdated = user.rows[0]?.total_crystals_updated_at || 0;
+            if (lastUpdated >= todayStart) {
+                return { error: 'Сегодня вы уже выполнили квест', status: 400 };
+            }
 
-        const firstQuest = await db(`
-            SELECT q.id, q.day, q.type, q.reward_crystals
-            FROM quests q
-            LEFT JOIN user_quests uq ON q.id = uq.quest_id AND uq.user_id = $1
-            WHERE q.day <= $2
-              AND uq.quest_id IS NULL
-              AND q.type IN ('manual', 'confirm')
-            ORDER BY q.day
-            LIMIT 1
-        `, [userId, currentDay]);
+            const firstQuest = await client.query(`
+                SELECT q.id, q.day, q.type, q.reward_crystals
+                FROM quests q
+                LEFT JOIN user_quests uq ON q.id = uq.quest_id AND uq.user_id = $1
+                WHERE q.day <= $2
+                  AND uq.quest_id IS NULL
+                  AND q.type IN ('manual', 'confirm')
+                ORDER BY q.day
+                LIMIT 1
+            `, [userId, currentDay]);
 
-        if (firstQuest.rows.length === 0) {
-            return res.status(400).json({ error: 'Нет доступных квестов' });
-        }
+            if (firstQuest.rows.length === 0) {
+                return { error: 'Нет доступных квестов', status: 400 };
+            }
 
-        const quest = firstQuest.rows[0];
-        if (quest.type === 'confirm' && !confirmed) {
-            return res.status(400).json({ error: 'Нужно подтверждение' });
-        }
+            const quest = firstQuest.rows[0];
+            if (quest.type === 'confirm' && !confirmed) {
+                return { error: 'Нужно подтверждение', status: 400 };
+            }
 
-        await db('BEGIN');
-        await db(`INSERT INTO user_quests (user_id, quest_id, completed_at, progress, target) VALUES ($1, $2, $3, 0, 0)`, [userId, quest.id, now]);
-        await db(`UPDATE users SET total_crystals = total_crystals + $1, total_crystals_updated_at = $2 WHERE id = $3`, [quest.reward_crystals, now, userId]);
-        await db('COMMIT');
+            // ON CONFLICT — вторая защита от гонки на случай, если тот же квест
+            // уже был вставлен параллельным запросом до FOR UPDATE.
+            const inserted = await client.query(
+                `INSERT INTO user_quests (user_id, quest_id, completed_at, progress, target)
+                 VALUES ($1, $2, $3, 0, 0)
+                 ON CONFLICT (user_id, quest_id) DO NOTHING
+                 RETURNING quest_id`,
+                [userId, quest.id, now]
+            );
+            if (inserted.rows.length === 0) {
+                return { error: 'Квест уже выполнен', status: 400 };
+            }
 
-        const newTotal = await db('SELECT total_crystals FROM users WHERE id = $1', [userId]);
+            const updated = await client.query(
+                `UPDATE users SET total_crystals = total_crystals + $1, total_crystals_updated_at = $2
+                 WHERE id = $3 RETURNING total_crystals`,
+                [quest.reward_crystals, now, userId]
+            );
 
-        res.json({
-            success: true,
-            added: quest.reward_crystals,
-            totalCrystals: newTotal.rows[0].total_crystals,
-            canDoToday: false,
-            completedQuestId: quest.id
+            return {
+                success: true,
+                added: quest.reward_crystals,
+                totalCrystals: updated.rows[0].total_crystals,
+                canDoToday: false,
+                completedQuestId: quest.id
+            };
         });
+
+        if (result.error) return res.status(result.status).json({ error: result.error });
+        res.json(result);
     } catch (err) {
-        await db('ROLLBACK');
         console.error('[Quests complete]', err);
         res.status(500).json({ error: 'Ошибка при выполнении квеста' });
     }
