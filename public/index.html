@@ -2449,27 +2449,85 @@
     </div>
   </div>
 
+<style>
+/* ── Обновлённый интерфейс модалки входа ─────────────────── */
+.login-modal { padding-top: 8px; }
+.login-modal-header { text-align: center; margin-bottom: 22px; }
+.login-modal-icon {
+  font-size: 34px; margin-bottom: 6px;
+  filter: drop-shadow(0 4px 12px rgba(201,168,76,0.35));
+}
+.login-modal-header h2 { margin: 2px 0 4px; font-size: 21px; }
+.login-modal-sub { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+.login-password-wrap { position: relative; }
+.login-password-wrap .form-input { padding-right: 42px; }
+.login-password-toggle {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 16px;
+  color: var(--text-muted); padding: 7px; line-height: 1; border-radius: 6px;
+  transition: color .15s ease, background .15s ease;
+}
+.login-password-toggle:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+
+/* Капча логина скрыта по умолчанию — появляется только когда
+   сервер её реально требует (после нескольких неверных попыток) */
+#login-recaptcha-wrap { overflow: hidden; }
+#login-recaptcha-wrap.reveal { animation: loginCaptchaReveal .35s cubic-bezier(0.22,1,0.36,1); }
+@keyframes loginCaptchaReveal {
+  from { opacity: 0; max-height: 0; transform: translateY(-6px); }
+  to   { opacity: 1; max-height: 160px; transform: translateY(0); }
+}
+.login-captcha-hint {
+  font-size: 12px; color: var(--text-muted); text-align: center;
+  margin: 2px 0 8px; padding: 8px 10px; background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.25); border-radius: 8px;
+}
+
+#login-error:not(:empty) { display: flex; align-items: center; gap: 6px; }
+#login-error:not(:empty)::before { content: '⚠'; flex-shrink: 0; }
+
+#login-submit-btn { position: relative; min-width: 112px; }
+#login-submit-btn.loading #login-submit-text { visibility: hidden; }
+#login-submit-btn.loading::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 16px; height: 16px;
+  margin: -8px 0 0 -8px; border-radius: 50%;
+  border: 2px solid rgba(26,26,46,0.35); border-top-color: #1a1a2e;
+  animation: loginBtnSpin .7s linear infinite;
+}
+@keyframes loginBtnSpin { to { transform: rotate(360deg); } }
+</style>
+
 <div class="modal-overlay" id="modal-login">
-  <div class="modal" style="position:relative">
+  <div class="modal login-modal" style="position:relative">
     <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
-    <h2>♚ Вход</h2>
+    <div class="login-modal-header">
+      <div class="login-modal-icon">♚</div>
+      <h2>Вход</h2>
+      <p class="login-modal-sub">Рады видеть вас снова</p>
+    </div>
     <form onsubmit="handleLogin(event)">
       <div class="form-group">
         <label class="form-label">Имя пользователя</label>
-        <input class="form-input" id="login-username" placeholder="Ваш ник" autocomplete="username">
+        <input class="form-input" id="login-username" placeholder="Ваш ник" autocomplete="username" required>
       </div>
       <div class="form-group">
         <label class="form-label">Пароль</label>
-        <input class="form-input" id="login-password" type="password" placeholder="Пароль" autocomplete="current-password">
+        <div class="login-password-wrap">
+          <input class="form-input" id="login-password" type="password" placeholder="Пароль" autocomplete="current-password" required>
+          <button type="button" class="login-password-toggle" onclick="toggleLoginPasswordVisibility(this)" tabindex="-1" aria-label="Показать пароль">👁</button>
+        </div>
       </div>
       <div class="form-error" id="login-error"></div>
+      <div id="login-recaptcha-wrap" style="display:none">
+        <div class="login-captcha-hint" id="login-captcha-hint">Слишком много попыток входа — подтвердите, что вы не робот</div>
+        <div id="login-recaptcha"></div>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" onclick="closeModal('modal-login');openModal('modal-register')">Нет аккаунта?</button>
-        <button type="submit" class="btn btn-primary">Войти</button>
+        <button type="submit" class="btn btn-primary" id="login-submit-btn"><span id="login-submit-text">Войти</span></button>
       </div>
     </form>
-    <div class="g-recaptcha" data-sitekey="6LdJZyUtAAAAABNEO9ah9rjVHMgjpBdSZijdPGdj"></div>
-
   </div>
 </div>
 
@@ -2506,7 +2564,7 @@
         <button type="button" class="btn btn-ghost" onclick="closeModal('modal-register');openModal('modal-login')">Уже есть аккаунт?</button>
         <button type="submit" class="btn btn-primary" id="reg-submit-btn" disabled style="opacity:0.5; cursor:not-allowed;">Создать аккаунт</button>
       </div>
-          <div class="g-recaptcha" data-sitekey="6LdJZyUtAAAAABNEO9ah9rjVHMgjpBdSZijdPGdj"></div>
+          <div id="reg-recaptcha"></div>
 
     </form>
   </div>
