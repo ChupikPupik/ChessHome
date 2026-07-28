@@ -972,7 +972,9 @@ app.get('/api/donate/status/:id', async (req, res) => {
 async function checkRecaptcha(req, res, next) {
     const token = req.body['g-recaptcha-response'];
 
-    if (!token) return res.status(400).json({ error: 'Пожалуйста, подтвердите, что вы не робот.' });
+    // captchaRequired:true — явный флаг для фронтенда, чтобы он показал
+    // виджет капчи, а не пытался распарсить текст ошибки на русском.
+    if (!token) return res.status(400).json({ error: 'Пожалуйста, подтвердите, что вы не робот.', captchaRequired: true });
 
     try {
         const verify = await fetch('https://www.google.com/recaptcha/api/siteverify', {
@@ -987,7 +989,7 @@ async function checkRecaptcha(req, res, next) {
         }
 
         console.warn('[reCAPTCHA] Проверка не пройдена:', result['error-codes']);
-        return res.status(403).json({ error: 'Капча не пройдена. Обновите страницу и попробуйте снова.' });
+        return res.status(403).json({ error: 'Капча не пройдена. Обновите страницу и попробуйте снова.', captchaRequired: true });
     } catch (e) {
         console.error('Ошибка проверки капчи:', e);
         return res.status(500).json({ error: 'Внутренняя ошибка сервера при проверке капчи.' });
@@ -1156,19 +1158,24 @@ app.post('/api/login',
     next();
   },
   async (req, res) => {
-  const { username, password } = req.body;
-  const usernameLow = (username || '').toLowerCase();
-  const user = await getUser(usernameLow);
-  if (!user) { bumpLoginFailStreak(usernameLow); return res.status(401).json({ error: 'Неверное имя или пароль' }); }
-  if (user.banned) return res.status(403).json({ error: `Заблокирован: ${user.banReason || ''}` });
-  if (!await bcrypt.compare(password, user.passwordHash)) {
-    bumpLoginFailStreak(usernameLow);
-    return res.status(401).json({ error: 'Неверное имя или пароль' });
+  try {
+    const { username, password } = req.body;
+    const usernameLow = (username || '').toLowerCase();
+    const user = await getUser(usernameLow);
+    if (!user) { bumpLoginFailStreak(usernameLow); return res.status(401).json({ error: 'Неверное имя или пароль' }); }
+    if (user.banned) return res.status(403).json({ error: `Заблокирован: ${user.banReason || ''}` });
+    if (!await bcrypt.compare(password, user.passwordHash)) {
+      bumpLoginFailStreak(usernameLow);
+      return res.status(401).json({ error: 'Неверное имя или пароль' });
+    }
+    clearLoginFailStreak(usernameLow);
+    const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
+    res.json({ user: sanitizeUser(user) });
+  } catch (err) {
+    console.error('[Login]', err.message);
+    res.status(500).json({ error: 'Внутренняя ошибка сервера при входе. Попробуйте ещё раз.' });
   }
-  clearLoginFailStreak(usernameLow);
-  const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
-  res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
-  res.json({ user: sanitizeUser(user) });
 });
 
 app.post('/api/logout', (req, res) => {
