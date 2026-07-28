@@ -5,6 +5,85 @@
 const API = '/api';
 let socket = null;
 let currentUser = null;
+
+// ─── reCAPTCHA ───────────────────────────────────────────────
+// Виджеты рендерим сами (explicit) вместо авто-рендера по классу
+// .g-recaptcha, потому что на странице их два (логин + регистрация)
+// и без явного контроля легко перепутать/потерять widgetId.
+//
+// ВАЖНО: раньше оба виджета рендерились один раз на DOMContentLoaded,
+// пока обе модалки ещё скрыты (display:none через .modal-overlay без
+// класса .open). grecaptcha.render() в скрытый контейнер создаёт
+// нерабочий/невидимый виджет (iframe с нулевыми размерами) НАВСЕГДА —
+// даже когда модалка потом открывается, виджет не «чинится» сам.
+// Из-за этого капча логина была невидимой, а после 3 неверных попыток
+// пароля (лимит на бэкенде) вход блокировался навсегда с ошибкой
+// «Пожалуйста, подтвердите, что вы не робот» без возможности её пройти.
+//
+// Теперь виджет рендерим только в момент, когда его контейнер
+// реально видим на экране (модалка открыта), плюс капча логина
+// по умолчанию скрыта и появляется только тогда, когда её
+// действительно запросил сервер.
+const RECAPTCHA_SITE_KEY = '6LdJZyUtAAAAABNEO9ah9rjVHMgjpBdSZijdPGdj';
+let loginRecaptchaWidgetId = null;
+let regRecaptchaWidgetId = null;
+let needsLoginCaptcha = false; // сервер попросил капчу при входе
+
+function ensureGrecaptchaReady(cb) {
+  if (typeof grecaptcha !== 'undefined' && grecaptcha.render) { cb(); return; }
+  // api.js ещё не догрузился (async defer) — пробуем ещё раз чуть позже
+  setTimeout(() => ensureGrecaptchaReady(cb), 100);
+}
+
+// Форма регистрации пересоздаёт свою разметку (шаг ввода email-кода
+// и возврат назад через cancelVerify), поэтому #reg-recaptcha может
+// оказаться новым DOM-узлом без привязанного виджета — рендерим заново.
+// Регистрация требует капчу всегда, поэтому рендерим её сразу же,
+// как только модалка регистрации становится видимой.
+function renderRegRecaptchaIfNeeded() {
+  ensureGrecaptchaReady(() => {
+    const regEl = document.getElementById('reg-recaptcha');
+    if (regEl && !regEl.hasChildNodes()) {
+      regRecaptchaWidgetId = grecaptcha.render(regEl, { sitekey: RECAPTCHA_SITE_KEY });
+    }
+  });
+}
+
+// Капча логина нужна только после нескольких неверных попыток —
+// показываем и рендерим её только тогда, когда это реально требуется
+// (см. captchaRequired в ответе сервера), а не на каждый вход.
+function showLoginCaptcha() {
+  needsLoginCaptcha = true;
+  const wrap = document.getElementById('login-recaptcha-wrap');
+  if (wrap && wrap.style.display === 'none') {
+    wrap.style.display = '';
+    wrap.classList.add('reveal');
+  }
+  ensureGrecaptchaReady(() => {
+    const loginEl = document.getElementById('login-recaptcha');
+    if (loginEl && loginRecaptchaWidgetId === null) {
+      loginRecaptchaWidgetId = grecaptcha.render(loginEl, { sitekey: RECAPTCHA_SITE_KEY });
+    }
+  });
+}
+
+function getCaptchaToken(widgetId) {
+  if (typeof grecaptcha === 'undefined' || widgetId === null) return '';
+  return grecaptcha.getResponse(widgetId) || '';
+}
+
+function resetCaptcha(widgetId) {
+  if (typeof grecaptcha !== 'undefined' && widgetId !== null) grecaptcha.reset(widgetId);
+}
+
+function toggleLoginPasswordVisibility(btn) {
+  const input = document.getElementById('login-password');
+  if (!input) return;
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+  btn.setAttribute('aria-label', show ? 'Скрыть пароль' : 'Показать пароль');
+}
 // Токен авторизации и device id больше НЕ хранятся в localStorage —
 // они живут только в HttpOnly-cookie на сервере (ch_token, ch_device_id),
 // недоступной для чтения из JS. Это защищает от кражи токена через XSS
@@ -99,6 +178,26 @@ function showPage(name) {
 }
 
 // ─── API ──────────────────────────────────────────────────────
+// Сервер иногда может ответить не JSON'ом (HTML-страница от прокси/
+// хостинга при 502/503, таймаут и т.п.) — раньше res.json() в таком
+// случае падал с "Unexpected token '<', ... is not valid JSON" и
+// пользователь видел эту техническую абракадабру вместо понятной ошибки.
+async function parseApiResponse(res) {
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (e) {
+    throw new Error('Сервер временно недоступен. Попробуйте ещё раз через минуту.');
+  }
+  if (!res.ok) {
+    const err = new Error(data.error || 'Ошибка');
+    if (data.captchaRequired) err.captchaRequired = true;
+    throw err;
+  }
+  return data;
+}
+
 async function apiPost(path, body) {
   const res = await fetch(API + path, {
     method: 'POST',
@@ -106,16 +205,12 @@ async function apiPost(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Ошибка');
-  return data;
+  return parseApiResponse(res);
 }
 
 async function apiGet(path) {
   const res = await fetch(API + path, { credentials: 'same-origin' });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Ошибка');
-  return data;
+  return parseApiResponse(res);
 }
 
 // ─── TOAST ────────────────────────────────────────────────────
@@ -162,11 +257,22 @@ async function handleRegister(e) {
   // Honeypot: передаём скрытое поле (у людей оно всегда пустое)
   const _hp = (document.getElementById('reg-hp') || {}).value || '';
 
+  const captchaToken = getCaptchaToken(regRecaptchaWidgetId);
+  if (!captchaToken) {
+    errEl.textContent = 'Пожалуйста, подтвердите, что вы не робот.';
+    return;
+  }
+
   try {
-    await apiPost('/register', { username, email, password, _hp });
+    await apiPost('/register', { username, email, password, _hp, 'g-recaptcha-response': captchaToken });
     // Регистрация принята — показываем форму ввода кода
     showEmailVerifyStep(username, email);
-  } catch (err) { errEl.textContent = err.message; }
+  } catch (err) {
+    errEl.textContent = err.message;
+    // Токен reCAPTCHA одноразовый — после любой неудачи просим пройти заново,
+    // иначе повторный клик отправит уже использованный токен и снова упадёт.
+    resetCaptcha(regRecaptchaWidgetId);
+  }
 }
 
 function showEmailVerifyStep(username, email) {
@@ -233,23 +339,60 @@ function cancelVerify() {
     // Переподключаем обработчики после восстановления HTML
     const form = modal.querySelector('form');
     if (form) form.addEventListener('submit', handleRegister);
+    // #reg-recaptcha — новый DOM-узел, старый widgetId к нему не привязан
+    regRecaptchaWidgetId = null;
+    renderRegRecaptchaIfNeeded();
   }
 }
 
+
+function setLoginSubmitLoading(loading) {
+  const btn = document.getElementById('login-submit-btn');
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.classList.toggle('loading', loading);
+}
 
 async function handleLogin(e) {
   e.preventDefault();
   const username = document.getElementById('login-username').value.trim();
   const password = document.getElementById('login-password').value;
   const errEl    = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  // Капча на бэке требуется только после нескольких неудачных попыток
+  // подряд для этого аккаунта. Пока needsLoginCaptcha не выставлен —
+  // отправляем без токена, сервер сам решит, нужен ли он. Если он уже
+  // один раз потребовал капчу в этой сессии, проверяем токен ДО запроса,
+  // чтобы не гонять пустые попытки на сервер.
+  if (needsLoginCaptcha && !getCaptchaToken(loginRecaptchaWidgetId)) {
+    errEl.textContent = 'Пожалуйста, подтвердите, что вы не робот.';
+    return;
+  }
+
+  const captchaToken = getCaptchaToken(loginRecaptchaWidgetId);
+  setLoginSubmitLoading(true);
+
   try {
-    const data = await apiPost('/login', { username, password });
+    const data = await apiPost('/login', { username, password, 'g-recaptcha-response': captchaToken });
     currentUser = data.user; // сервер уже установил HttpOnly cookie ch_token
+    needsLoginCaptcha = false;
     closeModal('modal-login');
     updateAuthUI(); connectSocket();
     toast('С возвращением, ' + username + '! ♟️', 'success');
     showPage('lobby');
-  } catch (err) { errEl.textContent = err.message; }
+  } catch (err) {
+    errEl.textContent = err.message;
+    // Сервер явно сообщил, что капча теперь обязательна — показываем
+    // виджет (рендерим, если ещё не отрендерен) вместо того, чтобы
+    // молча повторять попытки с пустым токеном.
+    if (err.captchaRequired) showLoginCaptcha();
+    // Токен одноразовый — сбрасываем виджет, чтобы следующая попытка
+    // не отправила уже "протухший" токен и не зациклилась на той же ошибке.
+    resetCaptcha(loginRecaptchaWidgetId);
+  } finally {
+    setLoginSubmitLoading(false);
+  }
 }
 
 async function logout() {
@@ -441,7 +584,13 @@ function mobileLogout() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileNav(); });
 
 // ─── MODALS ───────────────────────────────────────────────────
-function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function openModal(id)  {
+  document.getElementById(id)?.classList.add('open');
+  // Рендерим капчу только когда контейнер реально виден — см. пояснение
+  // у объявления RECAPTCHA_SITE_KEY выше.
+  if (id === 'modal-register') renderRegRecaptchaIfNeeded();
+  if (id === 'modal-login' && needsLoginCaptcha) showLoginCaptcha();
+}
 function closeModal(id) {
   document.getElementById(id)?.classList.remove('open');
   document.querySelectorAll('.form-error').forEach(e => e.textContent = '');
