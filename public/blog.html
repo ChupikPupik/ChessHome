@@ -637,17 +637,39 @@ function getHdrs(withCT=true) {
 }
 async function apiGet(path) {
   const r = await fetch(API+path, {headers: getHdrs(false), credentials: 'same-origin'});
-  let d; try { d = await r.json(); } catch { throw new Error('Некорректный ответ сервера'); }
-  if (!r.ok) { const err = new Error(d.error||'Ошибка'); err.status = r.status; throw err; }
+  return parseApiResponse(r);
+}
+// Общий разбор ответа: сервер иногда отвечает не-JSON'ом (HTML-страница
+// ошибки от хостинга/прокси, обрыв соединения при большом теле, пустой
+// ответ и т.п.) — именно попытка бездумно сделать r.json() на такой ответ
+// и роняла фронт с "JSON.parse: unexpected character at line 1 column 1".
+// Читаем как текст и парсим сами, чтобы при не-JSON вернуть понятную
+// ошибку (с кодом статуса и куском тела), а не мёртвый краш.
+async function parseApiResponse(r) {
+  const raw = await r.text();
+  let d;
+  try {
+    d = raw ? JSON.parse(raw) : {};
+  } catch {
+    console.error('[API] Не-JSON ответ', r.status, raw.slice(0, 300));
+    const err = new Error(
+      r.ok
+        ? 'Сервер вернул некорректный ответ'
+        : `Ошибка сервера (${r.status}). Попробуйте ещё раз или сократите текст`
+    );
+    err.status = r.status;
+    throw err;
+  }
+  if (!r.ok) { const err = new Error(d.error || 'Ошибка'); err.status = r.status; throw err; }
   return d;
 }
 async function apiPost(path, body) {
   const r = await fetch(API+path, {method:'POST', headers:getHdrs(), credentials: 'same-origin', body:JSON.stringify(body)});
-  const d = await r.json(); if (!r.ok) { const err = new Error(d.error||'Ошибка'); err.status = r.status; throw err; } return d;
+  return parseApiResponse(r);
 }
 async function apiPatch(path, body) {
   const r = await fetch(API+path, {method:'PATCH', headers:getHdrs(), credentials: 'same-origin', body:JSON.stringify(body)});
-  const d = await r.json(); if (!r.ok) { const err = new Error(d.error||'Ошибка'); err.status = r.status; throw err; } return d;
+  return parseApiResponse(r);
 }
 // Раньше здесь был fetch(..., {method:'DELETE'}) — на части хостингов/прокси
 // метод DELETE до сервера не доходит и в ответ прилетает HTML-страница
@@ -655,7 +677,7 @@ async function apiPatch(path, body) {
 // удаление теперь всегда идёт через POST на /.../delete.
 async function apiDelete(path) {
   const r = await fetch(API+path+'/delete', {method:'POST', headers:getHdrs(), credentials: 'same-origin', body: '{}'});
-  const d = await r.json(); if (!r.ok) { const err = new Error(d.error||'Ошибка'); err.status = r.status; throw err; } return d;
+  return parseApiResponse(r);
 }
 
 // ── HEADER ──────────────────────────────────────────────────────

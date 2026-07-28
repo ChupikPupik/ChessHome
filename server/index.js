@@ -746,8 +746,15 @@ app.use((req, res, next) => {
 });
 app.use(cors());
 app.use(compression());
-app.use(express.json({ limit: '50kb' }));
-app.use(express.urlencoded({ extended: false, limit: '50kb' }));
+// Лимит поднят с 50kb: статьи блога разрешены до 100 000 символов
+// (см. проверку body.length в POST /api/blog), а это уже само по себе
+// 100-400кб в зависимости от алфавита. При старом лимите body-parser
+// рубил запрос ДО того, как код успевал вернуть свою красивую ошибку
+// "Текст слишком длинный", и в некоторых окружениях (за прокси без
+// финального error-хендлера) это отдавало клиенту HTML вместо JSON —
+// отсюда "JSON.parse: unexpected character at line 1 column 1".
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 app.use((req, res, next) => {
     if (req.path.match(/\.(css|js|svg|png|ico|woff|woff2|map)$/)) return next();
     if (!limiterGeneral.check(getIP(req)).allowed)
@@ -4101,8 +4108,14 @@ app.all('/api/*', (req, res) => {
 // Финальный обработчик ошибок — гарантирует, что клиент ВСЕГДА получит JSON,
 // а не HTML-страницу с трейсом, даже если где-то в коде забыли try/catch.
 app.use((err, req, res, next) => {
-  console.error('[Unhandled error]', err);
   if (res.headersSent) return next(err);
+  if (err && err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'Слишком большой запрос' });
+  }
+  if (err && err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Некорректный JSON в запросе' });
+  }
+  console.error('[Unhandled error]', err);
   res.status(500).json({ error: 'Внутренняя ошибка сервера' });
 });
 
