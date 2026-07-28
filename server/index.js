@@ -600,6 +600,13 @@ async function loadBlog() {
   }
 }
 async function saveBlogPost(p) {
+  // Просмотры/лайки сохраняются с задержкой (см. _viewTimer/_lstTimer ниже) —
+  // если статью удалили, пока такой отложенный таймер ещё не сработал, он
+  // всё равно вызовет saveBlogPost() через 5 секунд ПОСЛЕ удаления. Из-за
+  // ON CONFLICT DO UPDATE это превращается в обычный INSERT (строки-то уже
+  // нет), и удалённая статья "воскресает" в БД — а после рестарта сервера
+  // снова появляется на сайте через loadBlog(). Флаг _deleted это глушит.
+  if (p._deleted) return;
   await db(`
     INSERT INTO blog_posts (id, title, body, author, status, views, likes, liked_by, created_at, updated_at, community)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
@@ -2692,6 +2699,12 @@ async function handleDeleteBlogPost(req, res) {
   const caller = req.blogUser.username;
   if (!isBlogAdmin(caller) && post.author.toLowerCase() !== caller.toLowerCase())
     return res.status(403).json({ error: 'Нет доступа' });
+  // Отменяем отложенные таймеры сохранения просмотров/лайков (см. комментарий
+  // в saveBlogPost) — иначе они всплывут через 5 секунд ПОСЛЕ удаления и
+  // заново вставят уже удалённую статью в БД.
+  if (post._viewTimer) { clearTimeout(post._viewTimer); post._viewTimer = null; }
+  if (post._lstTimer)  { clearTimeout(post._lstTimer);  post._lstTimer  = null; }
+  post._deleted = true;
   blogPosts.splice(idx, 1);
   await deleteBlogPost(post.id);
   await db('DELETE FROM blog_likes WHERE post_id=$1',[post.id]).catch(()=>{});
