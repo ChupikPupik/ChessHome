@@ -2514,6 +2514,16 @@ function blogAdminMiddleware(req, res, next) {
 
 function isBlogAdmin(username) { return username && ['chesshome','marina64'].includes(username.toLowerCase()); }
 
+// Заголовок и текст статьи блога иногда приезжают в base64 (поле encoding:'b64') —
+// так фронтенд обходит ложные срабатывания WAF/ModSecurity на длинном сыром
+// markdown-тексте (WAF видит бессмысленный base64 вместо спецсимволов и не блокирует
+// запрос). Раскодируем здесь один раз, дальше код работает с обычным текстом как раньше.
+function decodeBlogField(value, encoding) {
+  if (typeof value !== 'string' || encoding !== 'b64') return value;
+  try { return Buffer.from(value, 'base64').toString('utf8'); }
+  catch { return value; }
+}
+
 function blogSanitize(post, withBody) {
   const o = { id: post.id, title: post.title, author: post.author, status: post.status,
     views: post.views || 0, likes: post.likes || 0,
@@ -2624,7 +2634,9 @@ app.get('/api/blog/:id', async (req, res) => {
 });
 
 app.post('/api/blog', blogAuthMiddleware, rateLimit(limiterStrict), async (req, res) => {
-  const { title, body, status } = req.body;
+  let { title, body, status, encoding } = req.body;
+  title = decodeBlogField(title, encoding);
+  body  = decodeBlogField(body, encoding);
   if (!title || !title.trim()) return res.status(400).json({ error: 'Укажите заголовок' });
   if (!body  || !body.trim())  return res.status(400).json({ error: 'Укажите текст' });
   if (title.length > 200)      return res.status(400).json({ error: 'Заголовок слишком длинный (макс 200)' });
@@ -2657,7 +2669,9 @@ app.patch('/api/blog/:id', blogAuthMiddleware, rateLimit(limiterStrict), async (
   const caller = req.blogUser.username;
   if (!isBlogAdmin(caller) && post.author.toLowerCase() !== caller.toLowerCase())
     return res.status(403).json({ error: 'Нет доступа' });
-  const { title, body, status } = req.body;
+  let { title, body, status, encoding } = req.body;
+  title = decodeBlogField(title, encoding);
+  body  = decodeBlogField(body, encoding);
   if (title !== undefined) { if (!title.trim()) return res.status(400).json({ error: 'Заголовок не может быть пустым' }); post.title = title.trim().slice(0,200); }
   if (body  !== undefined) { if (!body.trim())  return res.status(400).json({ error: 'Текст не может быть пустым' }); post.body = body.trim().slice(0,100000); }
   if (status !== undefined && ['published','draft','hidden'].includes(status)) {

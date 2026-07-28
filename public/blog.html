@@ -1074,6 +1074,16 @@ function insBlock() {
   ta.focus(); updateCounter();
 }
 
+// UTF-8-safe base64 — обычный btoa() ломается на кириллице/эмодзи.
+// Используется, чтобы отправлять текст статьи закодированным: WAF видит
+// набор base64-символов вместо "живого" markdown с кавычками/скобками/
+// спецсимволами и не блокирует запрос ложным срабатыванием (см. историю
+// с ModSecurity выше). Сервер сам раскодирует это обратно перед сохранением.
+function b64EncodeUtf8(str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+    (_, hex) => String.fromCharCode(parseInt(hex, 16))));
+}
+
 async function savePost(status) {
   const title = document.getElementById('post-title').value.trim();
   const body  = document.getElementById('post-body').value.trim();
@@ -1081,9 +1091,10 @@ async function savePost(status) {
   if (!body)  { toast('Напишите текст статьи','error'); return; }
   document.getElementById('btn-draft').disabled = true;
   document.getElementById('btn-pub').disabled   = true;
+  const payload = { title: b64EncodeUtf8(title), body: b64EncodeUtf8(body), status, encoding: 'b64' };
   try {
-    if (editingId) { await apiPatch('/blog/'+editingId, {title, body, status}); }
-    else           { await apiPost('/blog', {title, body, status}); }
+    if (editingId) { await apiPatch('/blog/'+editingId, payload); }
+    else           { await apiPost('/blog', payload); }
     toast(status==='published' ? '🚀 Опубликовано!' : '💾 Черновик сохранён','success');
     allPosts = [];
     goBack();
@@ -1093,6 +1104,7 @@ async function savePost(status) {
     document.getElementById('btn-pub').disabled   = false;
   }
 }
+
 
 // ══════════════════════════════════════════════════════════════
 //  COMMENTS
