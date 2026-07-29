@@ -1441,7 +1441,7 @@ async function executeChatBan(msgId, rowEl, username, durationMinutes) {
 
 function sendGlobalChatMsg() {
   const input = document.getElementById('global-chat-input');
-  let msg = input?.value.trim().slice(0, 50);
+  let msg = input?.value.trim().slice(0, 300);
 
   if (!msg) return;
   if (!currentUser) { toast('Войдите чтобы писать в чат', 'info'); return; }
