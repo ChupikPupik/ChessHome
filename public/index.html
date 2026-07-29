@@ -10,6 +10,18 @@
   <style>
 
     /* ══════════════════════════════════════════════════════
+       ЧАТ: ПЕРЕНОС ДЛИННЫХ СООБЩЕНИЙ НА НОВУЮ СТРОКУ
+       (лобби-чат и чат в игре, включая мобильную версию)
+    ══════════════════════════════════════════════════════ */
+    #global-chat-messages, #global-chat-messages *,
+    #chat-messages, #chat-messages * {
+      overflow-wrap: break-word;
+      word-break: break-word;
+      white-space: normal !important;
+      max-width: 100%;
+    }
+
+    /* ══════════════════════════════════════════════════════
    ОНБОРДИНГ (WELCOME ТУР) — ДЕСКТОП И МОБИЛКА
 ══════════════════════════════════════════════════════ */
 #ch-onboarding {
@@ -1653,7 +1665,7 @@
           <div id="chat-not-logged" style="display:none;font-size:13px;color:var(--text-muted);flex:1">
             <a href="/" style="color:var(--accent)">Войдите</a>, чтобы писать в чат
           </div>
-          <input class="form-input" id="global-chat-input" placeholder="Написать сообщение..." maxlength="50"
+          <input class="form-input" id="global-chat-input" placeholder="Написать сообщение..." maxlength="300"
             onkeydown="if(event.key==='Enter')sendGlobalChatMsg()"
             style="flex:1;padding:8px 14px;font-size:14px;display:none">
           <button class="btn btn-primary btn-sm" id="chat-send-btn" onclick="sendGlobalChatMsg()" style="display:none">
@@ -1834,7 +1846,7 @@
         <div class="game-chat-panel">
           <div class="chat-messages" id="chat-messages"></div>
           <div class="chat-input-row">
-            <input class="chat-input" id="chat-input" placeholder="Сообщение..." maxlength="100"
+            <input class="chat-input" id="chat-input" placeholder="Сообщение..." maxlength="300"
               onkeydown="if(event.key==='Enter')sendChatMsg()">
             <button class="btn btn-primary btn-sm" onclick="sendChatMsg()">→</button>
           </div>
