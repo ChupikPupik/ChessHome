@@ -1,3 +1,4 @@
+
 const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
@@ -4320,6 +4321,15 @@ function liveClock(game, now) {
   return { whiteTime, blackTime };
 }
 
+// Партия считается "реально сыгранной" для статистики (/api/stats) и
+// профиля (gamesPlayed/wins/losses/draws/рейтинг) только если сделан
+// хотя бы 1 полный ход — то есть сходили и белые, и чёрные (минимум
+// 2 полухода в game.moves). Иначе, например, когда игрок вышел до
+// ответного хода соперника, партия не должна засорять статистику.
+function hasFullMove(game) {
+  return Array.isArray(game.moves) && game.moves.length >= 2;
+}
+
 async function endGameAuthoritative(gameId, game, result, reason) {
   if (!activeGames.has(gameId) && !tournamentGames.has(gameId)) return; // уже завершена
   activeGames.delete(gameId);
@@ -4328,7 +4338,7 @@ async function endGameAuthoritative(gameId, game, result, reason) {
   if (isTournament) {
     const t = tournaments.find(t => t.id === game.tournamentId);
     if (t) await finishTournamentGame(t, game, result, reason);
-  } else {
+  } else if (hasFullMove(game)) {
     await recordGame(game, result, reason);
     await updateStats(game.white, game.black, result);
   }
@@ -4525,8 +4535,13 @@ async function finishTournamentGame(tournament, game, result, reason) {
   }
   tournament.games.push({ id: game.id, white: game.white, black: game.black, result, reason, moves: game.moves, timeControl: game.timeControl, endedAt: now, berserk: game.berserk, accuracy: game.accuracy || null });
   checkAnticheat(tournament, game, wp, bp, result);
-  await recordGame(game, result, reason);
-  await updateStats(game.white, game.black, result);
+  // В общую таблицу games и в личную статистику/профиль игрока (updateStats)
+  // партия попадает, только если сделан хотя бы 1 полный ход — сама турнирная
+  // логика (пары, счёт турнира, история встреч выше) при этом не меняется.
+  if (hasFullMove(game)) {
+    await recordGame(game, result, reason);
+    await updateStats(game.white, game.black, result);
+  }
   if (wp && !wp.left && !wp.anticheatBanned && now < tournament.endsAt) { wp.waiting = true; wp.paused = false; }
   if (bp && !bp.left && !bp.anticheatBanned && now < tournament.endsAt) { bp.waiting = true; bp.paused = false; }
   await saveTournament(tournament);
@@ -5056,7 +5071,7 @@ io.on('connection', (socket) => {
     if (winSock) winSock.emit('game_ended', { gameId, result: wc, reason: 'opponent_resign' });
     const isTournament = !!game.tournamentId;
     if (isTournament) { const t = tournaments.find(t => t.id === game.tournamentId); if (t) await finishTournamentGame(t, game, wc, 'resign'); }
-    else { await recordGame(game, wc, 'resign'); await updateStats(game.white, game.black, wc); }
+    else if (hasFullMove(game)) { await recordGame(game, wc, 'resign'); await updateStats(game.white, game.black, wc); }
   });
 
   socket.on('offer_draw', ({ gameId }) => {
@@ -5073,13 +5088,14 @@ io.on('connection', (socket) => {
     [findSocketByUsername(game.white), findSocketByUsername(game.black)].forEach(s => s?.emit('game_ended', payload));
     const isTournament = !!game.tournamentId;
     if (isTournament) { const t = tournaments.find(t => t.id === game.tournamentId); if (t) await finishTournamentGame(t, game, 'draw', 'agreement'); }
-    else { await updateStats(game.white, game.black, 'draw'); }
+    else if (hasFullMove(game)) { await recordGame(game, 'draw', 'agreement'); await updateStats(game.white, game.black, 'draw'); }
   });
 
   socket.on('game_chat', ({ gameId, message }) => {
     const game = activeGames.get(gameId); if (!game) return;
+    const text = (message || '').trim().slice(0, 300); if (!text) return;
     const opp = game.white === socket.username ? game.black : game.white;
-    const msg = { from: socket.username, message, gameId, ts: Date.now() };
+    const msg = { from: socket.username, message: text, gameId, ts: Date.now() };
     if (!game.chatMessages) game.chatMessages = [];
     game.chatMessages.push(msg);
     if (game.chatMessages.length > 100) game.chatMessages.shift();
@@ -5099,7 +5115,7 @@ io.on('connection', (socket) => {
 
   socket.on('global_chat', async ({ message }) => {
     if (!socket.username) return;
-    const text = (message || '').trim().slice(0, 200); if (!text) return;
+    const text = (message || '').trim().slice(0, 300); if (!text) return;
     const now = Date.now();
     const user = await getUser(socket.username.toLowerCase());
     if (!user || user.banned) { socket.disconnect(); return; }
