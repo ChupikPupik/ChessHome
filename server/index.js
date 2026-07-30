@@ -1,4 +1,3 @@
-
 const express = require('express');
 const http    = require('http');
 const { Server } = require('socket.io');
@@ -4481,8 +4480,9 @@ function startTournamentGame(tournament, p1, p2) {
   else { white = p2.username; black = p1.username; }
   const wR = usersCache.get(white.toLowerCase())?.rating ?? '?';
   const bR = usersCache.get(black.toLowerCase())?.rating ?? '?';
-  const [tcMinT, tcIncT] = tournament.timeControl.split('+').map(Number);
-  const tcSecT = (tcMinT || 10) * 60;
+  const [tcBaseT, tcIncTStr] = tournament.timeControl.split('+');
+  const tcIncT = Number(tcIncTStr);
+  const tcSecT = tcBaseT && tcBaseT.endsWith('s') ? (Number(tcBaseT.slice(0, -1)) || 15) : (Number(tcBaseT) || 10) * 60;
   const now = Date.now();
   const FIRST_MOVE_TIMEOUT = 20 * 1000;
   const game = {
@@ -4604,8 +4604,9 @@ function startGame(acceptorSocket, challenge) {
   if (challenge.color === 'white')      { white = challenge.from; black = acceptorSocket.username; }
   else if (challenge.color === 'black') { white = acceptorSocket.username; black = challenge.from; }
   else { if (Math.random() > 0.5) { white = challenge.from; black = acceptorSocket.username; } else { white = acceptorSocket.username; black = challenge.from; } }
-  const [tcMin, tcInc] = challenge.timeControl.split('+').map(Number);
-  const tcSec = (tcMin || 10) * 60;
+  const [tcBase, tcIncStr] = challenge.timeControl.split('+');
+  const tcInc = Number(tcIncStr);
+  const tcSec = tcBase && tcBase.endsWith('s') ? (Number(tcBase.slice(0, -1)) || 15) : (Number(tcBase) || 10) * 60;
   const gameNow = Date.now();
   const game = { id: gameId, white, black, turn: 'white', moves: [], createdAt: gameNow, lastActivity: gameNow, timeControl: challenge.timeControl, whiteTime: tcSec, blackTime: tcSec, tcIncrement: tcInc || 0, lastMoveAt: gameNow, _board: serverChess.startBoard() };
   activeGames.set(gameId, game);
