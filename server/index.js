@@ -2350,6 +2350,70 @@ app.post('/api/admin/system-message', authMiddleware, rateLimit(limiterStrict), 
   });
 });
 
+// ── Админ: просмотр переписок пользователя ──────────────────────
+// Доступ только через requireAdmin (роль admin). Каждый просмотр
+// пишется в admin_dm_audit (кто из админов, чью переписку и когда
+// смотрел) — это не ограничивает доступ, но даёт возможность потом
+// расследовать злоупотребления и отвечает перед пользователями за
+// то, что доступ к их ЛС отслеживается.
+async function logDmAudit(admin, target, partner, action) {
+  try {
+    await db('INSERT INTO admin_dm_audit (id, admin, target, partner, action, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+      [uuidv4(), admin, target, partner, action, Date.now()]);
+  } catch (e) { console.error('[DM Audit]', e.message); }
+}
+
+app.get('/api/admin/dm/conversations/:username', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    const target = req.params.username.toLowerCase();
+    const targetUser = await getUser(target);
+    if (!targetUser) return res.status(404).json({ error: 'Пользователь не найден' });
+
+    const msgs = await db('SELECT from_user, to_user, text, ts FROM dm_messages WHERE from_user ILIKE $1 OR to_user ILIKE $1 ORDER BY ts DESC LIMIT 1000', [target]);
+    const convMap = new Map();
+    for (const m of msgs.rows) {
+      const partner = m.from_user.toLowerCase() === target ? m.to_user : m.from_user;
+      const key = partner.toLowerCase();
+      if (!convMap.has(key)) convMap.set(key, { partner, lastMsg: m.text, lastTs: m.ts });
+    }
+    const convs = Array.from(convMap.values()).sort((a, b) => new Date(b.lastTs) - new Date(a.lastTs));
+
+    await logDmAudit(req.user.username, targetUser.username, null, 'list_conversations');
+    res.json({ user: sanitizeUser(targetUser), conversations: convs });
+  });
+});
+
+app.get('/api/admin/dm/messages/:username/:partner', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    const target  = req.params.username.toLowerCase();
+    const partner = req.params.partner.toLowerCase();
+    const targetUser  = await getUser(target);
+    const partnerUser = await getUser(partner);
+    if (!targetUser || !partnerUser) return res.status(404).json({ error: 'Пользователь не найден' });
+
+    const r = await db(
+      "SELECT * FROM (SELECT * FROM dm_messages WHERE (from_user ILIKE $1 AND to_user ILIKE $2) OR (from_user ILIKE $2 AND to_user ILIKE $1) ORDER BY ts DESC LIMIT 1000) sub ORDER BY ts ASC",
+      [target, partner]
+    );
+    const messages = r.rows.map(m => ({ id: m.id, from: m.from_user, to: m.to_user, text: m.text, ts: m.ts, read: m.read }));
+
+    await logDmAudit(req.user.username, targetUser.username, partnerUser.username, 'view_thread');
+    res.json({ messages });
+  });
+});
+
+// Аудит-лог просмотров переписок — кто из админов и когда смотрел
+// чьи ЛС. Помогает расследовать злоупотребление доступом.
+app.get('/api/admin/dm/audit', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    const target = (req.query.target || '').toLowerCase();
+    const r = target
+      ? await db('SELECT * FROM admin_dm_audit WHERE target ILIKE $1 ORDER BY created_at DESC LIMIT 200', [target])
+      : await db('SELECT * FROM admin_dm_audit ORDER BY created_at DESC LIMIT 200');
+    res.json(r.rows.map(a => ({ admin: a.admin, target: a.target, partner: a.partner, action: a.action, createdAt: Number(a.created_at) })));
+  });
+});
+
 // ── Forum API ─────────────────────────────────────────────────
 function countTodayByUser(arr, username) {
   const midnight = new Date(); midnight.setHours(0,0,0,0);
@@ -5244,6 +5308,21 @@ async function main() {
       created_at   BIGINT NOT NULL
     )
   `);
+
+  // Аудит-лог просмотров переписок админами (см. /api/admin/dm/*).
+  await db(`
+    CREATE TABLE IF NOT EXISTS admin_dm_audit (
+      id         TEXT PRIMARY KEY,
+      admin      TEXT NOT NULL,
+      target     TEXT NOT NULL,
+      partner    TEXT,
+      action     TEXT NOT NULL,
+      created_at BIGINT NOT NULL
+    )
+  `);
+  await db(`CREATE INDEX IF NOT EXISTS idx_admin_dm_audit_target ON admin_dm_audit(target, created_at DESC)`);
+  await db(`CREATE INDEX IF NOT EXISTS idx_admin_dm_audit_admin  ON admin_dm_audit(admin, created_at DESC)`);
+
   await loadChat();
   await loadTournaments();
   await loadClubs();
