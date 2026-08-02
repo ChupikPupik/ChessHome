@@ -105,6 +105,16 @@
       <div id="settings-account-info">
         <div style="color:var(--text-secondary);font-size:14px" id="account-info-text">Войдите в аккаунт для управления профилем</div>
       </div>
+      <div class="settings-row" id="row-2fa" style="display:none">
+        <div class="settings-label">
+          <div class="settings-label-name">Подтверждение входа по email (2FA)</div>
+          <div class="settings-label-desc">При входе будет запрашиваться код, отправленный на вашу почту</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="set-2fa" onchange="toggle2FA(this)">
+          <div class="toggle-slider"></div>
+        </label>
+      </div>
     </div>
 
     <!-- ИНФОРМАЦИЯ -->
@@ -263,6 +273,22 @@ async function removeEmoji() {
   } catch (err) { toast(err.message, 'error'); }
 }
 
+// ── 2FA ───────────────────────────────────────────────────────
+async function toggle2FA(checkbox) {
+  const wantEnabled = checkbox.checked;
+  checkbox.disabled = true;
+  try {
+    const data = await apiPost('/account/2fa/toggle', { enabled: wantEnabled });
+    checkbox.checked = !!data.twoFactorEnabled;
+    toast(data.twoFactorEnabled ? '2FA включена' : '2FA выключена', 'success');
+  } catch (err) {
+    checkbox.checked = !wantEnabled; // откатываем визуально при ошибке
+    toast(err.message, 'error');
+  } finally {
+    checkbox.disabled = false;
+  }
+}
+
 function updateEmojiPreview(emoji) {
   const preview = document.getElementById('current-emoji-preview');
   const removeBtn = document.getElementById('btn-remove-emoji');
@@ -305,6 +331,12 @@ async function init() {
           '<span style="font-size:14px;color:var(--text-secondary)">@' + currentUser.username + '</span>' +
           '<span style="font-size:13px;color:var(--text-muted)">\u2605 ' + currentUser.rating + '</span>' +
         '</div>';
+    }
+    const row2fa = document.getElementById('row-2fa');
+    const set2fa = document.getElementById('set-2fa');
+    if (row2fa && set2fa) {
+      row2fa.style.display = '';
+      set2fa.checked = !!currentUser.twoFactorEnabled;
     }
   }
 }

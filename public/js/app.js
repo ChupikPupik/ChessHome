@@ -375,8 +375,14 @@ async function handleLogin(e) {
 
   try {
     const data = await apiPost('/login', { username, password, 'g-recaptcha-response': captchaToken });
-    currentUser = data.user; // сервер уже установил HttpOnly cookie ch_token
     needsLoginCaptcha = false;
+    // Пароль верный, но у аккаунта включена 2FA — токен ещё не выдан,
+    // сервер ждёт код с почты. Показываем шаг ввода кода вместо закрытия модалки.
+    if (data.twoFactorRequired) {
+      showLoginTwoFactorStep(data.message);
+      return;
+    }
+    currentUser = data.user; // сервер уже установил HttpOnly cookie ch_token
     closeModal('modal-login');
     updateAuthUI(); connectSocket();
     toast('С возвращением, ' + username + '! ♟️', 'success');
@@ -393,6 +399,84 @@ async function handleLogin(e) {
   } finally {
     setLoginSubmitLoading(false);
   }
+}
+
+// ─── 2FA при входе ───────────────────────────────────────────
+// Пароль уже проверен сервером; здесь только код с почты.
+// Паттерн (сохранить innerHTML → подменить → восстановить) — как в
+// showEmailVerifyStep/cancelVerify для регистрации.
+function showLoginTwoFactorStep(message) {
+  const modal = document.getElementById('modal-login');
+  if (!modal) return;
+  modal._origHTML = modal.innerHTML;
+
+  modal.innerHTML = `
+    <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
+    <div class="login-modal-header">
+      <div class="login-modal-icon">✉️</div>
+      <h2>Код подтверждения</h2>
+      <p class="login-modal-sub">${escapeHtml(message || 'Мы отправили код на вашу почту')}</p>
+    </div>
+    <div style="padding:0 24px 24px">
+      <input id="login-2fa-code" type="text" inputmode="numeric" maxlength="6" placeholder="_ _ _ _ _ _"
+        style="width:100%;font-size:28px;letter-spacing:12px;text-align:center;padding:14px;border:2px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text);box-sizing:border-box">
+      <div id="login-2fa-error" class="form-error" style="min-height:20px;margin-top:8px"></div>
+      <button type="button" onclick="handleLoginVerify2FA()" class="btn btn-primary" id="login-2fa-submit-btn" style="width:100%;margin-top:16px;padding:12px">
+        <span id="login-2fa-submit-text">Подтвердить</span>
+      </button>
+      <button type="button" onclick="cancelLoginTwoFactor()" class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px">← Назад</button>
+    </div>
+  `;
+
+  // Авто-фокус и авто-сабмит при 6 цифрах (как в шаге подтверждения email)
+  setTimeout(() => {
+    const inp = document.getElementById('login-2fa-code');
+    if (inp) {
+      inp.focus();
+      inp.addEventListener('input', () => {
+        if (inp.value.replace(/\D/g, '').length === 6) handleLoginVerify2FA();
+      });
+    }
+  }, 100);
+}
+
+async function handleLoginVerify2FA() {
+  const codeEl = document.getElementById('login-2fa-code');
+  const errEl  = document.getElementById('login-2fa-error');
+  const btn    = document.getElementById('login-2fa-submit-btn');
+  if (!codeEl || !errEl) return;
+  const code = codeEl.value.replace(/\D/g, '');
+  if (code.length !== 6) { errEl.textContent = 'Введите 6-значный код'; return; }
+  errEl.textContent = '';
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+
+  try {
+    const data = await apiPost('/login/verify-2fa', { code });
+    currentUser = data.user; // сервер уже установил HttpOnly cookie ch_token
+    const modal = document.getElementById('modal-login');
+    if (modal) { modal.innerHTML = modal._origHTML || modal.innerHTML; delete modal._origHTML; }
+    loginRecaptchaWidgetId = null; // старый #login-recaptcha уничтожен вместе с innerHTML
+    needsLoginCaptcha = false;
+    closeModal('modal-login');
+    updateAuthUI(); connectSocket();
+    toast('С возвращением, ' + currentUser.username + '! ♟️', 'success');
+    showPage('lobby');
+  } catch (err) {
+    errEl.textContent = err.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+  }
+}
+
+function cancelLoginTwoFactor() {
+  const modal = document.getElementById('modal-login');
+  if (!modal || !modal._origHTML) return;
+  modal.innerHTML = modal._origHTML;
+  delete modal._origHTML;
+  // #login-recaptcha — новый DOM-узел после восстановления, старый widgetId к нему не привязан
+  loginRecaptchaWidgetId = null;
+  const form = modal.querySelector('form');
+  if (form) form.addEventListener('submit', handleLogin);
 }
 
 async function logout() {

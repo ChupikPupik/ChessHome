@@ -1015,7 +1015,6 @@
       }
 
       /* ── SETTINGS ──────────────────────── */
-      #page-settings > div { padding: 20px 16px !important; }
       .settings-row {
         flex-direction: row !important;
         align-items: center !important;
@@ -1993,96 +1992,6 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="page-settings" class="page">
-    <div style="padding:40px 24px;max-width:700px;margin:0 auto">
-      <div class="page-header">
-        <h1>⚙️ Настройки</h1>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-title">🎮 Игра</div>
-
-        <div class="settings-row">
-          <div class="settings-label">
-            <div class="settings-label-name">Звуковые эффекты</div>
-            <div class="settings-label-desc">Звуки ходов, взятий, шаха</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="set-sounds" onchange="saveSetting('sounds',this.checked)">
-            <div class="toggle-slider"></div>
-          </label>
-        </div>
-
-        <div class="settings-row">
-          <div class="settings-label">
-            <div class="settings-label-name">Подсказки ходов</div>
-            <div class="settings-label-desc">Показывать возможные ходы</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="set-hints" onchange="saveSetting('hints',this.checked)">
-            <div class="toggle-slider"></div>
-          </label>
-        </div>
-
-        <div class="settings-row">
-          <div class="settings-label">
-            <div class="settings-label-name">Координаты на доске</div>
-            <div class="settings-label-desc">Буквы и цифры по краям</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="set-coords" onchange="saveSetting('coords',this.checked)">
-            <div class="toggle-slider"></div>
-          </label>
-        </div>
-
-        <div class="settings-row">
-          <div class="settings-label">
-            <div class="settings-label-name">Анимация ходов</div>
-            <div class="settings-label-desc">Плавное перемещение фигур</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="set-animation" onchange="saveSetting('animation',this.checked)">
-            <div class="toggle-slider"></div>
-          </label>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-title">🎨 Доска</div>
-        <div class="settings-row">
-          <div class="settings-label">
-            <div class="settings-label-name">Тема доски</div>
-          </div>
-          <div class="color-options">
-            <div class="color-option" style="background:#f0d9b5;border:2px solid #b58863" title="Классическая" onclick="setBoardTheme('#f0d9b5','#b58863')"></div>
-            <div class="color-option" style="background:#dee3e6;border:2px solid #8ca2ad" title="Синяя" onclick="setBoardTheme('#dee3e6','#8ca2ad')"></div>
-            <div class="color-option" style="background:#e8e9b7;border:2px solid #6e8149" title="Зелёная" onclick="setBoardTheme('#e8e9b7','#6e8149')"></div>
-            <div class="color-option" style="background:#f1c79c;border:2px solid #c07030" title="Оранжевая" onclick="setBoardTheme('#f1c79c','#c07030')"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-title">👤 Аккаунт</div>
-        <div id="settings-account-info">
-          <div style="color:var(--text-secondary);font-size:14px" id="account-info-text">Войдите в аккаунт для управления профилем</div>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-title">🔗 Информация</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <a class="btn btn-ghost btn-sm" href="#" data-page="about" onclick="showPage('about')">О сайте</a>
-          <a class="btn btn-ghost btn-sm" href="#" data-page="faq" onclick="showPage('faq')">Частые вопросы</a>
-          <a class="btn btn-ghost btn-sm" href="#" data-page="appeal" onclick="goToAppealPage()">Апелляция</a>
-          <a class="btn btn-ghost btn-sm" href="#" data-page="privacy" onclick="showPage('privacy')">Конфиденциальность</a>
-          <a class="btn btn-ghost btn-sm" href="#" data-page="terms" onclick="showPage('terms')">Соглашение</a>
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">Chess Home v1.0.0 · Made with ♥ in Russia</div>
       </div>
     </div>
   </div>
@@ -3925,7 +3834,7 @@ function applyFaqFilters(query) {
     { id: 'clubs',     label: 'Клубы',                icon: '🛡️', group: 'Сообщество', href: '/clubs', spa: false },
     { id: 'blog',      label: 'Блоги',                icon: '📰', group: 'Сообщество', href: '/blog', spa: false },
     { id: 'forum',     label: 'Форумы',               icon: '💬', group: 'Сообщество', href: '/forum', spa: false },
-    { id: 'settings',  label: 'Настройки',            icon: '⚙️', group: 'Аккаунт', href: '/settings' },
+    { id: 'settings',  label: 'Настройки',            icon: '⚙️', group: 'Аккаунт', href: '/settings', spa: false },
     { id: 'profile',   label: 'Мой профиль',          icon: '👤', group: 'Аккаунт', href: '/profile' },
     { id: 'appeal',    label: 'Связь с администрацией', icon: '✉️', group: 'Помощь',  href: '/appeal' },
     { id: 'faq',       label: 'Частые вопросы',       icon: '❓', group: 'Помощь' },

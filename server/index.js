@@ -65,6 +65,8 @@ const { Resend } = require('resend');
 const pendingRegistrations = new Map();
 const pendingPasswordChanges = new Map();
 const pendingDeletions = new Map();
+// 2FA: код входа, отправленный на почту, ждёт подтверждения перед выдачей jwt.
+const pendingLogins = new Map();
 
 setInterval(() => {
   const now = Date.now();
@@ -76,6 +78,9 @@ setInterval(() => {
   }
   for (const [code, d] of pendingDeletions.entries()) {
     if (now > d.expiresAt) pendingDeletions.delete(code);
+  }
+  for (const [code, d] of pendingLogins.entries()) {
+    if (now > d.expiresAt) pendingLogins.delete(code);
   }
 }, 10 * 60 * 1000);
 
@@ -123,6 +128,24 @@ async function sendPasswordChangeEmail(email, code) {
         <p>Вы запросили смену пароля. Ваш код подтверждения:</p>
         <div style="font-size:36px;font-weight:900;letter-spacing:10px;color:#fff;background:#0f0f1e;padding:20px;border-radius:8px;text-align:center">${code}</div>
         <p style="color:#888;font-size:13px;margin-top:24px">Код действует 15 минут. Если вы не запрашивали смену пароля — немедленно смените пароль или обратитесь в поддержку.</p>
+      </div>
+    `
+  });
+  if (error) throw new Error(error.message);
+}
+
+async function sendTwoFactorLoginEmail(email, code) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const { error } = await resend.emails.send({
+    from: 'Chess Home <noreply@chesshome.pro>',
+    to: email,
+    subject: 'Код входа — Chess Home',
+    html: `
+      <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:32px;background:#1a1a2e;color:#e0e0e0;border-radius:12px">
+        <h2 style="color:#7c9cbf;margin-top:0">♟️ Chess Home</h2>
+        <p>Кто-то (надеемся, что вы) пытается войти в ваш аккаунт. Код подтверждения входа:</p>
+        <div style="font-size:36px;font-weight:900;letter-spacing:10px;color:#fff;background:#0f0f1e;padding:20px;border-radius:8px;text-align:center">${code}</div>
+        <p style="color:#888;font-size:13px;margin-top:24px">Код действует 10 минут. Если это были не вы — просто проигнорируйте письмо, пароль остаётся прежним.</p>
       </div>
     `
   });
@@ -382,6 +405,7 @@ function rowToUser(row) {
     bio:              row.bio         || '',
     fshrRating:       row.fshr_rating != null ? row.fshr_rating : null,
     fideRating:       row.fide_rating != null ? row.fide_rating : null,
+    twoFactorEnabled: row.two_factor_enabled || false,
   };
 }
 
@@ -398,17 +422,18 @@ async function saveUser(u) {
   await db(`
     INSERT INTO users (id, username, username_low, email, password_hash, rating,
       games_played, wins, losses, draws, avatar, role, banned, ban_reason,
-      created_at, created_from_ip, created_device_id, emoji, bio, fshr_rating, fide_rating)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+      created_at, created_from_ip, created_device_id, emoji, bio, fshr_rating, fide_rating,
+      two_factor_enabled)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
     ON CONFLICT (id) DO UPDATE SET
       rating=$6, games_played=$7, wins=$8, losses=$9, draws=$10,
       avatar=$11, role=$12, banned=$13, ban_reason=$14, emoji=$18,
-      bio=$19, fshr_rating=$20, fide_rating=$21
+      bio=$19, fshr_rating=$20, fide_rating=$21, two_factor_enabled=$22
   `, [u.id, u.username, u.username.toLowerCase(), u.email || null,
       u.passwordHash, u.rating, u.gamesPlayed, u.wins, u.losses, u.draws,
       u.avatar || null, u.role || 'user', u.banned || false, u.banReason || null,
       u.createdAt, u.createdFromIP || null, u.createdDeviceId || null, u.emoji || '',
-      u.bio || '', u.fshrRating ?? null, u.fideRating ?? null]);
+      u.bio || '', u.fshrRating ?? null, u.fideRating ?? null, u.twoFactorEnabled || false]);
 }
 
 // ── Кэш глобального чата ──────────────────────────────────────
@@ -1169,6 +1194,34 @@ app.post('/api/login',
       return res.status(401).json({ error: 'Неверное имя или пароль' });
     }
     clearLoginFailStreak(usernameLow);
+
+    // Пароль верный. Если у аккаунта включена 2FA — токен пока не выдаём,
+    // отправляем код на почту и ждём отдельного подтверждения.
+    if (user.twoFactorEnabled) {
+      if (!user.email) {
+        // Не должно происходить (включить 2FA можно только с привязанной почтой),
+        // но на всякий случай не блокируем вход, если так вышло.
+        console.warn('[2FA] У пользователя включена 2FA, но нет email:', user.username);
+      } else {
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        for (const [k, v] of pendingLogins.entries()) {
+          if (v.username === user.username) pendingLogins.delete(k);
+        }
+        pendingLogins.set(code, { username: user.username, expiresAt: Date.now() + 10 * 60 * 1000 });
+        try {
+          await Promise.race([
+            sendTwoFactorLoginEmail(user.email, code),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
+          ]);
+        } catch (err) {
+          pendingLogins.delete(code);
+          console.error('[2FA send]', err.message);
+          return res.status(500).json({ error: 'Не удалось отправить код подтверждения: ' + err.message });
+        }
+        return res.json({ twoFactorRequired: true, message: 'Код подтверждения отправлен на ' + user.email });
+      }
+    }
+
     const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
     res.json({ user: sanitizeUser(user) });
@@ -1177,6 +1230,31 @@ app.post('/api/login',
     res.status(500).json({ error: 'Внутренняя ошибка сервера при входе. Попробуйте ещё раз.' });
   }
 });
+
+app.post('/api/login/verify-2fa',
+  rateLimit(limiterAuth, 'Слишком много попыток. Подождите минуту.'),
+  ipBanMiddleware,
+  async (req, res) => {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Введите код' });
+
+    const pending = pendingLogins.get(String(code));
+    if (!pending) return res.status(400).json({ error: 'Неверный или истёкший код' });
+    if (Date.now() > pending.expiresAt) {
+      pendingLogins.delete(String(code));
+      return res.status(400).json({ error: 'Код истёк. Войдите заново.' });
+    }
+
+    const user = await getUser(pending.username.toLowerCase());
+    pendingLogins.delete(String(code));
+    if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+    if (user.banned) return res.status(403).json({ error: `Заблокирован: ${user.banReason || ''}` });
+
+    const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
+    res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
+    res.json({ user: sanitizeUser(user) });
+  }
+);
 
 app.post('/api/logout', (req, res) => {
   res.clearCookie('ch_token', { ...AUTH_COOKIE_OPTS, maxAge: undefined });
@@ -1193,7 +1271,21 @@ app.get('/api/users/search', async (req, res) => {
 app.get('/api/me', authMiddleware, async (req, res) => {
   const me = await getUser(req.user.username.toLowerCase());
   if (!me) return res.status(401).json({ error: 'Не найден' });
-  res.json(sanitizeUser(me));
+  // twoFactorEnabled — это настройка безопасности самого пользователя,
+  // не публичный профиль, поэтому её нет в sanitizeUser (используется и для чужих профилей).
+  res.json({ ...sanitizeUser(me), twoFactorEnabled: !!me.twoFactorEnabled });
+});
+
+app.post('/api/account/2fa/toggle', authMiddleware, rateLimit(limiterStrict, 'Слишком много запросов. Попробуйте позже.'), async (req, res) => {
+  const { enabled } = req.body;
+  const user = await getUser(req.user.username.toLowerCase());
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (enabled && !user.email) return res.status(400).json({ error: 'Для 2FA нужен привязанный email' });
+
+  user.twoFactorEnabled = !!enabled;
+  await db('UPDATE users SET two_factor_enabled=$1 WHERE id=$2', [user.twoFactorEnabled, user.id]);
+  cacheUser(user);
+  res.json({ ok: true, twoFactorEnabled: user.twoFactorEnabled });
 });
 
 app.post('/api/account/request-password-change', authMiddleware, rateLimit(limiterStrict, 'Слишком много запросов. Попробуйте позже.'), async (req, res) => {
@@ -5267,6 +5359,8 @@ async function main() {
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT DEFAULT ''`);
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fshr_rating INT`);
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fide_rating INT`);
+  // 2FA по email при входе
+  await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE`);
   // Создание таблицы для дневника разработки (перенесено сюда из глобальной области)
   await db(`
     CREATE TABLE IF NOT EXISTS dev_diary (
