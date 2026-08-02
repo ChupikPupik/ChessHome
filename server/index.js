@@ -67,6 +67,10 @@ const pendingPasswordChanges = new Map();
 const pendingDeletions = new Map();
 // 2FA: код входа, отправленный на почту, ждёт подтверждения перед выдачей jwt.
 const pendingLogins = new Map();
+// Не даём спамить письма при повторных заходах/выходах — пока предыдущий
+// код ещё "свежий", новый не шлём, просто говорим, что он уже отправлен.
+const TWO_FA_RESEND_COOLDOWN_MS = 30 * 1000;
+const twoFactorLastSent = new Map(); // username_low -> timestamp
 
 setInterval(() => {
   const now = Date.now();
@@ -1203,6 +1207,15 @@ app.post('/api/login',
         // но на всякий случай не блокируем вход, если так вышло.
         console.warn('[2FA] У пользователя включена 2FA, но нет email:', user.username);
       } else {
+        const usernameLowKey = user.username.toLowerCase();
+        const lastSent = twoFactorLastSent.get(usernameLowKey) || 0;
+        if (Date.now() - lastSent < TWO_FA_RESEND_COOLDOWN_MS) {
+          // Уже отправляли код совсем недавно (например, юзер вышел и сразу
+          // зашёл заново) — не долбим почтовый API повторно, просто просим
+          // ввести уже присланный код или немного подождать.
+          return res.json({ twoFactorRequired: true, message: 'Код уже отправлен на ' + user.email + '. Проверьте почту (или подождите немного перед новой попыткой).' });
+        }
+
         const code = String(Math.floor(100000 + Math.random() * 900000));
         for (const [k, v] of pendingLogins.entries()) {
           if (v.username === user.username) pendingLogins.delete(k);
@@ -1213,6 +1226,7 @@ app.post('/api/login',
             sendTwoFactorLoginEmail(user.email, code),
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
           ]);
+          twoFactorLastSent.set(usernameLowKey, Date.now());
         } catch (err) {
           pendingLogins.delete(code);
           console.error('[2FA send]', err.message);
