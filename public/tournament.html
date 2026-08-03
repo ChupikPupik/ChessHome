@@ -645,8 +645,22 @@ const API    = '/api';
 // Токен живёт только в HttpOnly-cookie ch_token — браузер шлёт её сам,
 // читать/хранить в localStorage больше нечего (и нельзя).
 const tId    = location.pathname.split('/').pop();
+
+// Некоторые хостинги/прокси режут методы PATCH/DELETE — запрос не долетает
+// до сервера, и в ответ прилетает HTML-страница ошибки вместо JSON. Именно
+// это вызывало "JSON.parse: unexpected character at line 1 column 1".
+// safeJson не даёт этой "сырой" ошибке всплыть наружу.
+async function safeJson(res) {
+  try {
+    return await res.json();
+  } catch (e) {
+    throw new Error('Сервер вернул некорректный ответ' + (res.status ? ` (${res.status})` : '') + '. Попробуйте ещё раз.');
+  }
+}
+
 let socket   = null;
 let tData    = null;
+let tClubData = null; // данные клуба, если турнир привязан к клубу (для проверки членства)
 let currentUser = null;
 let countdownInterval = null;
 let currentSection = 'leaderboard';
@@ -658,7 +672,7 @@ async function init() {
   // Куку ch_token браузер отправит сам — просто спрашиваем сервер, кто мы.
   try {
     const r = await fetch(API + '/me', { credentials: 'same-origin' });
-    if (r.ok) currentUser = await r.json();
+    if (r.ok) currentUser = await safeJson(r);
   } catch {}
 
   if (window.CH) {
@@ -677,7 +691,13 @@ async function loadTournament() {
       document.getElementById('t-content').innerHTML = '<div style="text-align:center;padding:80px 0;color:var(--text-muted)"><div style="font-size:48px">🔍</div><div style="margin-top:12px">Турнир не найден</div></div>';
       return;
     }
-    tData = await r.json();
+    tData = await safeJson(r);
+    if (tData.clubId && !tClubData) {
+      try {
+        const cr = await fetch(API + '/clubs/' + tData.clubId);
+        if (cr.ok) tClubData = await safeJson(cr);
+      } catch {}
+    }
     render();
   } catch (e) {
     console.error(e);
@@ -851,8 +871,15 @@ function render() {
   const ratingOk = (!tData.minRating || myRating >= tData.minRating) &&
                    (!tData.maxRating || tData.maxRating >= 9999 || myRating <= tData.maxRating);
 
+  // Клубное ограничение: участвовать могут только члены клуба
+  let clubOk = true;
+  if (tData.clubOnly && tData.clubId) {
+    const members = (tClubData?.members || []).map(m => m.toLowerCase());
+    clubOk = !!currentUser && members.includes(currentUser.username.toLowerCase());
+  }
+
   document.getElementById('t-loading').style.display = 'none';
-  document.getElementById('t-content').innerHTML = buildHTML(status, isAdmin, myPart, canJoin && !isBlacklisted && ratingOk);
+  document.getElementById('t-content').innerHTML = buildHTML(status, isAdmin, myPart, canJoin && !isBlacklisted && ratingOk && clubOk);
 
   startCountdown(status);
 
@@ -899,6 +926,19 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
        </div>`
     : '';
 
+  // ── Клубный турнир ──
+  const clubHtml = tData.clubId
+    ? `<div class="t-hero-meta-item" title="Турнир привязан к клубу">
+         <span class="t-hero-meta-icon">🛡</span>Клуб:
+         <a href="/clubs/${escHtml(tData.clubId)}">${escHtml(tClubData ? tClubData.name : 'клуб')}</a>
+       </div>`
+    : '';
+  const clubOnlyNotice = (tData.clubOnly && tData.clubId)
+    ? `<div class="t-hero-disclaimer" style="border-color:rgba(93,173,226,0.35);background:rgba(93,173,226,0.08);color:#5dade2">
+         🔒 Участвовать может только член клуба «${escHtml(tClubData ? tClubData.name : '')}»
+       </div>`
+    : '';
+
   return `
     <!-- HERO -->
     <div class="t-hero">
@@ -911,8 +951,9 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
             ${statusIcon} ${statusLabel}
           </div>
           <div class="t-hero-title">${escHtml(tData.name)}</div>
-          ${(organizerHtml || startsAtHtml) ? `<div class="t-hero-meta">${organizerHtml}${organizerHtml && startsAtHtml ? '<span class="t-hero-meta-sep">·</span>' : ''}${startsAtHtml}</div>` : ''}
+          ${(organizerHtml || startsAtHtml || clubHtml) ? `<div class="t-hero-meta">${organizerHtml}${organizerHtml && (startsAtHtml||clubHtml) ? '<span class="t-hero-meta-sep">·</span>' : ''}${startsAtHtml}${startsAtHtml && clubHtml ? '<span class="t-hero-meta-sep">·</span>' : ''}${clubHtml}</div>` : ''}
           ${tData.description ? `<div class="t-hero-desc">${escHtml(tData.description)}</div>` : ''}
+          ${clubOnlyNotice}
           ${!tData.createdByIsAdmin ? `<div class="t-hero-disclaimer">⚠ Этот турнир создан пользователем, а не администрацией. Если в описании турнира заявлены призы — ChessHome не организует и не несёт ответственности за их выплату. Все договорённости о призах — личная ответственность организатора турнира.</div>` : ''}
         </div>
       </div>
@@ -1183,7 +1224,7 @@ async function joinTournament() {
       method: 'POST',
       credentials: 'same-origin'
     });
-    const data = await r.json();
+    const data = await safeJson(r);
     if (!r.ok) throw new Error(data.error || 'Ошибка');
     toast('Вы в турнире! 🎉 Ждите начала', 'success');
     await loadTournament();
@@ -1200,7 +1241,7 @@ async function leaveTournament() {
       method: 'POST',
       credentials: 'same-origin'
     });
-    const data = await r.json();
+    const data = await safeJson(r);
     if (!r.ok) throw new Error(data.error || 'Ошибка');
     toast('Вы покинули турнир', 'success');
     await loadTournament();
@@ -1211,11 +1252,13 @@ async function leaveTournament() {
 async function adminDeleteTournament() {
   if (!confirm('Удалить турнир безвозвратно?')) return;
   try {
-    const r = await fetch(API + '/tournaments/' + tId, {
-      method: 'DELETE',
+    // Некоторые хостинги/прокси режут метод DELETE — шлём POST на /delete,
+    // для которого на сервере есть специальный дублёр-обработчик.
+    const r = await fetch(API + '/tournaments/' + tId + '/delete', {
+      method: 'POST',
       credentials: 'same-origin'
     });
-    if (!r.ok) throw new Error((await r.json()).error);
+    if (!r.ok) throw new Error((await safeJson(r)).error);
     toast('Турнир удалён', 'success');
     setTimeout(() => window.location.href = '/tournaments', 1200);
   } catch (e) { toast(e.message, 'error'); }
@@ -1294,13 +1337,15 @@ async function submitEditTournament() {
   if (!payload.startsAt) { toast('Укажите дату начала', 'error'); btn.disabled = false; btn.textContent = '💾 Сохранить'; return; }
 
   try {
-    const res = await fetch(API + '/tournaments/' + tId, {
-      method: 'PATCH',
+    // Некоторые хостинги/прокси режут метод PATCH — шлём POST на /edit,
+    // для которого на сервере есть специальный дублёр-обработчик.
+    const res = await fetch(API + '/tournaments/' + tId + '/edit', {
+      method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) throw new Error(data.error || 'Ошибка обновления');
     toast('Турнир обновлён ✅', 'success');
     closeEditModal();
@@ -1322,7 +1367,7 @@ async function adminBanFromTournament(username) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
-    const data = await r.json();
+    const data = await safeJson(r);
     if (!r.ok) throw new Error(data.error || 'Ошибка');
     toast(`${username} забанен в турнире`, 'success');
   } catch (e) { toast(e.message, 'error'); }

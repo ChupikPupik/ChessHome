@@ -471,6 +471,8 @@ async function loadTournaments() {
       maxParticipants: row.max_participants, minRating: row.min_rating, maxRating: row.max_rating,
       blacklist: row.blacklist, createdBy: row.created_by, createdAt: Number(row.created_at),
       participants: row.participants, games: row.games, winner: row.winner,
+      // Клубные турниры: привязка к клубу и ограничение только для его участников
+      clubId: row.club_id || null, clubOnly: !!row.club_only,
     });
   }
 }
@@ -478,16 +480,17 @@ async function saveTournament(t) {
   await db(`
     INSERT INTO tournaments (id, name, description, time_control, duration_minutes,
       starts_at, ends_at, max_participants, min_rating, max_rating,
-      blacklist, created_by, created_at, participants, games, winner)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+      blacklist, created_by, created_at, participants, games, winner, club_id, club_only)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
     ON CONFLICT (id) DO UPDATE SET
       name=$2, description=$3, time_control=$4, duration_minutes=$5,
       starts_at=$6, ends_at=$7, max_participants=$8, min_rating=$9, max_rating=$10,
-      blacklist=$11, participants=$14, games=$15, winner=$16
+      blacklist=$11, participants=$14, games=$15, winner=$16, club_id=$17, club_only=$18
   `, [t.id, t.name, t.description || null, t.timeControl, t.durationMinutes,
       t.startsAt, t.endsAt, t.maxParticipants, t.minRating, t.maxRating,
       JSON.stringify(t.blacklist || []), t.createdBy, t.createdAt,
-      JSON.stringify(t.participants || []), JSON.stringify(t.games || []), t.winner || null]);
+      JSON.stringify(t.participants || []), JSON.stringify(t.games || []), t.winner || null,
+      t.clubId || null, !!t.clubOnly]);
 }
 async function deleteTournamentFromDB(id) {
   await db('DELETE FROM tournaments WHERE id = $1', [id]);
@@ -2103,6 +2106,7 @@ app.get('/api/tournaments', async (req, res) => {
       createdByIsAdmin: usersCache.get((t.createdBy || '').toLowerCase())?.role === 'admin',
     }));
   if (req.query.status) list = list.filter(t => t.status === req.query.status);
+  if (req.query.clubId) list = list.filter(t => t.clubId === req.query.clubId);
   list.sort((a, b) => a.startsAt - b.startsAt);
   res.json(list);
 });
@@ -2121,12 +2125,24 @@ app.get('/api/tournaments/:id', (req, res) => {
 });
 
 app.post('/api/tournaments', authMiddleware, async (req, res) => {
-  const user = req.user;
+  if (!req.user) return res.status(401).json({ error: 'Нет доступа' });
+  const user = await getUser(req.user.username.toLowerCase());
   if (!user) return res.status(401).json({ error: 'Нет доступа' });
 
   const isAdmin = user.role === 'admin';
-  const { name, description, timeControl, durationMinutes, startsAt, maxParticipants, minRating, maxRating, blacklist } = req.body;
+  const { name, description, timeControl, durationMinutes, startsAt, maxParticipants, minRating, maxRating, blacklist, clubId, clubOnly } = req.body;
   if (!name || !timeControl || !durationMinutes || !startsAt) return res.status(400).json({ error: 'Заполните обязательные поля' });
+
+  // Клубный турнир — привязка турнира к клубу разрешена только его администраторам
+  // (защита от спама: обычный участник клуба не может создать «клубный» турнир от его имени).
+  let finalClubId = null, finalClubOnly = false;
+  if (clubId) {
+    const club = clubs.find(c => c.id === clubId);
+    if (!club) return res.status(404).json({ error: 'Клуб не найден' });
+    if (!isClubModerator(club, user.username)) return res.status(403).json({ error: 'Только администраторы клуба могут создавать клубные турниры' });
+    finalClubId = club.id;
+    finalClubOnly = !!clubOnly;
+  }
 
   const startTime = new Date(startsAt).getTime();
   if (isNaN(startTime)) return res.status(400).json({ error: 'Неверная дата' });
@@ -2156,14 +2172,15 @@ app.post('/api/tournaments', authMiddleware, async (req, res) => {
     maxParticipants: parseInt(maxParticipants) || 0, minRating: parseInt(minRating) || 0, maxRating: parseInt(maxRating) || 9999,
     blacklist: bl, createdBy: user.username, createdAt: now,
     participants: [], games: [], winner: null,
+    clubId: finalClubId, clubOnly: finalClubOnly,
   };
   tournaments.push(tournament);
   await saveTournament(tournament);
-  io.emit('tournament_created', { id: tournament.id, name: tournament.name, timeControl: tournament.timeControl, startsAt: tournament.startsAt, durationMinutes: tournament.durationMinutes });
+  io.emit('tournament_created', { id: tournament.id, name: tournament.name, timeControl: tournament.timeControl, startsAt: tournament.startsAt, durationMinutes: tournament.durationMinutes, clubId: tournament.clubId });
   res.json(tournament);
 });
 
-app.patch('/api/tournaments/:id', authMiddleware, async (req, res) => {
+async function handleEditTournament(req, res) {
   await requireAdmin(req, res, async () => {
     const t = tournaments.find(t => t.id === req.params.id);
     if (!t) return res.status(404).json({ error: 'Не найден' });
@@ -2175,9 +2192,15 @@ app.patch('/api/tournaments/:id', authMiddleware, async (req, res) => {
     io.emit('tournament_updated', { id: t.id, name: t.name, startsAt: t.startsAt });
     res.json(t);
   });
-});
+}
+app.patch('/api/tournaments/:id', authMiddleware, handleEditTournament);
+// Некоторые хостинги/прокси режут методы PATCH/DELETE (запрос не долетает до
+// Express и в ответ прилетает HTML-страница ошибки вместо JSON — отсюда и
+// "JSON.parse: unexpected character at line 1 column 1"). Даём POST-дублёры,
+// как уже сделано для /api/blog, /api/admin/chat и /api/admin/puzzles.
+app.post('/api/tournaments/:id/edit', authMiddleware, handleEditTournament);
 
-app.delete('/api/tournaments/:id', authMiddleware, async (req, res) => {
+async function handleDeleteTournament(req, res) {
   await requireAdmin(req, res, async () => {
     const idx = tournaments.findIndex(t => t.id === req.params.id);
     if (idx === -1) return res.status(404).json({ error: 'Не найден' });
@@ -2186,7 +2209,9 @@ app.delete('/api/tournaments/:id', authMiddleware, async (req, res) => {
     io.emit('tournament_deleted', t.id);
     res.json({ ok: true });
   });
-});
+}
+app.delete('/api/tournaments/:id', authMiddleware, handleDeleteTournament);
+app.post('/api/tournaments/:id/delete', authMiddleware, handleDeleteTournament);
 
 app.post('/api/tournaments/:id/join', authMiddleware, rateLimit(limiterStrict), async (req, res) => {
   const user = await getUser(req.user.username.toLowerCase());
@@ -2197,6 +2222,11 @@ app.post('/api/tournaments/:id/join', authMiddleware, rateLimit(limiterStrict), 
   if (getTournamentStatus(t, now) === 'finished') return res.status(400).json({ error: 'Турнир завершён' });
   if (t.endsAt && t.endsAt < now - 365*24*60*60*1000) return res.status(400).json({ error: 'Этому турниру больше года — запись недоступна' });
   if ((t.blacklist || []).includes(user.username.toLowerCase())) return res.status(403).json({ error: 'Вам закрыт доступ в этот турнир' });
+  if (t.clubOnly && t.clubId) {
+    const club = clubs.find(c => c.id === t.clubId);
+    const inClub = club && (club.members || []).map(m => m.toLowerCase()).includes(user.username.toLowerCase());
+    if (!inClub) return res.status(403).json({ error: `Турнир доступен только участникам клуба «${club ? club.name : ''}»` });
+  }
   if (t.minRating && user.rating < t.minRating) return res.status(400).json({ error: `Минимальный рейтинг: ${t.minRating}` });
   if (t.maxRating && t.maxRating < 9999 && user.rating > t.maxRating) return res.status(400).json({ error: `Максимальный рейтинг: ${t.maxRating}` });
   if (t.maxParticipants && t.participants.length >= t.maxParticipants) return res.status(400).json({ error: 'Турнир заполнен' });
@@ -2311,7 +2341,7 @@ app.post('/api/tournaments/:id/blacklist', authMiddleware, async (req, res) => {
   });
 });
 
-app.delete('/api/tournaments/:id/blacklist/:username', authMiddleware, async (req, res) => {
+async function handleUnblacklistTournament(req, res) {
   await requireAdmin(req, res, async () => {
     const t = tournaments.find(t => t.id === req.params.id);
     if (!t) return res.status(404).json({ error: 'Не найден' });
@@ -2319,7 +2349,9 @@ app.delete('/api/tournaments/:id/blacklist/:username', authMiddleware, async (re
     await saveTournament(t);
     res.json({ ok: true, blacklist: t.blacklist });
   });
-});
+}
+app.delete('/api/tournaments/:id/blacklist/:username', authMiddleware, handleUnblacklistTournament);
+app.post('/api/tournaments/:id/blacklist/:username/delete', authMiddleware, handleUnblacklistTournament);
 
 // ── DM: Личные Сообщения ──────────────────────────────────────
 function dmRoomKey(a, b) { return [a.toLowerCase(), b.toLowerCase()].sort().join('::'); }
@@ -3364,7 +3396,7 @@ app.post('/api/clubs/:id/leave', authMiddleware, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.patch('/api/clubs/:id', authMiddleware, async (req, res) => {
+async function handleEditClub(req, res) {
   const me = await getUser(req.user.username.toLowerCase());
   if (!me) return res.status(404).json({ error: 'Не найден' });
   const club = clubs.find(c => c.id === req.params.id);
@@ -3375,7 +3407,11 @@ app.patch('/api/clubs/:id', authMiddleware, async (req, res) => {
   if (req.body.description !== undefined) club.description = req.body.description.toString().trim().slice(0, 500);
   await saveClub(club);
   res.json({ ok: true, club });
-});
+}
+app.patch('/api/clubs/:id', authMiddleware, handleEditClub);
+// POST-дублёр на случай хостингов/прокси, которые режут метод PATCH
+// (см. аналогичный комментарий у /api/tournaments/:id/edit выше).
+app.post('/api/clubs/:id/edit', authMiddleware, handleEditClub);
 
 app.post('/api/clubs/:id/kick', authMiddleware, async (req, res) => {
   const me = await getUser(req.user.username.toLowerCase());
@@ -3439,7 +3475,7 @@ app.post('/api/clubs/:id/demote', authMiddleware, async (req, res) => {
   club.admins.splice(aidx, 1); await saveClub(club); res.json({ ok: true });
 });
 
-app.delete('/api/clubs/:id', authMiddleware, async (req, res) => {
+async function handleDeleteClub(req, res) {
   const me = await getUser(req.user.username.toLowerCase());
   if (!me) return res.status(404).json({ error: 'Не найден' });
   const idx = clubs.findIndex(c => c.id === req.params.id);
@@ -3450,7 +3486,9 @@ app.delete('/api/clubs/:id', authMiddleware, async (req, res) => {
   if (!isCreator && !isSuperAdmin) return res.status(403).json({ error: 'Нет прав' });
   if (club.official && !isSuperAdmin) return res.status(403).json({ error: 'Нельзя удалить официальный клуб' });
   clubs.splice(idx, 1); await deleteClubFromDB(club.id); res.json({ ok: true });
-});
+}
+app.delete('/api/clubs/:id', authMiddleware, handleDeleteClub);
+app.post('/api/clubs/:id/delete', authMiddleware, handleDeleteClub);
 
 // ── Club Chat API ──────────────────────────────────────────────
 app.get('/api/clubs/:id/chat', authMiddleware, (req, res) => {
@@ -5363,6 +5401,10 @@ async function main() {
   await initPuzzleTables();
   await initClubChatTable();
   await initDonateTable();
+  // Клубные турниры: привязка турнира к клубу + флаг «только для участников клуба»
+  await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS club_id TEXT`);
+  await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS club_only BOOLEAN DEFAULT FALSE`);
+  await db(`CREATE INDEX IF NOT EXISTS idx_tournaments_club_id ON tournaments(club_id)`);
   await db(`
     CREATE TABLE IF NOT EXISTS deleted_usernames (
       username_low TEXT PRIMARY KEY,

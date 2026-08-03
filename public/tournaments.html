@@ -413,6 +413,35 @@
       color: var(--text-muted);
     }
 
+    /* Club-only tournament block */
+    .club-only-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .club-only-toggle {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .club-only-toggle input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+    .club-only-box .form-select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .t-club-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(93,173,226,0.12); border: 1px solid rgba(93,173,226,0.3);
+      color: #5dade2; font-size: 11px; font-weight: 700;
+      padding: 2px 8px; border-radius: 6px;
+    }
+
     /* Blacklist */
     .blacklist-input-row {
       display: flex;
@@ -667,6 +696,20 @@
           <input type="number" class="form-input" id="t-max-rating" min="0" max="3000" placeholder="0 = без лимита">
         </div>
 
+        <div class="form-group full" id="club-only-group" style="display:none">
+          <label class="form-label">🛡️ Клубный турнир</label>
+          <div class="club-only-box">
+            <select class="form-select" id="t-club-select" onchange="onClubSelectChange()">
+              <option value="">— Обычный турнир (без привязки к клубу) —</option>
+            </select>
+            <label class="club-only-toggle" id="club-only-toggle-row" style="display:none">
+              <input type="checkbox" id="t-club-only" checked>
+              Только для участников выбранного клуба
+            </label>
+            <span class="form-hint">Доступно только администраторам клуба. Если галочка снята — турнир будет виден в клубе, но участвовать сможет любой.</span>
+          </div>
+        </div>
+
         <div class="form-group full">
           <label class="form-label">⛔ Blacklist — кому закрыт вход</label>
           <div class="blacklist-input-row">
@@ -690,6 +733,16 @@
 
   <script>
     const API = '/api';
+    // Некоторые хостинги/прокси при ошибке (например, превышен лимит тела
+    // запроса) возвращают HTML-страницу вместо JSON — это и вызывало
+    // "JSON.parse: unexpected character at line 1 column 1".
+    async function safeJson(res) {
+      try {
+        return await res.json();
+      } catch (e) {
+        throw new Error('Сервер вернул некорректный ответ' + (res.status ? ` (${res.status})` : '') + '. Попробуйте ещё раз.');
+      }
+    }
     // Токен живёт только в HttpOnly-cookie ch_token — браузер шлёт её сам,
     // читать/хранить в localStorage больше нечего (и нельзя).
     let currentUser = null;
@@ -711,6 +764,7 @@
 
     let currentTab = pathToTab(location.pathname);
     let blacklist = [];
+    let myAdminClubs = []; // клубы, где текущий пользователь — администратор (может создавать клубные турниры)
 
     window.addEventListener('popstate', () => {
       currentTab = pathToTab(location.pathname);
@@ -744,6 +798,7 @@
       syncTabButtons();
       if (currentUser) {
         document.getElementById('btn-create-tournament').style.display = 'flex';
+        await loadMyAdminClubs();
       }
       // Set default datetime
       const dt = document.getElementById('t-starts-at');
@@ -753,6 +808,45 @@
       }
       await loadTournaments();
       setInterval(loadTournaments, 15000);
+
+      // Пришли со страницы клуба через «Создать клубный турнир» — открываем
+      // модалку сразу с предвыбранным клубом и включённым ограничением.
+      const params = new URLSearchParams(location.search);
+      const clubParam = params.get('createClubTournament');
+      if (clubParam && currentUser) {
+        openCreateModal();
+        const sel = document.getElementById('t-club-select');
+        if (sel && [...sel.options].some(o => o.value === clubParam)) {
+          sel.value = clubParam;
+          onClubSelectChange();
+          document.getElementById('t-club-only').checked = true;
+        }
+      }
+    }
+
+    // ── КЛУБЫ, ГДЕ Я АДМИНИСТРАТОР ──
+    function isClubAdminOf(club) {
+      if (!currentUser) return false;
+      const lname = currentUser.username.toLowerCase();
+      if (currentUser.role === 'admin') return true;
+      return (club.admins || []).map(a => a.toLowerCase()).includes(lname);
+    }
+    async function loadMyAdminClubs() {
+      try {
+        const clubs = await fetch(API + '/clubs', { credentials: 'same-origin' }).then(r => r.json());
+        myAdminClubs = (clubs || []).filter(isClubAdminOf);
+      } catch { myAdminClubs = []; }
+      const group = document.getElementById('club-only-group');
+      const sel = document.getElementById('t-club-select');
+      if (!myAdminClubs.length) { group.style.display = 'none'; return; }
+      group.style.display = '';
+      sel.innerHTML = '<option value="">— Обычный турнир (без привязки к клубу) —</option>' +
+        myAdminClubs.map(c => `<option value="${escHtmlAttr(c.id)}">🛡️ ${escHtmlAttr(c.name)}</option>`).join('');
+    }
+    function onClubSelectChange() {
+      const sel = document.getElementById('t-club-select');
+      const row = document.getElementById('club-only-toggle-row');
+      row.style.display = sel.value ? 'flex' : 'none';
     }
 
     // ── LOAD ──
@@ -860,6 +954,10 @@
         ? `<span class="t-meta-item t-user-badge" title="Турнир создан пользователем. ChessHome не несёт ответственности за выплату призов, если они заявлены в этом турнире.">👤 От игрока</span>`
         : '';
 
+      const clubBadge = t.clubId
+        ? `<span class="t-meta-item t-club-badge" title="${t.clubOnly ? 'Участвовать могут только члены клуба' : 'Турнир клуба, открыт для всех'}">🛡️ ${t.clubOnly ? 'Только для клуба' : 'Турнир клуба'}</span>`
+        : '';
+
       return `
         <a class="t-card status-${statusClass}" href="/tournament/${t.id}">
           <div class="t-card-icon">${cardIcons[t.status] || '🏆'}</div>
@@ -869,6 +967,7 @@
               <span class="t-meta-item">${timeInfo}</span>
               <span class="t-meta-item">${ratingInfo}</span>
               <span class="t-meta-item">⏱ ${t.durationMinutes} мин</span>
+              ${clubBadge}
               ${userTournamentBadge}
               ${t.description ? `<span class="t-meta-item" style="color:var(--text-muted);font-style:italic">${escHtml(t.description.slice(0,50))}${t.description.length>50?'…':''}</span>` : ''}
             </div>
@@ -929,6 +1028,9 @@
       const maxP = parseInt(document.getElementById('t-max').value) || 0;
       const minR = parseInt(document.getElementById('t-min-rating').value) || 0;
       const maxR = parseInt(document.getElementById('t-max-rating').value) || 0;
+      const clubSel = document.getElementById('t-club-select');
+      const clubId = clubSel ? clubSel.value : '';
+      const clubOnly = clubId ? document.getElementById('t-club-only').checked : false;
 
       if (!name) { toast('Введите название', 'error'); return; }
       if (!startsAt) { toast('Укажите дату начала', 'error'); return; }
@@ -947,14 +1049,17 @@
             maxParticipants: maxP, minRating: minR,
             maxRating: maxR || 9999,
             blacklist: blacklist,
+            clubId: clubId || undefined,
+            clubOnly,
           })
         });
-        const data = await res.json();
+        const data = await safeJson(res);
         if (!res.ok) throw new Error(data.error || 'Ошибка');
         toast('Турнир создан! 🏆', 'success');
         closeCreateModal();
         // Reset form
         ['t-name','t-desc','t-bl-input'].forEach(id => document.getElementById(id).value = '');
+        if (clubSel) { clubSel.value = ''; onClubSelectChange(); }
         blacklist = [];
         renderBlacklist();
         await loadTournaments();
