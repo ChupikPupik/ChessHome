@@ -597,6 +597,31 @@ function isClubModerator(club, username) {
   if (isSiteAdmin(username)) return true;
   return (club.admins || []).map(a => a.toLowerCase()).includes(username.toLowerCase());
 }
+// Может ли пользователь управлять турниром: сайт-админ ИЛИ администратор клуба,
+// к которому привязан этот турнир (создатель клуба всегда входит в club.admins).
+function canManageTournament(user, t) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (t.clubId) {
+    const club = clubs.find(c => c.id === t.clubId);
+    if (club && isClubModerator(club, user.username)) return true;
+  }
+  return false;
+}
+// Аналог requireAdmin, но также пускает администраторов клуба для турниров их клуба.
+async function requireTournamentManager(req, res, cb) {
+  try {
+    const me = await getUser(req.user.username.toLowerCase());
+    if (!me) return res.status(403).json({ error: 'Нет прав' });
+    const t = tournaments.find(t => t.id === req.params.id);
+    if (!t) return res.status(404).json({ error: 'Не найден' });
+    if (!canManageTournament(me, t)) return res.status(403).json({ error: 'Нет прав' });
+    await cb(t, me);
+  } catch (e) {
+    console.error('[requireTournamentManager]', e);
+    if (!res.headersSent) res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+}
 function canWriteInClubChat(club, username) {
   if (!username) return false;
   if (isSiteAdmin(username)) return true;
@@ -2181,9 +2206,7 @@ app.post('/api/tournaments', authMiddleware, async (req, res) => {
 });
 
 async function handleEditTournament(req, res) {
-  await requireAdmin(req, res, async () => {
-    const t = tournaments.find(t => t.id === req.params.id);
-    if (!t) return res.status(404).json({ error: 'Не найден' });
+  await requireTournamentManager(req, res, async (t) => {
     if (getTournamentStatus(t, Date.now()) === 'finished') return res.status(400).json({ error: 'Турнир завершён' });
     ['name','description','timeControl','durationMinutes','maxParticipants','minRating','maxRating'].forEach(k => { if (req.body[k] !== undefined) t[k] = req.body[k]; });
     if (req.body.startsAt) { t.startsAt = new Date(req.body.startsAt).getTime(); t.endsAt = t.startsAt + t.durationMinutes * 60000; }
@@ -2201,10 +2224,10 @@ app.patch('/api/tournaments/:id', authMiddleware, handleEditTournament);
 app.post('/api/tournaments/:id/edit', authMiddleware, handleEditTournament);
 
 async function handleDeleteTournament(req, res) {
-  await requireAdmin(req, res, async () => {
-    const idx = tournaments.findIndex(t => t.id === req.params.id);
+  await requireTournamentManager(req, res, async (t) => {
+    const idx = tournaments.findIndex(x => x.id === t.id);
     if (idx === -1) return res.status(404).json({ error: 'Не найден' });
-    const [t] = tournaments.splice(idx, 1);
+    tournaments.splice(idx, 1);
     await deleteTournamentFromDB(t.id);
     io.emit('tournament_deleted', t.id);
     res.json({ ok: true });
@@ -2287,9 +2310,7 @@ app.get('/api/tournaments/:id/games', async (req, res) => {
 
 // ── Ручной античит-бан от администратора ─────────────────────
 app.post('/api/tournaments/:id/anticheat-ban', authMiddleware, async (req, res) => {
-  await requireAdmin(req, res, async () => {
-    const t = tournaments.find(t => t.id === req.params.id);
-    if (!t) return res.status(404).json({ error: 'Турнир не найден' });
+  await requireTournamentManager(req, res, async (t) => {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: 'Укажите username' });
     const p = t.participants.find(p => p.username.toLowerCase() === username.toLowerCase());
@@ -2325,9 +2346,7 @@ app.post('/api/tournaments/:id/anticheat-ban', authMiddleware, async (req, res) 
 });
 
 app.post('/api/tournaments/:id/blacklist', authMiddleware, async (req, res) => {
-  await requireAdmin(req, res, async () => {
-    const t = tournaments.find(t => t.id === req.params.id);
-    if (!t) return res.status(404).json({ error: 'Не найден' });
+  await requireTournamentManager(req, res, async (t) => {
     const { username } = req.body;
     if (!username) return res.status(400).json({ error: 'Укажите username' });
     if (!t.blacklist) t.blacklist = [];
@@ -2342,9 +2361,7 @@ app.post('/api/tournaments/:id/blacklist', authMiddleware, async (req, res) => {
 });
 
 async function handleUnblacklistTournament(req, res) {
-  await requireAdmin(req, res, async () => {
-    const t = tournaments.find(t => t.id === req.params.id);
-    if (!t) return res.status(404).json({ error: 'Не найден' });
+  await requireTournamentManager(req, res, async (t) => {
     t.blacklist = (t.blacklist || []).filter(u => u !== req.params.username.toLowerCase());
     await saveTournament(t);
     res.json({ ok: true, blacklist: t.blacklist });
