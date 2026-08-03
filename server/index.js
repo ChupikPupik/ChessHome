@@ -595,7 +595,11 @@ function isSiteAdmin(username) {
 function isClubModerator(club, username) {
   if (!username) return false;
   if (isSiteAdmin(username)) return true;
-  return (club.admins || []).map(a => a.toLowerCase()).includes(username.toLowerCase());
+  const lname = username.toLowerCase();
+  // Создатель клуба всегда сохраняет права модератора, даже если технически
+  // выпал из club.admins (например, вышел из клуба и зашёл снова).
+  if ((club.createdBy || '').toLowerCase() === lname) return true;
+  return (club.admins || []).map(a => a.toLowerCase()).includes(lname);
 }
 // Может ли пользователь управлять турниром: сайт-админ ИЛИ администратор клуба,
 // к которому привязан этот турнир (создатель клуба всегда входит в club.admins).
@@ -3332,6 +3336,12 @@ app.post('/api/clubs/:id/join', authMiddleware, rateLimit(limiterStrict), async 
   const memberOf = clubs.filter(c => (c.members || []).map(m => m.toLowerCase()).includes(lname)).length;
   if (memberOf >= 10) return res.status(400).json({ error: 'Вы уже в 10 клубах (максимум)' });
   club.members = club.members || []; club.members.push(me.username); club.memberCount = club.members.length;
+  // Если вступает создатель клуба, а он ранее выпал из admins (например, после
+  // выхода/повторного входа) — возвращаем ему права администратора клуба.
+  if ((club.createdBy || '').toLowerCase() === lname) {
+    club.admins = club.admins || [];
+    if (!club.admins.map(a => a.toLowerCase()).includes(lname)) club.admins.push(me.username);
+  }
   await saveClub(club);
   res.json({ ok: true, memberCount: club.memberCount });
 });

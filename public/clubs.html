@@ -843,8 +843,10 @@ function renderClubDetail(club) {
   const lme = me ? me.username.toLowerCase() : '';
   const members = club.members || [];
   const admins = club.admins || [];
-  const isAdmin = admins.map(a=>a.toLowerCase()).includes(lme);
   const isCreator = (club.createdBy||'').toLowerCase() === lme;
+  // Создатель клуба всегда считается администратором клуба, даже если
+  // технически выпал из admins (например, вышел из клуба и зашёл снова).
+  const isAdmin = admins.map(a=>a.toLowerCase()).includes(lme) || isCreator;
   const isSuperAdmin = me && (me.username.toLowerCase() === 'chesshome' || me.role === 'admin');
   const isMem = members.map(m=>m.toLowerCase()).includes(lme);
   const canManageTournaments = isAdmin || isSuperAdmin;

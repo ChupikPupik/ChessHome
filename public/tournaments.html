@@ -829,6 +829,7 @@
       if (!currentUser) return false;
       const lname = currentUser.username.toLowerCase();
       if (currentUser.role === 'admin') return true;
+      if ((club.createdBy || '').toLowerCase() === lname) return true;
       return (club.admins || []).map(a => a.toLowerCase()).includes(lname);
     }
     async function loadMyAdminClubs() {
