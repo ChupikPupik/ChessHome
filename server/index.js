@@ -632,6 +632,100 @@ function canWriteInClubChat(club, username) {
   return (club.members || []).map(m => m.toLowerCase()).includes(username.toLowerCase());
 }
 
+// ── Чат турниров ──────────────────────────────────────────────
+// Открыт для сообщений до турнира, во время и ещё 3 часа после его
+// окончания — дальше доступно только чтение (история из последних
+// TOURNAMENT_CHAT_MAX сообщений).
+const TOURNAMENT_CHAT_MAX = 50;
+const TOURNAMENT_CHAT_READONLY_AFTER_MS = 3 * 60 * 60 * 1000;
+const tournamentChats = new Map();      // tId -> [{id, username, role, message, timestamp, system, muted}]
+const tournamentChatMutes = new Map();  // tId -> Map(usernameLow -> { until })
+
+function getTournamentChat(tId) {
+  if (!tournamentChats.has(tId)) tournamentChats.set(tId, []);
+  return tournamentChats.get(tId);
+}
+function getTournamentChatMutes(tId) {
+  if (!tournamentChatMutes.has(tId)) tournamentChatMutes.set(tId, new Map());
+  return tournamentChatMutes.get(tId);
+}
+function isTournamentChatOpen(t, now) {
+  return now < (t.endsAt + TOURNAMENT_CHAT_READONLY_AFTER_MS);
+}
+// Модератор чата турнира: сайт-админ, админ клуба (если турнир клубный)
+// ИЛИ создатель конкретно этого турнира.
+function canModerateTournamentChat(user, t) {
+  if (!user) return false;
+  if (canManageTournament(user, t)) return true;
+  return !!(t.createdBy && user.username.toLowerCase() === t.createdBy.toLowerCase());
+}
+
+async function initTournamentChatTable() {
+  await db(`
+    CREATE TABLE IF NOT EXISTS tournament_chat_messages (
+      id            TEXT PRIMARY KEY,
+      tournament_id TEXT NOT NULL,
+      username      TEXT NOT NULL,
+      role          TEXT NOT NULL DEFAULT 'user',
+      message       TEXT NOT NULL,
+      timestamp     BIGINT NOT NULL,
+      is_system     BOOLEAN NOT NULL DEFAULT FALSE,
+      is_muted      BOOLEAN NOT NULL DEFAULT FALSE
+    )
+  `);
+  await db(`CREATE INDEX IF NOT EXISTS idx_tournament_chat_tid ON tournament_chat_messages(tournament_id, timestamp DESC)`);
+}
+
+async function loadTournamentChats() {
+  const r = await db(`
+    SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY tournament_id ORDER BY timestamp DESC) AS rn
+      FROM tournament_chat_messages) t WHERE rn <= ${TOURNAMENT_CHAT_MAX} ORDER BY timestamp ASC
+  `);
+  for (const row of r.rows) {
+    const chat = getTournamentChat(row.tournament_id);
+    chat.push({
+      id: row.id, username: row.username, role: row.role,
+      message: row.message, timestamp: Number(row.timestamp),
+      system: row.is_system || false, muted: row.is_muted || false,
+    });
+  }
+}
+
+async function saveTournamentChatMsg(tId, msg) {
+  try {
+    await db(`
+      INSERT INTO tournament_chat_messages (id, tournament_id, username, role, message, timestamp, is_system, is_muted)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO NOTHING
+    `, [msg.id, tId, msg.username, msg.role || 'user', msg.message,
+        msg.timestamp, msg.system || false, msg.muted || false]);
+    await db(`
+      DELETE FROM tournament_chat_messages
+      WHERE tournament_id = $1 AND id NOT IN (
+        SELECT id FROM tournament_chat_messages
+        WHERE tournament_id = $1 ORDER BY timestamp DESC LIMIT ${TOURNAMENT_CHAT_MAX}
+      )
+    `, [tId]);
+  } catch (e) { console.error('[saveTournamentChatMsg] error:', e.message); }
+}
+
+// Мут: не удаляет сообщения пользователя, а стирает их текст, заменяя на
+// «[Замучен]» — история чата (кто когда писал) остаётся видна, но содержимое скрыто.
+async function wipeTournamentChatMsgsByUser(tId, usernameLow) {
+  const chat = getTournamentChat(tId);
+  const affectedIds = [];
+  for (const m of chat) {
+    if ((m.username || '').toLowerCase() === usernameLow && !m.system) {
+      m.message = '[Замучен]';
+      m.muted = true;
+      affectedIds.push(m.id);
+    }
+  }
+  try {
+    await db(`UPDATE tournament_chat_messages SET message = '[Замучен]', is_muted = TRUE WHERE tournament_id=$1 AND LOWER(username)=$2`, [tId, usernameLow]);
+  } catch (e) { console.error('[wipeTournamentChatMsgsByUser] error:', e.message); }
+  return affectedIds;
+}
+
 // ── Форум ─────────────────────────────────────────────────────
 const forumThreads = [];
 const forumReplies = [];
@@ -2373,6 +2467,104 @@ async function handleUnblacklistTournament(req, res) {
 }
 app.delete('/api/tournaments/:id/blacklist/:username', authMiddleware, handleUnblacklistTournament);
 app.post('/api/tournaments/:id/blacklist/:username/delete', authMiddleware, handleUnblacklistTournament);
+
+// ── Tournament Chat API ────────────────────────────────────────
+app.get('/api/tournaments/:id/chat', authMiddleware, async (req, res) => {
+  const t = tournaments.find(t => t.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'Турнир не найден' });
+  const me = await getUser(req.user.username.toLowerCase());
+  if (!me) return res.status(401).json({ error: 'Нет доступа' });
+
+  const now = Date.now();
+  const msgs = getTournamentChat(t.id);
+  const mutes = getTournamentChatMutes(t.id);
+  const myMuteRaw = mutes.get(me.username.toLowerCase());
+  const myMute = (myMuteRaw && myMuteRaw.until > now) ? myMuteRaw : null;
+
+  res.json({
+    messages: msgs.slice(-TOURNAMENT_CHAT_MAX),
+    open: isTournamentChatOpen(t, now),
+    myMute,
+    canModerate: canModerateTournamentChat(me, t),
+  });
+});
+
+app.post('/api/tournaments/:id/chat', authMiddleware, rateLimit(limiterStrict), async (req, res) => {
+  const t = tournaments.find(t => t.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'Турнир не найден' });
+  const me = await getUser(req.user.username.toLowerCase());
+  if (!me) return res.status(401).json({ error: 'Нет доступа' });
+  if (me.banned) return res.status(403).json({ error: 'Ваш аккаунт заблокирован' });
+
+  const now = Date.now();
+  if (!isTournamentChatOpen(t, now)) {
+    return res.status(403).json({ error: 'Чат турнира закрыт для сообщений — доступно только чтение' });
+  }
+
+  const mutes = getTournamentChatMutes(t.id);
+  const myMute = mutes.get(me.username.toLowerCase());
+  if (myMute) {
+    if (myMute.until > now) return res.status(403).json({ error: 'Вы замучены в чате этого турнира', until: myMute.until });
+    mutes.delete(me.username.toLowerCase());
+  }
+
+  const text = (req.body.message || '').toString().trim().slice(0, 300);
+  if (!text) return res.status(400).json({ error: 'Пустое сообщение' });
+
+  const msg = { id: uuidv4(), username: me.username, role: me.role || 'user', message: text, timestamp: now };
+  const chat = getTournamentChat(t.id);
+  chat.push(msg);
+  if (chat.length > TOURNAMENT_CHAT_MAX) chat.shift();
+  saveTournamentChatMsg(t.id, msg);
+  io.to(`tournament_${t.id}`).emit('tournament_chat_msg', { tournamentId: t.id, msg });
+  res.json({ ok: true, msg });
+});
+
+app.post('/api/tournaments/:id/chat-mute', authMiddleware, async (req, res) => {
+  const t = tournaments.find(t => t.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'Турнир не найден' });
+  const me = await getUser(req.user.username.toLowerCase());
+  if (!me) return res.status(401).json({ error: 'Нет доступа' });
+  if (!canModerateTournamentChat(me, t)) return res.status(403).json({ error: 'Нет прав' });
+
+  const { username, minutes } = req.body;
+  if (!username) return res.status(400).json({ error: 'Укажите username' });
+  const target = username.toLowerCase();
+
+  if (isSiteAdmin(target) && me.role !== 'admin') return res.status(403).json({ error: 'Нельзя замутить администратора' });
+  if (t.createdBy && target === t.createdBy.toLowerCase() && me.role !== 'admin' && me.username.toLowerCase() !== target) {
+    return res.status(403).json({ error: 'Нельзя замутить создателя турнира' });
+  }
+
+  const dur = Math.min(Math.max(parseInt(minutes) || 15, 1), 24 * 60); // от 1 минуты до 24 часов
+  const until = Date.now() + dur * 60 * 1000;
+  getTournamentChatMutes(t.id).set(target, { until });
+
+  const mutedIds = await wipeTournamentChatMsgsByUser(t.id, target);
+
+  const sysMsg = { id: uuidv4(), username: 'system', role: 'system', message: `🔇 ${username} замучен в чате турнира на ${dur} мин.`, timestamp: Date.now(), system: true };
+  const chat = getTournamentChat(t.id);
+  chat.push(sysMsg);
+  if (chat.length > TOURNAMENT_CHAT_MAX) chat.shift();
+  saveTournamentChatMsg(t.id, sysMsg);
+
+  io.to(`tournament_${t.id}`).emit('tournament_chat_user_muted', { tournamentId: t.id, username, until, mutedIds, sysMsg });
+  res.json({ ok: true, until });
+});
+
+app.post('/api/tournaments/:id/chat-unmute', authMiddleware, async (req, res) => {
+  const t = tournaments.find(t => t.id === req.params.id);
+  if (!t) return res.status(404).json({ error: 'Турнир не найден' });
+  const me = await getUser(req.user.username.toLowerCase());
+  if (!me) return res.status(401).json({ error: 'Нет доступа' });
+  if (!canModerateTournamentChat(me, t)) return res.status(403).json({ error: 'Нет прав' });
+
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: 'Укажите username' });
+  getTournamentChatMutes(t.id).delete(username.toLowerCase());
+  io.to(`tournament_${t.id}`).emit('tournament_chat_user_unmuted', { tournamentId: t.id, username });
+  res.json({ ok: true });
+});
 
 // ── DM: Личные Сообщения ──────────────────────────────────────
 function dmRoomKey(a, b) { return [a.toLowerCase(), b.toLowerCase()].sort().join('::'); }
@@ -4707,6 +4899,8 @@ function tryPairTournamentPlayers(tournament) {
   // При нечётном числе один игрок остаётся в waiting (bye) и получит партию следующим
 }
 
+const FIRST_MOVE_TIMEOUT = 20 * 1000; // время на первый ход — общее для белых и чёрных
+
 function startTournamentGame(tournament, p1, p2) {
   const gameId = uuidv4();
   const p1Last = [...tournament.games].reverse().find(g => g.white === p1.username || g.black === p1.username);
@@ -4719,7 +4913,6 @@ function startTournamentGame(tournament, p1, p2) {
   const tcIncT = Number(tcIncTStr);
   const tcSecT = tcBaseT && tcBaseT.endsWith('s') ? (Number(tcBaseT.slice(0, -1)) || 15) : (Number(tcBaseT) || 10) * 60;
   const now = Date.now();
-  const FIRST_MOVE_TIMEOUT = 20 * 1000;
   const game = {
     id: gameId, tournamentId: tournament.id, white, black,
     turn: 'white', moves: [], createdAt: now, lastActivity: now,
@@ -4777,8 +4970,20 @@ async function finishTournamentGame(tournament, game, result, reason) {
     await recordGame(game, result, reason);
     await updateStats(game.white, game.black, result);
   }
-  if (wp && !wp.left && !wp.anticheatBanned && now < tournament.endsAt) { wp.waiting = true; wp.paused = false; }
-  if (bp && !bp.left && !bp.anticheatBanned && now < tournament.endsAt) { bp.waiting = true; bp.paused = false; }
+  // Если партия завершилась из-за неявки на первый ход — сторону, не сделавшую
+  // ход (при timeout_firstmove это всегда белые, т.к. первый ход за ними),
+  // не возвращаем в очередь автоматически: ставим на паузу, новую пару даём
+  // только после того, как игрок сам нажмёт "Играть".
+  // Просрочивший первый ход — проигравшая сторона в этой партии (result — цвет победителя)
+  const afkColor = reason === 'timeout_firstmove' ? (result === 'white' ? 'black' : 'white') : null;
+  if (wp && !wp.left && !wp.anticheatBanned && now < tournament.endsAt) {
+    if (afkColor === 'white') { wp.waiting = false; wp.paused = true; }
+    else { wp.waiting = true; wp.paused = false; }
+  }
+  if (bp && !bp.left && !bp.anticheatBanned && now < tournament.endsAt) {
+    if (afkColor === 'black') { bp.waiting = false; bp.paused = true; }
+    else { bp.waiting = true; bp.paused = false; }
+  }
   await saveTournament(tournament);
   io.to(`tournament_${tournament.id}`).emit('tournament_update', sanitizeTournament(tournament));
   setTimeout(() => tryPairTournamentPlayers(tournament), 500);
@@ -4882,16 +5087,30 @@ setInterval(async () => {
 
       for (const [gameId, game] of tournamentGames.entries()) {
         if (game.tournamentId !== t.id) continue;
-        if (game.moves.length === 0 && game.firstMoveDeadline && now > game.firstMoveDeadline) {
-          console.log(`[Tournament] Первый ход просрочен: ${game.white} в игре ${gameId}`);
-          const ws = findSocketByUsername(game.white);
-          const bs = findSocketByUsername(game.black);
-          const payload = { gameId, result: 'black', reason: 'timeout_firstmove' };
-          if (ws) ws.emit('game_ended', payload);
-          if (bs) bs.emit('game_ended', payload);
-          await finishTournamentGame(t, game, 'black', 'timeout_firstmove');
-          tournamentGames.delete(gameId);
-          activeGames.delete(gameId);
+        if (game.firstMoveDeadline && now > game.firstMoveDeadline) {
+          if (game.moves.length === 0) {
+            // Белые не сделали первый ход — поражение белых
+            console.log(`[Tournament] Первый ход просрочен: ${game.white} (белые) в игре ${gameId}`);
+            const ws = findSocketByUsername(game.white);
+            const bs = findSocketByUsername(game.black);
+            const payload = { gameId, result: 'black', reason: 'timeout_firstmove' };
+            if (ws) ws.emit('game_ended', payload);
+            if (bs) bs.emit('game_ended', payload);
+            await finishTournamentGame(t, game, 'black', 'timeout_firstmove');
+            tournamentGames.delete(gameId);
+            activeGames.delete(gameId);
+          } else if (game.moves.length === 1) {
+            // Белые сходили, чёрные не сделали свой первый ход — поражение чёрных
+            console.log(`[Tournament] Первый ход просрочен: ${game.black} (чёрные) в игре ${gameId}`);
+            const ws = findSocketByUsername(game.white);
+            const bs = findSocketByUsername(game.black);
+            const payload = { gameId, result: 'white', reason: 'timeout_firstmove' };
+            if (ws) ws.emit('game_ended', payload);
+            if (bs) bs.emit('game_ended', payload);
+            await finishTournamentGame(t, game, 'white', 'timeout_firstmove');
+            tournamentGames.delete(gameId);
+            activeGames.delete(gameId);
+          }
         }
       }
       tryPairTournamentPlayers(t);
@@ -5252,9 +5471,17 @@ io.on('connection', (socket) => {
     game.lastMoveAt = now;
     game.moves.push(move); game.turn = game.turn === 'white' ? 'black' : 'white'; game.lastActivity = now;
     if (game.moveCounts) game.moveCounts[pc] = (game.moveCounts[pc] || 0) + 1;
-    if (game.moves.length === 1 && game.firstMoveDeadline) game.firstMoveDeadline = null;
+    if (game.firstMoveDeadline) {
+      if (game.moves.length === 1) {
+        // Белые сделали первый ход — даём чёрным отдельные 20 сек на их первый ход
+        game.firstMoveDeadline = now + FIRST_MOVE_TIMEOUT;
+      } else if (game.moves.length === 2) {
+        // Чёрные тоже сходили первый раз — таймер первого хода больше не нужен
+        game.firstMoveDeadline = null;
+      }
+    }
     const other = findSocketByUsername(pc === 'white' ? game.black : game.white);
-    const timePayload = { move, gameId, whiteTime: game.whiteTime, blackTime: game.blackTime, serverAt: now };
+    const timePayload = { move, gameId, whiteTime: game.whiteTime, blackTime: game.blackTime, serverAt: now, firstMoveDeadline: game.firstMoveDeadline };
     socket.emit('move_confirmed', timePayload);
     if (other) other.emit('opponent_move', timePayload);
   });
@@ -5428,6 +5655,7 @@ async function main() {
   await initPuzzleTables();
   await initClubChatTable();
   await initDonateTable();
+  await initTournamentChatTable();
   // Клубные турниры: привязка турнира к клубу + флаг «только для участников клуба»
   await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS club_id TEXT`);
   await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS club_only BOOLEAN DEFAULT FALSE`);
@@ -5502,6 +5730,7 @@ async function main() {
 
   await loadChat();
   await loadTournaments();
+  await loadTournamentChats();
   await loadClubs();
   await loadClubChats();
   await loadForum();

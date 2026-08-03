@@ -275,6 +275,93 @@
       color: var(--text-primary);
     }
 
+    /* ── TOURNAMENT CHAT ── */
+    .t-chat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      height: 480px;
+      overflow: hidden;
+    }
+    .t-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .t-chat-empty {
+      margin: auto;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .t-chat-msg { display: flex; flex-direction: column; gap: 2px; max-width: 100%; }
+    .t-chat-msg-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .t-chat-author { font-weight: 700; font-size: 13px; color: var(--text-primary); }
+    .t-chat-author.role-admin { color: var(--accent); }
+    .t-chat-author.role-creator { color: #5dade2; }
+    .t-chat-time { font-size: 11px; color: var(--text-muted); }
+    .t-chat-text { font-size: 14px; color: var(--text-secondary); word-break: break-word; white-space: pre-wrap; }
+    .t-chat-text.is-muted { color: var(--text-muted); font-style: italic; }
+    .t-chat-mod-actions { display: inline-flex; gap: 6px; margin-left: 4px; }
+    .t-chat-mod-btn {
+      border: none; background: none; cursor: pointer;
+      font-size: 11px; color: var(--text-muted); padding: 0 2px;
+      transition: color 0.15s;
+    }
+    .t-chat-mod-btn:hover { color: var(--accent); }
+    .t-chat-msg-system {
+      align-self: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-secondary);
+      padding: 5px 12px;
+      border-radius: 20px;
+    }
+    .t-chat-composer {
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .t-chat-input {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .t-chat-input:focus { border-color: var(--accent); }
+    .t-chat-send-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 0 20px;
+      background: var(--accent);
+      color: #17181f;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      transition: opacity 0.15s;
+    }
+    .t-chat-send-btn:disabled { opacity: 0.5; cursor: default; }
+    .t-chat-closed-banner, .t-chat-muted-banner {
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+    .t-chat-muted-banner { color: #e74c3c; }
+
     /* ── LEADERBOARD ── */
     .leaderboard {
       background: var(--bg-card);
@@ -665,6 +752,12 @@ let currentUser = null;
 let countdownInterval = null;
 let currentSection = 'leaderboard';
 
+// ── ЧАТ ТУРНИРА ──
+let chatMessages = [];
+let chatCanModerate = false;
+let chatMyMuteUntil = 0;
+let chatLoadedOnce = false;
+
 // ── AUTH ──
 // Хедер (логотип, меню, юзер-меню, счётчик онлайна) теперь полностью
 // рисует /js/header.js — здесь только сообщаем ему, кто мы и какая страница активна.
@@ -681,6 +774,7 @@ async function init() {
   }
 
   await loadTournament();
+  loadTournamentChat();
   connectSocket();
 }
 
@@ -850,6 +944,43 @@ function connectSocket() {
   socket.on('anticheat_ban', function (data) {
     toast('⚠️ ' + data.username + ' — заблокирован за читерство', 'error');
     loadTournament();
+  });
+
+  // ── Чат турнира ──
+  socket.on('tournament_chat_msg', function (data) {
+    if (!data || data.tournamentId !== tId) return;
+    chatMessages.push(data.msg);
+    if (chatMessages.length > 50) chatMessages.shift();
+    renderChatMessages();
+  });
+
+  socket.on('tournament_chat_user_muted', function (data) {
+    if (!data || data.tournamentId !== tId) return;
+    const wipedIds = new Set(data.mutedIds || []);
+    chatMessages.forEach(function (m) {
+      if (wipedIds.has(m.id)) { m.message = '[Замучен]'; m.muted = true; }
+    });
+    if (data.sysMsg) {
+      chatMessages.push(data.sysMsg);
+      if (chatMessages.length > 50) chatMessages.shift();
+    }
+    const me = currentUser && currentUser.username;
+    if (me && data.username && me.toLowerCase() === data.username.toLowerCase()) {
+      chatMyMuteUntil = data.until;
+      renderChatComposer();
+      toast('🔇 Вы замучены в чате турнира', 'error');
+    }
+    renderChatMessages();
+  });
+
+  socket.on('tournament_chat_user_unmuted', function (data) {
+    if (!data || data.tournamentId !== tId) return;
+    const me = currentUser && currentUser.username;
+    if (me && data.username && me.toLowerCase() === data.username.toLowerCase()) {
+      chatMyMuteUntil = 0;
+      renderChatComposer();
+      toast('🔊 С вас снят мут в чате турнира', 'success');
+    }
   });
 }
 
@@ -1029,6 +1160,7 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
     <div class="section-tabs">
       <button class="section-tab active" data-section="leaderboard">🏅 Таблица лидеров</button>
       <button class="section-tab" data-section="games">♟ Партии (${(tData.games||[]).length})</button>
+      <button class="section-tab" data-section="chat">💬 Чат</button>
     </div>
 
     <!-- LEADERBOARD -->
@@ -1039,6 +1171,11 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
     <!-- GAMES -->
     <div class="section-content" id="section-games">
       ${buildGames()}
+    </div>
+
+    <!-- CHAT -->
+    <div class="section-content" id="section-chat">
+      ${buildChat()}
     </div>
   `;
 }
@@ -1162,6 +1299,159 @@ function buildGames() {
   return `<div class="games-list">${liveHTML}${gamesHTML}</div>`;
 }
 
+// ── ЧАТ ТУРНИРА ──
+// Открыт: до турнира, во время и ещё 3 часа после его окончания.
+function isTournamentChatOpenNow() {
+  if (!tData || !tData.endsAt) return true;
+  return Date.now() < (tData.endsAt + 3 * 60 * 60 * 1000);
+}
+
+function buildChat() {
+  return `
+    <div class="t-chat-box">
+      <div class="t-chat-messages" id="chat-messages-list">${buildChatMessagesHtml()}</div>
+      <div id="chat-composer">${buildChatComposerHtml()}</div>
+    </div>`;
+}
+
+function chatAuthorClass(m) {
+  if (m.role === 'admin') return 'role-admin';
+  if (tData && tData.createdBy && m.username && tData.createdBy.toLowerCase() === m.username.toLowerCase()) return 'role-creator';
+  return '';
+}
+
+function buildChatMessagesHtml() {
+  if (!chatMessages.length) {
+    return `<div class="t-chat-empty">💬 Сообщений пока нет — начните обсуждение!</div>`;
+  }
+  return chatMessages.map(m => {
+    if (m.system) {
+      return `<div class="t-chat-msg-system">${escHtml(m.message)}</div>`;
+    }
+    const time = new Date(m.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const modActions = chatCanModerate
+      ? `<span class="t-chat-mod-actions">
+           <button class="t-chat-mod-btn" title="Замутить" onclick="promptMuteTournamentUser('${escHtml(m.username)}')">🔇 мут</button>
+           ${m.muted ? `<button class="t-chat-mod-btn" title="Снять мут" onclick="unmuteTournamentUser('${escHtml(m.username)}')">🔓 размутить</button>` : ''}
+         </span>`
+      : '';
+    return `
+      <div class="t-chat-msg">
+        <div class="t-chat-msg-head">
+          <a class="t-chat-author ${chatAuthorClass(m)}" href="/profile/${encodeURIComponent(m.username)}">${escHtml(m.username)}</a>
+          <span class="t-chat-time">${time}</span>
+          ${modActions}
+        </div>
+        <div class="t-chat-text${m.muted ? ' is-muted' : ''}">${escHtml(m.message)}</div>
+      </div>`;
+  }).join('');
+}
+
+function buildChatComposerHtml() {
+  if (!currentUser) {
+    return `<div class="t-chat-closed-banner">Войдите в аккаунт, чтобы писать в чат турнира</div>`;
+  }
+  if (!isTournamentChatOpenNow()) {
+    return `<div class="t-chat-closed-banner">🔒 Чат турнира закрыт для новых сообщений — доступна только история</div>`;
+  }
+  if (chatMyMuteUntil && chatMyMuteUntil > Date.now()) {
+    const until = new Date(chatMyMuteUntil).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    return `<div class="t-chat-muted-banner">🔇 Вы замучены в чате этого турнира до ${escHtml(until)}</div>`;
+  }
+  return `
+    <div class="t-chat-composer">
+      <input class="t-chat-input" id="chat-input" type="text" maxlength="300" placeholder="Написать в чат турнира..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendTournamentChatMessage();}">
+      <button class="t-chat-send-btn" id="chat-send-btn" onclick="sendTournamentChatMessage()">Отправить</button>
+    </div>`;
+}
+
+function renderChatMessages() {
+  const el = document.getElementById('chat-messages-list');
+  if (!el) return;
+  el.innerHTML = buildChatMessagesHtml();
+  scrollChatToBottom();
+}
+function renderChatComposer() {
+  const el = document.getElementById('chat-composer');
+  if (el) el.innerHTML = buildChatComposerHtml();
+}
+function scrollChatToBottom() {
+  const el = document.getElementById('chat-messages-list');
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+async function loadTournamentChat() {
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/chat', { credentials: 'same-origin' });
+    if (!r.ok) return;
+    const data = await safeJson(r);
+    chatMessages = data.messages || [];
+    chatCanModerate = !!data.canModerate;
+    chatMyMuteUntil = data.myMute ? data.myMute.until : 0;
+    chatLoadedOnce = true;
+    renderChatMessages();
+    renderChatComposer();
+  } catch (e) { console.error(e); }
+}
+
+async function sendTournamentChatMessage() {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const btn = document.getElementById('chat-send-btn');
+  input.disabled = true;
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch(API + '/tournaments/' + tId + '/chat', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await safeJson(r);
+    if (!r.ok) {
+      toast(data.error || 'Не удалось отправить сообщение', 'error');
+      if (data.until) { chatMyMuteUntil = data.until; renderChatComposer(); return; }
+    } else {
+      input.value = '';
+    }
+  } catch (e) {
+    toast('Ошибка сети', 'error');
+  }
+  input.disabled = false;
+  if (btn) btn.disabled = false;
+  input.focus();
+}
+
+function promptMuteTournamentUser(username) {
+  const minutes = prompt(`На сколько минут замутить ${username}? (1–1440)`, '15');
+  if (minutes === null) return;
+  const mins = parseInt(minutes, 10);
+  if (!mins || mins < 1) { toast('Некорректное значение', 'error'); return; }
+  fetch(API + '/tournaments/' + tId + '/chat-mute', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, minutes: mins })
+  }).then(safeJson).then(data => {
+    if (data.error) toast(data.error, 'error');
+    else toast(`🔇 ${username} замучен на ${mins} мин.`, 'success');
+  }).catch(() => toast('Ошибка сети', 'error'));
+}
+
+function unmuteTournamentUser(username) {
+  fetch(API + '/tournaments/' + tId + '/chat-unmute', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username })
+  }).then(safeJson).then(data => {
+    if (data.error) toast(data.error, 'error');
+    else toast(`🔊 ${username} размучен`, 'success');
+  }).catch(() => toast('Ошибка сети', 'error'));
+}
+
 // ── UPDATE PARTS (without full re-render) ──
 function renderLeaderboard() {
   const el = document.getElementById('section-leaderboard');
@@ -1188,6 +1478,10 @@ function switchSection(name) {
   currentSection = name;
   document.querySelectorAll('.section-tab').forEach(t => t.classList.toggle('active', t.dataset.section === name));
   document.querySelectorAll('.section-content').forEach(c => c.classList.toggle('active', c.id === 'section-' + name));
+  if (name === 'chat') {
+    if (!chatLoadedOnce) loadTournamentChat();
+    else scrollChatToBottom();
+  }
 }
 
 // ── COUNTDOWN ──
