@@ -948,7 +948,7 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
     : '';
   const clubOnlyNotice = (tData.clubOnly && tData.clubId)
     ? `<div class="t-hero-disclaimer" style="border-color:rgba(93,173,226,0.35);background:rgba(93,173,226,0.08);color:#5dade2">
-         🔒 Участвовать может только член клуба «${escHtml(tClubData ? tClubData.name : '')}»
+         🔒 Участвовать могут только участники клуба «${escHtml(tClubData ? tClubData.name : '')}»
        </div>`
     : '';
 
