@@ -811,6 +811,7 @@ function launchTournamentGame(data) {
 }
 
 // ── Баннер статуса ────────────────────────────────────────────
+let _graceBannerTimer = null; // тикает раз в секунду, пока идёт отсчёт грейс-периода после партии
 function updateMyStatusBanner() {
   const me = currentUser && currentUser.username;
   if (!me || !tData || tData.status !== 'active') {
@@ -839,17 +840,30 @@ function updateMyStatusBanner() {
   const isReallyPlaying = myPart.currentGameId &&
     tData.participants.some(function(o){ return o.username !== me && o.currentGameId === myPart.currentGameId; });
 
+  // Грейс-период после партии: сервер уже не даст новую пару раньше
+  // myPart.nextEligibleAt, так что показываем отсчёт и напоминаем про паузу.
+  const graceLeft = myPart.nextEligibleAt ? myPart.nextEligibleAt - Date.now() : 0;
+  clearTimeout(_graceBannerTimer);
+
   if (isReallyPlaying) {
     banner.style.cssText = BASE + 'rgba(76,175,114,0.35);background:rgba(76,175,114,0.08)';
     banner.innerHTML = '<span style="font-size:22px">⚡</span><div style="flex:1"><div style="color:var(--green)">Вы сейчас играете</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Партия идёт</div></div><a href="/game/' + myPart.currentGameId + '" class="btn btn-primary" style="font-size:12px;padding:7px 14px">♟ Перейти</a>';
+  } else if (myPart.waiting && graceLeft > 0) {
+    banner.style.cssText = BASE + 'rgba(201,168,76,0.3);background:rgba(201,168,76,0.07)';
+    const secs = Math.ceil(graceLeft / 1000);
+    banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">Следующая партия через ' + secs + 'с...</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Успеете поставить паузу, если не готовы играть</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">⏸ Пауза</button>';
+    // Перерисовываем раз в секунду, пока идёт отсчёт — свежего tournament_update от сервера в это время не будет
+    _graceBannerTimer = setTimeout(updateMyStatusBanner, 1000);
   } else if (myPart.waiting) {
     banner.style.cssText = BASE + 'rgba(201,168,76,0.3);background:rgba(201,168,76,0.07)';
     banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">Ищем соперника...</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Ожидаем подходящего игрока</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">⏸ Пауза</button>';
   } else {
     banner.style.cssText = BASE + 'var(--border);background:var(--bg-secondary)';
+    // БАГ: подписи были перепутаны местами — при paused === true (реальная пауза)
+    // показывался текст "Партия завершена", а не "На паузе", и наоборот.
     const pauseLabel = myPart.paused
-      ? '<div style="color:var(--text-secondary)">Партия завершена</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите ▶ Играть когда будете готовы</div>'
-      : '<div style="color:var(--text-secondary)">На паузе</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите чтобы возобновить поиск</div>';
+      ? '<div style="color:var(--text-secondary)">На паузе</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите чтобы возобновить поиск</div>'
+      : '<div style="color:var(--text-secondary)">Партия завершена</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите ▶ Играть когда будете готовы</div>';
     banner.innerHTML = '<span style="font-size:22px">⏸</span><div style="flex:1">' + pauseLabel + '</div><button onclick="resumeTournament()" class="btn btn-primary" style="font-size:12px;padding:7px 14px">▶ Играть</button>';
   }
   banner.style.display = 'flex';
@@ -874,6 +888,12 @@ function resumeTournament() {
 function connectSocket() {
   socket = io(); // кука ch_token уедет вместе с handshake автоматически (тот же origin)
 
+  socket.on('disconnect', function () {
+    // Сбрасываем, чтобы после реального обрыва связи резюме-логика снова
+    // корректно ждала свежий auth_ok, а не работала со старым (уже невалидным) именем.
+    socket.username = null;
+  });
+
   socket.on('connect', function () {
     // Сервер всё равно читает токен только из HttpOnly-cookie handshake,
     // а не из этого аргумента — но событие 'auth' обязательно нужно прислать,
@@ -881,7 +901,14 @@ function connectSocket() {
     socket.emit('auth', null);
   });
 
-  socket.on('auth_ok', function () {
+  socket.on('auth_ok', function (data) {
+    // БАГ: socket.username никогда не устанавливался на клиенте, из-за чего
+    // resumeTournament() (кнопка "▶ Играть" после паузы) всегда попадала
+    // в ветку "ещё не авторизован" и просто выставляла _pendingResume,
+    // который применялся только при СЛЕДУЮЩЕМ подключении сокета — то есть
+    // фактически никогда, пока не обновишь страницу. Это и был тот "выход из паузы,
+    // который не работает".
+    socket.username = (data && data.username) || (currentUser && currentUser.username) || socket.username;
     socket.emit('join_tournament_room', tId);
     if (tData && tData.status === 'active') {
       const me = currentUser && currentUser.username;

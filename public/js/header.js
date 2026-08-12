@@ -33,9 +33,10 @@
     {
       label: 'Сообщество',
       items: [
-        { id: 'clubs', label: 'Клубы',  icon: '🛡️', href: '/clubs', spa: false },
-        { id: 'blog',  label: 'Блоги',  icon: '📰', href: '/blog', spa: false },
-        { id: 'forum', label: 'Форумы', icon: '💬', href: '/forum', spa: false },
+        { id: 'clubs', label: 'Клубы',   icon: '🛡️', href: '/clubs', spa: false },
+        { id: 'blog',  label: 'Блоги',   icon: '📰', href: '/blog', spa: false },
+        { id: 'news',  label: 'Новости', icon: '📢', href: '/news', spa: false },
+        { id: 'forum', label: 'Форумы',  icon: '💬', href: '/forum', spa: false },
       ]
     },
     {

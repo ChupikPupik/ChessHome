@@ -2392,20 +2392,6 @@
 }
 .login-password-toggle:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
 
-/* Капча логина скрыта по умолчанию — появляется только когда
-   сервер её реально требует (после нескольких неверных попыток) */
-#login-recaptcha-wrap { overflow: hidden; }
-#login-recaptcha-wrap.reveal { animation: loginCaptchaReveal .35s cubic-bezier(0.22,1,0.36,1); }
-@keyframes loginCaptchaReveal {
-  from { opacity: 0; max-height: 0; transform: translateY(-6px); }
-  to   { opacity: 1; max-height: 160px; transform: translateY(0); }
-}
-.login-captcha-hint {
-  font-size: 12px; color: var(--text-muted); text-align: center;
-  margin: 2px 0 8px; padding: 8px 10px; background: rgba(201,168,76,0.08);
-  border: 1px solid rgba(201,168,76,0.25); border-radius: 8px;
-}
-
 #login-error:not(:empty) { display: flex; align-items: center; gap: 6px; }
 #login-error:not(:empty)::before { content: '⚠'; flex-shrink: 0; }
 
@@ -2441,10 +2427,6 @@
         </div>
       </div>
       <div class="form-error" id="login-error"></div>
-      <div id="login-recaptcha-wrap" style="display:none">
-        <div class="login-captcha-hint" id="login-captcha-hint">Слишком много попыток входа — подтвердите, что вы не робот</div>
-        <div id="login-recaptcha"></div>
-      </div>
       <div class="form-actions">
         <button type="button" class="btn btn-ghost" onclick="closeModal('modal-login');openModal('modal-register')">Нет аккаунта?</button>
         <button type="submit" class="btn btn-primary" id="login-submit-btn"><span id="login-submit-text">Войти</span></button>
@@ -2486,8 +2468,6 @@
         <button type="button" class="btn btn-ghost" onclick="closeModal('modal-register');openModal('modal-login')">Уже есть аккаунт?</button>
         <button type="submit" class="btn btn-primary" id="reg-submit-btn" disabled style="opacity:0.5; cursor:not-allowed;">Создать аккаунт</button>
       </div>
-          <div id="reg-recaptcha"></div>
-
     </form>
   </div>
 </div>
@@ -3307,40 +3287,6 @@ if (!sessionStorage.getItem('pageReloaded')) {
   position: relative;
   top: -900px; /* или любое значение, подбери */
   margin-bottom: -40px; /* чтобы не создавать пустоту внизу */
-}
-</style>
-
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
-<style>
-  /* Контейнер капчи — центрируем, добавляем отступы */
-.g-recaptcha {
-  display: flex;
-  justify-content: center;
-  margin: 16px 0 8px;
-}
-
-/* Если внутри модалки есть лишние отступы — убираем */
-.modal .g-recaptcha {
-  margin: 18px 0 12px;
-}
-
-/* Плавное появление (опционально) */
-.modal .g-recaptcha > div {
-  transition: box-shadow 0.2s;
-  border-radius: 6px;
-}
-.modal .g-recaptcha > div:hover {
-  box-shadow: 0 0 0 2px rgba(201,168,76,0.4);
-}
-
-/* Для мобилок — уменьшаем отступы */
-@media (max-width: 480px) {
-  .modal .g-recaptcha {
-    margin: 12px 0 8px;
-    transform: scale(0.92); /* если виджет слишком широкий */
-    transform-origin: center;
-  }
 }
 </style>
 

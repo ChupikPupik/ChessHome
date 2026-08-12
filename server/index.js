@@ -10,13 +10,12 @@ const bcrypt  = require('bcryptjs');
 const jwt     = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const path    = require('path');
+const fs      = require('fs');
 const cors    = require('cors');
 const { Pool } = require('pg');
+// npm install multer — обработка multipart/form-data для загрузки обложек новостей.
+const multer  = require('multer');
 require('dotenv').config();
-
-const RECAPTCHA_SECRET_KEY = process.env.GOOGLE_API_CAPTCHA;
-if (!RECAPTCHA_SECRET_KEY) console.warn('[WARN] GOOGLE_API_CAPTCHA не задан в .env — капча не будет проверяться корректно');
-
 
 // ── PostgreSQL ────────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -804,6 +803,48 @@ async function deleteBlogPost(id) {
   await db('DELETE FROM blog_posts WHERE id = $1', [id]);
 }
 
+// ── Новости (News) ───────────────────────────────────────────
+// В отличие от блога (открыт любому зарегистрированному юзеру, макс
+// 1 статья/день), новости пишут только авторы, назначенные владельцем
+// (username 'chesshome'). См. также newsAuthors ниже и API-контракт в
+// комментарии наверху public/news.html.
+const newsPosts = [];
+async function loadNews() {
+  const r = await db('SELECT * FROM news_posts ORDER BY created_at DESC');
+  for (const row of r.rows) {
+    newsPosts.push({
+      id: row.id, title: row.title, body: row.body, author: row.author,
+      status: row.status, views: row.views, likes: row.likes, dislikes: row.dislikes,
+      cover: row.cover || '',
+      createdAt: Number(row.created_at), updatedAt: row.updated_at ? Number(row.updated_at) : null,
+    });
+  }
+}
+async function saveNewsPost(p) {
+  // См. аналогичный комментарий в saveBlogPost — тот же паттерн отложенного
+  // сохранения просмотров/лайков и защиты от "воскрешения" удалённой статьи.
+  if (p._deleted) return;
+  await db(`
+    INSERT INTO news_posts (id, title, body, author, status, views, likes, dislikes, cover, created_at, updated_at)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    ON CONFLICT (id) DO UPDATE SET
+      title=$2, body=$3, status=$5, views=$6, likes=$7, dislikes=$8, cover=$9, updated_at=$11
+  `, [p.id, p.title, p.body, p.author, p.status,
+      p.views || 0, p.likes || 0, p.dislikes || 0, p.cover || '',
+      p.createdAt, p.updatedAt || null]);
+}
+async function deleteNewsPost(id) {
+  await db('DELETE FROM news_posts WHERE id = $1', [id]);
+}
+
+// Список авторов новостей: username в исходном регистре, назначаются/снимаются
+// владельцем (chesshome). Держим в памяти, синхронизируем с news_authors.
+let newsAuthors = [];
+async function loadNewsAuthors() {
+  const r = await db('SELECT username FROM news_authors ORDER BY created_at ASC');
+  newsAuthors = r.rows.map(row => row.username);
+}
+
 const server = http.createServer(app);
 const io     = new Server(server, {
   cors: { origin: '*', methods: ['GET','POST','DELETE','PATCH'] },
@@ -1000,6 +1041,19 @@ app.get('/blog/:id',(req, res) => {
   res.sendFile(path.join(__dirname, '../public/blog.html'));
 });
 
+app.get('/news',    (req, res) => res.sendFile(path.join(__dirname, '../public/news.html')));
+app.get('/news/:id',(req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  // Удалённой новости не существует, а прикрытую никто не должен увидеть по прямой ссылке.
+  if (!post || post.status === 'hidden') return res.redirect('/404.html');
+  res.sendFile(path.join(__dirname, '../public/news.html'));
+});
+app.get('/news/:id/comments', (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post || post.status === 'hidden') return res.redirect('/404.html');
+  res.sendFile(path.join(__dirname, '../public/news.html'));
+});
+
 app.get('/followers/:username', (req, res) => res.sendFile(path.join(__dirname, '../public/followers.html')));
 app.get('/following/:username', (req, res) => res.sendFile(path.join(__dirname, '../public/following.html')));
 
@@ -1124,39 +1178,9 @@ app.get('/api/donate/status/:id', async (req, res) => {
 //  AUTH & USER API
 // ══════════════════════════════════════════════════════════════
 
-async function checkRecaptcha(req, res, next) {
-    const token = req.body['g-recaptcha-response'];
-
-    // captchaRequired:true — явный флаг для фронтенда, чтобы он показал
-    // виджет капчи, а не пытался распарсить текст ошибки на русском.
-    if (!token) return res.status(400).json({ error: 'Пожалуйста, подтвердите, что вы не робот.', captchaRequired: true });
-
-    try {
-        const verify = await fetch('https://www.google.com/recaptcha/api/siteverify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `secret=${RECAPTCHA_SECRET_KEY}&response=${token}&remoteip=${getIP(req)}`
-        });
-        const result = await verify.json();
-
-        if (result.success) {
-            return next();
-        }
-
-        console.warn('[reCAPTCHA] Проверка не пройдена:', result['error-codes']);
-        return res.status(403).json({ error: 'Капча не пройдена. Обновите страницу и попробуйте снова.', captchaRequired: true });
-    } catch (e) {
-        console.error('Ошибка проверки капчи:', e);
-        return res.status(500).json({ error: 'Внутренняя ошибка сервера при проверке капчи.' });
-    }
-}
-
-
-
 app.post('/api/register', 
   rateLimit(limiterRegStrict, 'Слишком много регистраций с вашего IP. Попробуйте позже.'), // 1. Проверяем лимиты по IP
   ipBanMiddleware,                                                                       // 2. Проверяем черный список IP
-  checkRecaptcha,                                                                        // 3. Проверяем капчу (Google reCAPTCHA)
   async (req, res) => {                                                                  
     const ip = getIP(req);
     const { username, password, email, _hp } = req.body;
@@ -1305,11 +1329,7 @@ app.post('/api/login',
   rateLimit(limiterAuth, 'Слишком много попыток входа с вашего IP. Подождите минуту.'),
   ipBanMiddleware,
   async (req, res, next) => {
-    // Капча требуется только после 3 неудачных попыток входа подряд для
-    // этого конкретного аккаунта — так легитимные пользователи логинятся
-    // без капчи каждый раз, а брутфорс упирается в неё быстро.
-    const usernameLow = (req.body.username || '').toLowerCase();
-    if (getLoginFailStreak(usernameLow) >= 3) return checkRecaptcha(req, res, next);
+    // Капча отключена по запросу (была нестабильна).
     next();
   },
   async (req, res) => {
@@ -3479,6 +3499,435 @@ app.post('/api/blog/:id/comments/mod', blogAuthMiddleware, async (req, res) => {
   res.json({ ok: true, type, until, global: !!isGlobal });
 });
 
+// ══════════════════════════════════════════════════════════════
+//  NEWS API
+//  Контракт см. в комментарии наверху public/news.html.
+//  В отличие от блога, публиковать новости может не любой юзер, а
+//  только авторы, назначенные владельцем (username 'chesshome').
+// ══════════════════════════════════════════════════════════════
+function newsAuthMiddleware(req, res, next) {
+  const auth = getAuthToken(req);
+  if (!auth) return res.status(401).json({ error: 'Войдите, чтобы выполнить это действие' });
+  try { req.newsUser = jwt.verify(auth, JWT_SECRET); next(); }
+  catch { return res.status(401).json({ error: 'Неверный токен' }); }
+}
+
+const NEWS_OWNER_USERNAME = 'chesshome';
+function isNewsOwner(username) { return !!username && username.toLowerCase() === NEWS_OWNER_USERNAME; }
+function isNewsAuthorUser(username) {
+  if (!username) return false;
+  if (isNewsOwner(username)) return true;
+  const low = username.toLowerCase();
+  return newsAuthors.some(a => a.toLowerCase() === low);
+}
+
+function newsSanitize(post, withBody) {
+  const o = { id: post.id, title: post.title, author: post.author, status: post.status,
+    cover: post.cover || '', views: post.views || 0, likes: post.likes || 0, dislikes: post.dislikes || 0,
+    createdAt: post.createdAt, updatedAt: post.updatedAt || null };
+  if (withBody) o.body = post.body;
+  return o;
+}
+
+db(`CREATE TABLE IF NOT EXISTS news_posts (
+  id TEXT PRIMARY KEY, title TEXT NOT NULL, body TEXT NOT NULL, author TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft', views INT NOT NULL DEFAULT 0,
+  likes INT NOT NULL DEFAULT 0, dislikes INT NOT NULL DEFAULT 0, cover TEXT DEFAULT '',
+  created_at BIGINT NOT NULL, updated_at BIGINT
+)`).catch(e => console.error('[News] news_posts init:', e.message));
+db(`CREATE TABLE IF NOT EXISTS news_authors (username TEXT NOT NULL, username_low TEXT PRIMARY KEY, created_at BIGINT NOT NULL)`).catch(e => console.error('[News] news_authors init:', e.message));
+db(`CREATE TABLE IF NOT EXISTS news_views (viewer_key TEXT NOT NULL, post_id TEXT NOT NULL, PRIMARY KEY (viewer_key, post_id))`).catch(e => console.error('[News] news_views init:', e.message));
+db(`CREATE TABLE IF NOT EXISTS news_likes (user_id TEXT NOT NULL, post_id TEXT NOT NULL, PRIMARY KEY (user_id, post_id))`).catch(e => console.error('[News] news_likes init:', e.message));
+db(`CREATE TABLE IF NOT EXISTS news_dislikes (user_id TEXT NOT NULL, post_id TEXT NOT NULL, PRIMARY KEY (user_id, post_id))`).catch(e => console.error('[News] news_dislikes init:', e.message));
+db(`CREATE TABLE IF NOT EXISTS news_comments (id TEXT PRIMARY KEY, post_id TEXT NOT NULL, author TEXT NOT NULL, body TEXT NOT NULL, created_at BIGINT NOT NULL, deleted BOOLEAN NOT NULL DEFAULT FALSE, deleted_by TEXT)`).catch(e => console.error('[News] news_comments init:', e.message));
+db(`CREATE INDEX IF NOT EXISTS idx_news_comments_post ON news_comments(post_id, created_at ASC)`).catch(() => {});
+db(`CREATE TABLE IF NOT EXISTS news_comment_mutes (post_id TEXT NOT NULL, username TEXT NOT NULL, until BIGINT NOT NULL, created_at BIGINT NOT NULL, PRIMARY KEY (post_id, username))`).catch(e => console.error('[News] news_comment_mutes init:', e.message));
+
+// ── Список новостей / статья ─────────────────────────────────
+app.get('/api/news', (req, res) => {
+  const { status, page: pQ, limit: lQ } = req.query;
+  const page  = Math.max(0, parseInt(pQ) || 0);
+  const limit = Math.min(50, parseInt(lQ) || 20);
+
+  let callerUsername = null;
+  const auth = getAuthToken(req);
+  if (auth) { try { callerUsername = jwt.verify(auth, JWT_SECRET).username.toLowerCase(); } catch {} }
+
+  let list = newsPosts.filter(p => {
+    if (p.status === 'hidden') {
+      // Список прикрытых новостей виден только владельцу и только когда
+      // он явно его запросил (вкладка "Скрытые").
+      return status === 'hidden' && isNewsOwner(callerUsername);
+    }
+    if (status === 'hidden') return false;
+    if (p.status !== 'published') {
+      if (!callerUsername) return false;
+      if (!isNewsOwner(callerUsername) && p.author.toLowerCase() !== callerUsername) return false;
+      return status === 'drafts';
+    }
+    return status !== 'drafts';
+  });
+
+  if (status === 'drafts' || status === 'hidden') list.sort((a,b) => (b.updatedAt||b.createdAt) - (a.updatedAt||a.createdAt));
+  else list.sort((a,b) => b.createdAt - a.createdAt);
+
+  res.json({ posts: list.slice(page*limit, page*limit+limit).map(p => newsSanitize(p,false)), total: list.length });
+});
+
+app.get('/api/news/:id', async (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Новость не найдена' });
+
+  // Прикрытая новость не видна вообще никому (даже автору и владельцу) —
+  // управление такими новостями идёт только через список "Скрытые".
+  if (post.status === 'hidden') return res.status(404).json({ error: 'Новость не найдена' });
+
+  let callerUsername = null;
+  const auth = getAuthToken(req);
+  if (auth) { try { callerUsername = jwt.verify(auth, JWT_SECRET).username.toLowerCase(); } catch {} }
+
+  if (post.status !== 'published') {
+    const canSee = callerUsername && (isNewsOwner(callerUsername) || post.author.toLowerCase() === callerUsername);
+    if (!canSee) return res.status(403).json({ error: 'Черновик' });
+  }
+
+  const noview = req.query.noview === '1';
+  if (!noview && post.status === 'published') {
+    let viewerKey = callerUsername ? 'u:' + callerUsername : null;
+    if (!viewerKey) { const did = req.deviceId; if (did) viewerKey = 'd:' + did; }
+    if (viewerKey) {
+      try {
+        const ins = await db(`INSERT INTO news_views (viewer_key,post_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [viewerKey, post.id]);
+        if (ins.rowCount === 1) {
+          post.views = (post.views || 0) + 1;
+          if (!post._viewTimer) post._viewTimer = setTimeout(() => { saveNewsPost(post).catch(()=>{}); post._viewTimer=null; }, 5000);
+        }
+      } catch(e) { console.error('[News] view:', e.message); }
+    }
+  }
+
+  let liked = false, disliked = false;
+  if (callerUsername) {
+    const u = await getUser(callerUsername);
+    if (u) {
+      const [lr, dr] = await Promise.all([
+        db('SELECT 1 FROM news_likes WHERE user_id=$1 AND post_id=$2',[u.id,post.id]),
+        db('SELECT 1 FROM news_dislikes WHERE user_id=$1 AND post_id=$2',[u.id,post.id]),
+      ]);
+      liked = lr.rows.length>0; disliked = dr.rows.length>0;
+    }
+  }
+
+  res.json({ ...newsSanitize(post,true), liked, disliked });
+});
+
+app.post('/api/news', newsAuthMiddleware, rateLimit(limiterStrict), async (req, res) => {
+  if (!isNewsAuthorUser(req.newsUser.username)) return res.status(403).json({ error: 'Только авторы новостей могут писать статьи' });
+
+  let { title, body, cover, status, encoding } = req.body;
+  title = decodeBlogField(title, encoding);
+  body  = decodeBlogField(body, encoding);
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Укажите заголовок' });
+  if (!body  || !body.trim())  return res.status(400).json({ error: 'Укажите текст' });
+  if (title.length > 200)      return res.status(400).json({ error: 'Заголовок слишком длинный (макс 200)' });
+  if (body.length > 100000)    return res.status(400).json({ error: 'Текст слишком длинный (макс 100 000 символов)' });
+  if (cover !== undefined && cover !== null && (typeof cover !== 'string' || cover.length > 500))
+    return res.status(400).json({ error: 'Некорректная обложка' });
+
+  const user = await getUser(req.newsUser.username.toLowerCase());
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (user.banned) return res.status(403).json({ error: 'Заблокированные пользователи не могут создавать новости' });
+
+  const postStatus = ['published','draft'].includes(status) ? status : 'draft';
+  const post = { id: uuidv4(), title: title.trim(), body: body.trim(), author: user.username,
+    status: postStatus, views: 0, likes: 0, dislikes: 0, cover: cover || '', createdAt: Date.now(), updatedAt: null };
+  newsPosts.unshift(post);
+  await saveNewsPost(post);
+  res.json(newsSanitize(post, true));
+});
+
+app.patch('/api/news/:id', newsAuthMiddleware, rateLimit(limiterStrict), async (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Новость не найдена' });
+  const caller = req.newsUser.username;
+  if (!isNewsOwner(caller) && post.author.toLowerCase() !== caller.toLowerCase())
+    return res.status(403).json({ error: 'Нет доступа' });
+
+  let { title, body, cover, status, encoding } = req.body;
+  title = decodeBlogField(title, encoding);
+  body  = decodeBlogField(body, encoding);
+  if (title !== undefined) { if (!title.trim()) return res.status(400).json({ error: 'Заголовок не может быть пустым' }); post.title = title.trim().slice(0,200); }
+  if (body  !== undefined) { if (!body.trim())  return res.status(400).json({ error: 'Текст не может быть пустым' }); post.body = body.trim().slice(0,100000); }
+  if (cover !== undefined) { post.cover = (typeof cover === 'string' ? cover.slice(0,500) : ''); }
+  if (status !== undefined && ['published','draft','hidden'].includes(status)) {
+    // Прикрывать новость и возвращать её обратно может только владелец.
+    if ((status === 'hidden' || post.status === 'hidden') && !isNewsOwner(caller))
+      return res.status(403).json({ error: 'Скрывать и восстанавливать новости может только владелец' });
+    post.status = status;
+  }
+  post.updatedAt = Date.now();
+  await saveNewsPost(post);
+  res.json(newsSanitize(post, true));
+});
+
+async function handleDeleteNewsPost(req, res) {
+  const idx = newsPosts.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Новость не найдена' });
+  const post = newsPosts[idx];
+  const caller = req.newsUser.username;
+  if (!isNewsOwner(caller) && post.author.toLowerCase() !== caller.toLowerCase())
+    return res.status(403).json({ error: 'Нет доступа' });
+  // См. аналогичный комментарий в handleDeleteBlogPost про отложенные таймеры.
+  if (post._viewTimer) { clearTimeout(post._viewTimer); post._viewTimer = null; }
+  if (post._lstTimer)  { clearTimeout(post._lstTimer);  post._lstTimer  = null; }
+  post._deleted = true;
+  newsPosts.splice(idx, 1);
+  await deleteNewsPost(post.id);
+  await db('DELETE FROM news_likes WHERE post_id=$1',[post.id]).catch(()=>{});
+  await db('DELETE FROM news_dislikes WHERE post_id=$1',[post.id]).catch(()=>{});
+  await db('DELETE FROM news_views WHERE post_id=$1',[post.id]).catch(()=>{});
+  await db('DELETE FROM news_comments WHERE post_id=$1',[post.id]).catch(()=>{});
+  await db('DELETE FROM news_comment_mutes WHERE post_id=$1',[post.id]).catch(()=>{});
+  res.json({ ok: true });
+}
+app.delete('/api/news/:id', newsAuthMiddleware, handleDeleteNewsPost);
+app.post('/api/news/:id/delete', newsAuthMiddleware, handleDeleteNewsPost);
+
+// ── Лайк / дизлайк (взаимоисключающие) ───────────────────────
+app.post('/api/news/:id/like', newsAuthMiddleware, rateLimit(limiterStrict), async (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Новость не найдена' });
+  if (post.status !== 'published') return res.status(400).json({ error: 'Нельзя оценить черновик' });
+  const user = await getUser(req.newsUser.username.toLowerCase());
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (user.banned) return res.status(403).json({ error: 'Заблокированные не могут ставить оценки' });
+
+  const { unlike } = req.body;
+  const existingLike = await db('SELECT 1 FROM news_likes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+  if (unlike) {
+    if (existingLike.rows.length > 0) {
+      await db('DELETE FROM news_likes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+      post.likes = Math.max(0,(post.likes||1)-1);
+    }
+  } else if (existingLike.rows.length === 0) {
+    await db('INSERT INTO news_likes (user_id,post_id) VALUES ($1,$2)',[user.id,post.id]);
+    post.likes = (post.likes||0)+1;
+    const existingDislike = await db('SELECT 1 FROM news_dislikes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+    if (existingDislike.rows.length > 0) {
+      await db('DELETE FROM news_dislikes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+      post.dislikes = Math.max(0,(post.dislikes||1)-1);
+    }
+  }
+  if (!post._lstTimer) post._lstTimer = setTimeout(()=>{ saveNewsPost(post).catch(()=>{}); post._lstTimer=null; },5000);
+  res.json({ likes: post.likes, dislikes: post.dislikes, liked: !unlike, disliked: false });
+});
+
+app.post('/api/news/:id/dislike', newsAuthMiddleware, rateLimit(limiterStrict), async (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post) return res.status(404).json({ error: 'Новость не найдена' });
+  if (post.status !== 'published') return res.status(400).json({ error: 'Нельзя оценить черновик' });
+  const user = await getUser(req.newsUser.username.toLowerCase());
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (user.banned) return res.status(403).json({ error: 'Заблокированные не могут ставить оценки' });
+
+  const { undislike } = req.body;
+  const existingDislike = await db('SELECT 1 FROM news_dislikes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+  if (undislike) {
+    if (existingDislike.rows.length > 0) {
+      await db('DELETE FROM news_dislikes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+      post.dislikes = Math.max(0,(post.dislikes||1)-1);
+    }
+  } else if (existingDislike.rows.length === 0) {
+    await db('INSERT INTO news_dislikes (user_id,post_id) VALUES ($1,$2)',[user.id,post.id]);
+    post.dislikes = (post.dislikes||0)+1;
+    const existingLike = await db('SELECT 1 FROM news_likes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+    if (existingLike.rows.length > 0) {
+      await db('DELETE FROM news_likes WHERE user_id=$1 AND post_id=$2',[user.id,post.id]);
+      post.likes = Math.max(0,(post.likes||1)-1);
+    }
+  }
+  if (!post._lstTimer) post._lstTimer = setTimeout(()=>{ saveNewsPost(post).catch(()=>{}); post._lstTimer=null; },5000);
+  res.json({ likes: post.likes, dislikes: post.dislikes, liked: false, disliked: !undislike });
+});
+
+// ── Авторы новостей (владелец) ───────────────────────────────
+app.get('/api/news/authors', (req, res) => {
+  res.json({ owner: NEWS_OWNER_USERNAME, authors: newsAuthors });
+});
+
+app.post('/api/news/authors', newsAuthMiddleware, async (req, res) => {
+  if (!isNewsOwner(req.newsUser.username)) return res.status(403).json({ error: 'Только владелец может назначать авторов' });
+  const { username } = req.body;
+  if (!username || !username.trim()) return res.status(400).json({ error: 'Укажите никнейм' });
+  const target = await getUser(username.trim().toLowerCase());
+  if (!target) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (isNewsOwner(target.username)) return res.status(400).json({ error: 'Владелец и так может публиковать новости' });
+  if (newsAuthors.some(a => a.toLowerCase() === target.username.toLowerCase()))
+    return res.status(400).json({ error: 'Этот пользователь уже автор новостей' });
+
+  await db(`INSERT INTO news_authors (username,username_low,created_at) VALUES ($1,$2,$3) ON CONFLICT (username_low) DO NOTHING`, [target.username, target.username.toLowerCase(), Date.now()]);
+  newsAuthors.push(target.username);
+  res.json({ ok: true, authors: newsAuthors });
+});
+
+app.post('/api/news/authors/remove', newsAuthMiddleware, async (req, res) => {
+  if (!isNewsOwner(req.newsUser.username)) return res.status(403).json({ error: 'Только владелец может снимать авторов' });
+  const { username } = req.body;
+  if (!username || !username.trim()) return res.status(400).json({ error: 'Укажите никнейм' });
+  const low = username.trim().toLowerCase();
+  await db('DELETE FROM news_authors WHERE username_low=$1',[low]);
+  newsAuthors = newsAuthors.filter(a => a.toLowerCase() !== low);
+  res.json({ ok: true, authors: newsAuthors });
+});
+
+// ══════════════════════════════════════════════════════════════
+//  NEWS COMMENTS API
+// ══════════════════════════════════════════════════════════════
+async function getNewsCommentMute(postId, username) {
+  const uname = username.toLowerCase();
+  const r = await db('SELECT * FROM news_comment_mutes WHERE post_id=$1 AND username=$2',[postId,uname]);
+  const row = r.rows[0];
+  if (!row) return null;
+  if (Number(row.until) > Date.now()) return row;
+  await db('DELETE FROM news_comment_mutes WHERE post_id=$1 AND username=$2',[postId,uname]).catch(()=>{});
+  return null;
+}
+
+app.get('/api/news/:id/comments', async (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post || post.status !== 'published') return res.status(404).json({ error: 'Новость не найдена' });
+
+  let callerUsername = null;
+  const auth = getAuthToken(req);
+  if (auth) { try { callerUsername = jwt.verify(auth,JWT_SECRET).username.toLowerCase(); } catch {} }
+
+  const r = await db('SELECT * FROM news_comments WHERE post_id=$1 ORDER BY created_at ASC',[req.params.id]);
+  const comments = r.rows.map(c => ({
+    id: c.id, postId: c.post_id, author: c.author,
+    body: c.deleted ? null : c.body,
+    deleted: c.deleted, deletedBy: c.deleted_by || null,
+    createdAt: Number(c.created_at),
+  }));
+
+  let myBan = null;
+  if (callerUsername) {
+    const mute = await getNewsCommentMute(req.params.id, callerUsername);
+    if (mute) myBan = { type: 'mute', until: Number(mute.until) };
+  }
+
+  res.json({ comments, count: comments.length, myBan });
+});
+
+app.post('/api/news/:id/comments', newsAuthMiddleware, rateLimit(limiterStrict), async (req, res) => {
+  const post = newsPosts.find(p => p.id === req.params.id);
+  if (!post || post.status !== 'published') return res.status(404).json({ error: 'Новость не найдена' });
+
+  const user = await getUser(req.newsUser.username.toLowerCase());
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+  if (user.banned) return res.status(403).json({ error: 'Вы заблокированы' });
+
+  const mute = await getNewsCommentMute(req.params.id, user.username);
+  if (mute) {
+    const mins = Math.ceil((Number(mute.until) - Date.now())/60000);
+    return res.status(403).json({ error: `Вы замьючены. Осталось ${mins} мин.`, until: Number(mute.until) });
+  }
+
+  const body = (req.body.body || '').toString().trim();
+  if (!body) return res.status(400).json({ error: 'Пустой комментарий' });
+  if (body.length > 4000) return res.status(400).json({ error: 'Максимум 4000 символов' });
+
+  if (!isNewsOwner(user.username)) {
+    const dayStart = new Date(); dayStart.setHours(0,0,0,0);
+    const todayCount = await db(`SELECT COUNT(*) AS cnt FROM news_comments WHERE LOWER(author)=$1 AND created_at>=$2 AND deleted=FALSE`, [user.username.toLowerCase(), dayStart.getTime()]);
+    if (Number(todayCount.rows[0]?.cnt || 0) >= 10)
+      return res.status(429).json({ error: 'Можно оставить не более 10 комментариев в день. Возвращайтесь завтра!' });
+  }
+
+  const ratKey = 'newscmt_' + user.username.toLowerCase();
+  if (!global._newsCmtRate) global._newsCmtRate = new Map();
+  const last = global._newsCmtRate.get(ratKey) || 0;
+  if (Date.now() - last < 20000) return res.status(429).json({ error: 'Не так быстро! Подождите 20 секунд' });
+  global._newsCmtRate.set(ratKey, Date.now());
+
+  const id = uuidv4();
+  const createdAt = Date.now();
+  await db('INSERT INTO news_comments (id,post_id,author,body,created_at,deleted) VALUES ($1,$2,$3,$4,$5,FALSE)', [id, req.params.id, user.username, body, createdAt]);
+
+  res.json({ ok: true, comment: {
+    id, postId: req.params.id, author: user.username,
+    body, deleted: false, deletedBy: null, createdAt,
+  }});
+});
+
+async function handleDeleteNewsComment(req, res) {
+  const user = await getUser(req.newsUser.username.toLowerCase());
+  if (!user) return res.status(404).json({ error: 'Пользователь не найден' });
+
+  const r = await db('SELECT * FROM news_comments WHERE id=$1 AND post_id=$2',[req.params.cid,req.params.id]);
+  const comment = r.rows[0];
+  if (!comment) return res.status(404).json({ error: 'Комментарий не найден' });
+
+  const isOwnerCaller = isNewsOwner(user.username);
+  const isAuthor = comment.author.toLowerCase() === user.username.toLowerCase();
+  if (!isOwnerCaller && !isAuthor) return res.status(403).json({ error: 'Нет прав' });
+
+  const deletedBy = isOwnerCaller && !isAuthor ? user.username : null;
+  await db('UPDATE news_comments SET deleted=TRUE, deleted_by=$1 WHERE id=$2',[deletedBy, req.params.cid]);
+  res.json({ ok: true, deletedBy });
+}
+app.delete('/api/news/:id/comments/:cid', newsAuthMiddleware, handleDeleteNewsComment);
+app.post('/api/news/:id/comments/:cid/delete', newsAuthMiddleware, handleDeleteNewsComment);
+
+app.post('/api/news/:id/comments/mod', newsAuthMiddleware, async (req, res) => {
+  const user = await getUser(req.newsUser.username.toLowerCase());
+  if (!user || !isNewsOwner(user.username)) return res.status(403).json({ error: 'Нет прав' });
+
+  const { action, username } = req.body;
+  if (!action || !username) return res.status(400).json({ error: 'Укажите action и username' });
+  const target = username.toLowerCase();
+  if (isNewsOwner(target)) return res.status(403).json({ error: 'Нельзя замьютить владельца' });
+
+  if (action === 'unmute') {
+    await db('DELETE FROM news_comment_mutes WHERE post_id=$1 AND username=$2',[req.params.id,target]);
+    return res.json({ ok: true });
+  }
+  if (action !== 'mute') return res.status(400).json({ error: 'Неверное действие' });
+
+  const until = Date.now() + 60*60*1000;
+  const createdAt = Date.now();
+  await db(`INSERT INTO news_comment_mutes (post_id,username,until,created_at) VALUES ($1,$2,$3,$4) ON CONFLICT (post_id,username) DO UPDATE SET until=$3,created_at=$4`, [req.params.id,target,until,createdAt]);
+  res.json({ ok: true, type: 'mute', until });
+});
+
+// ── Загрузка изображений (обложки новостей) ──────────────────
+const UPLOADS_DIR = path.join(__dirname, '../public/uploads');
+try { fs.mkdirSync(UPLOADS_DIR, { recursive: true }); } catch (e) { console.error('[Upload] Не удалось создать папку uploads:', e.message); }
+
+const uploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename: (req, file, cb) => {
+    const ext = (path.extname(file.originalname) || '').toLowerCase().replace(/[^a-z0-9.]/g,'').slice(0,10);
+    cb(null, `${Date.now()}_${uuidv4()}${ext}`);
+  },
+});
+const uploadImage = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!/^image\/(jpeg|png|gif|webp)$/.test(file.mimetype)) return cb(new Error('Разрешены только изображения (jpeg, png, gif, webp)'));
+    cb(null, true);
+  },
+});
+
+app.post('/api/upload', newsAuthMiddleware, rateLimit(limiterStrict), (req, res) => {
+  if (!isNewsAuthorUser(req.newsUser.username)) return res.status(403).json({ error: 'Только авторы новостей могут загружать изображения' });
+  uploadImage.single('file')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: err.message || 'Не удалось загрузить файл' });
+    if (!req.file) return res.status(400).json({ error: 'Файл не передан' });
+    res.json({ url: '/uploads/' + req.file.filename });
+  });
+});
+
 // ── Clubs API ─────────────────────────────────────────────────
 app.get('/clubs',      (req, res) => res.sendFile(path.join(__dirname, '../public/clubs.html')));
 app.get('/clubs/:id',  (req, res) => res.sendFile(path.join(__dirname, '../public/clubs.html')));
@@ -4833,10 +5282,20 @@ async function updateStats(white, black, result) {
   await saveUser(w); await saveUser(b);
 }
 
+// Грейс-период после завершения партии: даже если пара уже готова,
+// игрока не спариваем ещё REMATCH_GRACE_PERIOD мс — чтобы он успел
+// вернуться на страницу турнира и, если хочет, нажать "Пауза" ДО того,
+// как придёт game_start и клиент редиректнет его в новую партию.
+// Отменяется мгновенно, если игрок сам нажал "Играть" (см. tournament_seek/tournament_waiting).
+const REMATCH_GRACE_PERIOD = 8000;
+
 function tryPairTournamentPlayers(tournament) {
   const now = Date.now();
   if (getTournamentStatus(tournament, now) !== 'active') return;
-  const waiting = tournament.participants.filter(p => p.waiting && !p.left && !p.currentGameId && !p.anticheatBanned);
+  const waiting = tournament.participants.filter(p =>
+    p.waiting && !p.left && !p.currentGameId && !p.anticheatBanned &&
+    (!p.nextEligibleAt || now >= p.nextEligibleAt)
+  );
   if (waiting.length < 2) return;
 
   const games = tournament.games;
@@ -4976,17 +5435,26 @@ async function finishTournamentGame(tournament, game, result, reason) {
   // только после того, как игрок сам нажмёт "Играть".
   // Просрочивший первый ход — проигравшая сторона в этой партии (result — цвет победителя)
   const afkColor = reason === 'timeout_firstmove' ? (result === 'white' ? 'black' : 'white') : null;
+  // nextEligibleAt — до этого момента игрок формально "в поиске" (waiting=true,
+  // баннер и кнопка "Пауза" на странице турнира уже показываются), но
+  // tryPairTournamentPlayers его пока пропускает — см. REMATCH_GRACE_PERIOD выше.
+  const nextEligibleAt = now + REMATCH_GRACE_PERIOD;
   if (wp && !wp.left && !wp.anticheatBanned && now < tournament.endsAt) {
-    if (afkColor === 'white') { wp.waiting = false; wp.paused = true; }
-    else { wp.waiting = true; wp.paused = false; }
+    if (afkColor === 'white') { wp.waiting = false; wp.paused = true; wp.nextEligibleAt = 0; }
+    else { wp.waiting = true; wp.paused = false; wp.nextEligibleAt = nextEligibleAt; }
   }
   if (bp && !bp.left && !bp.anticheatBanned && now < tournament.endsAt) {
-    if (afkColor === 'black') { bp.waiting = false; bp.paused = true; }
-    else { bp.waiting = true; bp.paused = false; }
+    if (afkColor === 'black') { bp.waiting = false; bp.paused = true; bp.nextEligibleAt = 0; }
+    else { bp.waiting = true; bp.paused = false; bp.nextEligibleAt = nextEligibleAt; }
   }
   await saveTournament(tournament);
   io.to(`tournament_${tournament.id}`).emit('tournament_update', sanitizeTournament(tournament));
+  // Первая попытка — заспарит других игроков, у которых грейс-период уже истёк
+  // или которых не касался (например "bye"-игрок, ждавший своей очереди).
   setTimeout(() => tryPairTournamentPlayers(tournament), 500);
+  // Вторая попытка — уже после того, как грейс-период для только что
+  // освободившихся игроков истечёт (если они сами не поставили паузу).
+  setTimeout(() => tryPairTournamentPlayers(tournament), REMATCH_GRACE_PERIOD + 500);
 }
 
 const ANTICHEAT_THRESHOLD = 95, ANTICHEAT_STREAK_BAN = 3;
@@ -5288,6 +5756,22 @@ io.on('connection', (socket) => {
     socket.username = p.username;
     socket.emit('auth_ok', { username: p.username });
     io.emit('online_count', onlineUsers.size);
+    // Автоматически возвращаем игрока в очередь поиска соперника после
+    // короткого обрыва связи (см. пометку "_resumeOnReconnect" в disconnect-хендлере),
+    // если он именно искал партию, а не поставил паузу сам руками.
+    for (const t of tournaments) {
+      const tp = t.participants.find(tp => tp.username === p.username);
+      if (!tp) continue;
+      if (tp._resumeOnReconnect) {
+        tp._resumeOnReconnect = false;
+        if (!tp.left && !tp.anticheatBanned && !tp.currentGameId && getTournamentStatus(t, Date.now()) === 'active') {
+          tp.waiting = true;
+          io.to(`tournament_${t.id}`).emit('tournament_update', sanitizeTournament(t));
+          saveTournament(t).catch(() => {});
+          tryPairTournamentPlayers(t);
+        }
+      }
+    }
     for (const [gId, game] of activeGames.entries()) {
       if (game.white === p.username || game.black === p.username) {
         const color = game.white === p.username ? 'white' : 'black';
@@ -5318,6 +5802,7 @@ io.on('connection', (socket) => {
     if (p.currentGameId) return;
     p.waiting = true;
     p.paused = false;
+    p.nextEligibleAt = 0; // явный клик "Играть" — грейс-период не нужен
     saveTournament(t).catch(() => {});
     io.to(`tournament_${t.id}`).emit('tournament_update', sanitizeTournament(t));
     tryPairTournamentPlayers(t);
@@ -5359,6 +5844,7 @@ io.on('connection', (socket) => {
     if (getTournamentStatus(t, Date.now()) !== 'active') return;
     p.waiting = true;
     p.paused = false;
+    p.nextEligibleAt = 0; // явный клик "Играть" — грейс-период не нужен
     saveTournament(t).catch(() => {});
     io.to(`tournament_${t.id}`).emit('tournament_update', sanitizeTournament(t));
     tryPairTournamentPlayers(t);
@@ -5640,6 +6126,17 @@ io.on('connection', (socket) => {
       io.emit('online_count', onlineUsers.size);
       for (const t of tournaments) {
         const p = t.participants.find(p => p.username === sess.username);
+        // БАГ: тут игрока молча вынимало из очереди поиска (waiting=false) при
+        // любом обрыве соединения (сеть моргнула, телефон заблокировался,
+        // сворачивание вкладки) — без paused=true и без broadcast. При
+        // реконнекте auth-хендлер проверял "myPart.waiting && !myPart.paused",
+        // но waiting уже был false, поэтому поиск соперника сам НЕ возобновлялся,
+        // и игрок застревал на экране "пауза", хотя сам её не ставил.
+        // Запоминаем, что человека нужно вернуть в очередь при следующем auth,
+        // если он именно ждал соперника, а не поставил паузу сам.
+        if (p && p.waiting && !p.left && !p.anticheatBanned && !p.currentGameId) {
+          p._resumeOnReconnect = true;
+        }
         if (p) p.waiting = false;
       }
     }

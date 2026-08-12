@@ -17,6 +17,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.22.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
     "nodemailer": "^8.0.4",
     "pg": "^8.22.0",
     "resend": "^6.18.0",

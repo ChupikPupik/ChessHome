@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>429 — Слишком много ходов | Chess Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#05060d;
+    --panel:#0e0f13;
+    --gold:#c9a84c;
+    --gold-light:#ffd966;
+    --violet:#7c6cf0;
+    --alert:#ff6b5e;
+    --text:#e8e6e0;
+    --text-dim:rgba(210,208,202,0.55);
+    --text-faint:rgba(210,208,202,0.32);
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', system-ui, sans-serif;
+    overflow-x:hidden;
+  }
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--gold-light); outline-offset:2px;}
+
+  /* ───────────────────────── КОСМИЧЕСКИЙ ФОН ───────────────────────── */
+  .space{
+    position:fixed; inset:0; z-index:-3;
+    background:
+      radial-gradient(ellipse at 20% 15%, rgba(124,108,240,0.16), transparent 55%),
+      radial-gradient(ellipse at 85% 75%, rgba(201,168,76,0.10), transparent 50%),
+      var(--bg);
+  }
+  #starfield{position:fixed; inset:0; z-index:-2; overflow:hidden;}
+  .star{position:absolute; background:#fff; border-radius:50%; animation:twinkle linear infinite;}
+  @keyframes twinkle{0%,100%{opacity:.15;}50%{opacity:1;}}
+  .drift-piece{
+    position:fixed; z-index:-1; opacity:.10; color:var(--gold-light);
+    font-size:8rem; filter:blur(0.3px); pointer-events:none;
+    animation:drift 26s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%{transform:translate(0,0) rotate(0deg);}
+    50%{transform:translate(30px,-40px) rotate(15deg);}
+    100%{transform:translate(0,0) rotate(0deg);}
+  }
+
+  /* ───────────────────────── HERO ───────────────────────── */
+  .hero{
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:60px 20px 40px; position:relative;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace; font-size:12px; letter-spacing:.16em;
+    color:var(--alert); text-transform:uppercase; margin-bottom:18px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before, .eyebrow::after{content:''; width:26px; height:1px; background:var(--alert); opacity:.5;}
+  .code-429{
+    font-family:'Cinzel', serif; font-weight:800; font-size:clamp(5rem, 18vw, 11rem);
+    line-height:1; margin:0; letter-spacing:.02em;
+    background:linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 55%, #7a5f1e 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 60px rgba(201,168,76,0.35);
+    position:relative;
+  }
+  .ring{
+    position:absolute; top:50%; left:50%; translate:-50% -50%;
+    border:1px solid rgba(255,107,94,0.35); border-radius:50%; pointer-events:none;
+    animation:pulse 2.6s ease-out infinite;
+  }
+  .ring.r1{width:260px; height:260px; animation-delay:0s;}
+  .ring.r2{width:260px; height:260px; animation-delay:.8s;}
+  .ring.r3{width:260px; height:260px; animation-delay:1.6s;}
+  @keyframes pulse{
+    0%{width:220px; height:220px; opacity:.7;}
+    100%{width:520px; height:520px; opacity:0;}
+  }
+  .subtitle{
+    font-size:clamp(1.2rem,3vw,1.6rem); font-weight:700; margin:18px 0 6px;
+    color:var(--text);
+  }
+  .desc{color:var(--text-dim); max-width:560px; font-size:15px; line-height:1.6; margin:0 auto;}
+
+  /* ───────────────────────── ТЕРМИНАЛ / ИСТОРИЯ ───────────────────────── */
+  .section-wrap{width:100%; max-width:680px; margin:44px auto 0; padding:0 20px;}
+  .terminal{
+    background:rgba(14,15,19,0.85); border:1px solid rgba(255,255,255,0.08);
+    border-radius:10px; padding:0; text-align:left; overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    backdrop-filter:blur(6px);
+  }
+  .terminal-bar{
+    display:flex; align-items:center; gap:7px; padding:10px 14px;
+    background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .terminal-dot{width:10px; height:10px; border-radius:50%;}
+  .terminal-dot.r{background:#ff5f57;} .terminal-dot.y{background:#febc2e;} .terminal-dot.g{background:#28c840;}
+  .terminal-title{
+    margin-left:8px; font-family:'JetBrains Mono', monospace; font-size:11.5px; color:var(--text-faint);
+  }
+  .terminal-body{padding:16px 18px; font-family:'JetBrains Mono', monospace; font-size:12.5px; line-height:2; min-height:170px;}
+  .tl{opacity:0; white-space:pre-wrap;}
+  .tl .tag{color:var(--gold);}
+  .tl .tag2{color:var(--violet);}
+  .tl .warn{color:var(--alert); font-weight:600;}
+  .cursor{display:inline-block; width:7px; height:13px; background:var(--gold-light); vertical-align:middle; animation:blink 1s step-end infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+  /* ───────────────────────── COUNTDOWN ───────────────────────── */
+  .countdown-wrap{
+    display:flex; flex-direction:column; align-items:center; gap:14px; margin-top:40px;
+  }
+  .ring-timer{position:relative; width:150px; height:150px;}
+  .ring-timer svg{transform:rotate(-90deg); width:150px; height:150px;}
+  .ring-timer circle{fill:none; stroke-width:6;}
+  .ring-bg{stroke:rgba(255,255,255,0.08);}
+  .ring-fg{stroke:var(--gold); stroke-linecap:round; transition:stroke-dashoffset 1s linear;}
+  .ring-num{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono', monospace; font-size:26px; font-weight:700; color:var(--gold-light);
+  }
+  .retry-label{font-size:13px; color:var(--text-dim); font-family:'JetBrains Mono', monospace;}
+  .retry-btn{
+    margin-top:6px; background:linear-gradient(135deg, var(--gold-light), var(--gold));
+    border:none; border-radius:8px; color:#1a1400; font-weight:800; font-size:14.5px;
+    padding:12px 30px; cursor:not-allowed; opacity:.4; transition:all .25s;
+    font-family:'Space Grotesk', sans-serif;
+  }
+  .retry-btn.ready{cursor:pointer; opacity:1; box-shadow:0 0 30px rgba(201,168,76,0.5); animation:readyPulse 1.4s ease-in-out infinite;}
+  .retry-btn.ready:hover{transform:translateY(-2px);}
+  @keyframes readyPulse{0%,100%{box-shadow:0 0 20px rgba(201,168,76,0.4);}50%{box-shadow:0 0 40px rgba(201,168,76,0.8);}}
+
+  /* ───────────────────────── MINI GAME ───────────────────────── */
+  .game-section{margin:64px auto 0; max-width:680px; padding:0 20px 80px; text-align:center;}
+  .game-title{
+    font-family:'Cinzel', serif; font-weight:800; font-size:1.6rem; color:var(--gold-light);
+    margin-bottom:6px;
+  }
+  .game-desc{color:var(--text-dim); font-size:14px; margin-bottom:22px; line-height:1.6;}
+  .game-hud{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--text-dim);
+    padding:0 4px;
+  }
+  .hearts span{filter:grayscale(0); margin-right:2px;}
+  .hearts span.dead{filter:grayscale(1); opacity:.25;}
+  #score{color:var(--gold-light); font-weight:700;}
+  .game-area{
+    position:relative; width:100%; height:380px; border-radius:14px; overflow:hidden;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(124,108,240,0.18), transparent 60%),
+      linear-gradient(180deg, #0a0b14 0%, #05060d 100%);
+    border:1px solid rgba(255,255,255,0.08);
+    cursor:crosshair;
+  }
+  .core{
+    position:absolute; bottom:10px; left:50%; translate:-50% 0;
+    font-size:2.4rem; filter:drop-shadow(0 0 14px rgba(201,168,76,0.6));
+    animation:coreBob 2.4s ease-in-out infinite;
+  }
+  @keyframes coreBob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,-6px);}}
+  .meteor{
+    position:absolute; top:-40px; font-size:1.7rem; user-select:none;
+    animation-name:fall; animation-timing-function:linear; animation-fill-mode:forwards;
+    filter:drop-shadow(0 0 6px rgba(255,107,94,0.5));
+  }
+  .meteor .badge{
+    position:absolute; top:-12px; left:50%; translate:-50% 0; font-size:7px;
+    font-family:'JetBrains Mono', monospace; color:var(--alert); white-space:nowrap;
+    background:rgba(5,6,13,0.7); padding:1px 3px; border-radius:3px;
+  }
+  @keyframes fall{ to { top:320px; } }
+  .pop{
+    position:absolute; font-size:1.4rem; pointer-events:none; animation:popAnim .5s ease-out forwards;
+  }
+  @keyframes popAnim{0%{transform:scale(1); opacity:1;}100%{transform:scale(1.8); opacity:0;}}
+  .game-overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:rgba(5,6,13,0.82); gap:12px; text-align:center; padding:20px;
+  }
+  .game-overlay h3{margin:0; font-family:'Cinzel', serif; color:var(--gold-light); font-size:1.4rem;}
+  .game-overlay p{margin:0; color:var(--text-dim); font-size:13.5px; max-width:380px;}
+  .play-btn{
+    background:var(--gold); border:none; border-radius:8px; color:#0e0f13; font-weight:800;
+    font-size:14px; padding:11px 26px; cursor:pointer; font-family:'Space Grotesk', sans-serif;
+    transition:opacity .15s;
+  }
+  .play-btn:hover{opacity:.85;}
+
+  footer{
+    text-align:center; padding:30px 20px 50px; color:var(--text-faint); font-size:12px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="space"></div>
+<div id="starfield"></div>
+<div class="drift-piece" style="top:12%; left:8%;">♞</div>
+<div class="drift-piece" style="top:60%; left:82%; animation-delay:-8s; font-size:6rem;">♝</div>
+<div class="drift-piece" style="top:78%; left:12%; animation-delay:-16s; font-size:5rem;">♜</div>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
+  <div class="eyebrow">Код ошибки HTTP</div>
+  <h1 class="code-429">429</h1>
+  <p class="subtitle">Слишком много ходов за раз</p>
+  <p class="desc">Сервер объявляет тайм-аут. Кто-то (возможно, вы) двигал фигуры быстрее, чем арбитр успевал записывать партию.</p>
+
+  <div class="section-wrap">
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dot r"></span><span class="terminal-dot y"></span><span class="terminal-dot g"></span>
+        <span class="terminal-title">arbiter-core — /var/log/chesshome.log</span>
+      </div>
+      <div class="terminal-body" id="term-body"></div>
+    </div>
+  </div>
+
+  <div class="countdown-wrap">
+    <div class="ring-timer">
+      <svg><circle class="ring-bg" cx="75" cy="75" r="66"></circle>
+        <circle class="ring-fg" id="ring-fg" cx="75" cy="75" r="66" stroke-dasharray="415" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="ring-num" id="ring-num">30</div>
+    </div>
+    <div class="retry-label">Повторная попытка станет доступна через <span id="retry-sec">30</span> сек.</div>
+    <button class="retry-btn" id="retry-btn">Повторить запрос</button>
+  </div>
+</section>
+
+<!-- ═══════════════ MINI GAME ═══════════════ -->
+<section class="game-section">
+  <div class="game-title">🛡️ Защита сервера</div>
+  <p class="game-desc">Пока идёт охлаждение — отбей лишние запросы (♟), летящие к королю-серверу. Пропустишь слишком много — и очередь придётся начинать заново.</p>
+  <div class="game-hud">
+    <div class="hearts" id="hearts">♥♥♥♥♥</div>
+    <div>Счёт: <span id="score">0</span></div>
+  </div>
+  <div class="game-area" id="game-area">
+    <div class="core">♚</div>
+    <div class="game-overlay" id="game-overlay">
+      <h3>Готов принять оборону?</h3>
+      <p>Кликай по фигурам-запросам, пока они не долетели до короля. Каждый пропуск отнимает жизнь.</p>
+      <button class="play-btn" id="play-btn">Начать игру</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Chess Home · сервер временно отбивается от слишком большого количества ходов · попробуйте снова через минуту
+</footer>
+
+<script>
+  /* ── Звёздное небо ── */
+  const starfield = document.getElementById('starfield');
+  const starCount = window.innerWidth < 600 ? 70 : 140;
+  for (let i = 0; i < starCount; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2 + 0.5;
+    s.style.width = size + 'px';
+    s.style.height = size + 'px';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.animationDuration = (Math.random() * 3 + 2) + 's';
+    s.style.animationDelay = (Math.random() * 4) + 's';
+    starfield.appendChild(s);
+  }
+
+  /* ── Печатающийся терминал-лог ── */
+  const lines = [
+    '<span class="tag">[СЕРВЕР]</span> Инициализация протокола обороны...',
+    '<span class="tag">[СЕРВЕР]</span> Зафиксировано 47 382 хода за 1 секунду.',
+    '<span class="tag2">[АРБИТР]</span> Кто-то там двигает пешки со скоростью света?',
+    '<span class="warn">[ОШИБКА 429]</span> Превышен лимит запросов к серверу.',
+    '<span class="tag2">[АРБИТР]</span> Всем шах... то есть — всем сохранять спокойствие.',
+    '<span class="tag">[СЕРВЕР]</span> Запущено охлаждение. Рекомендация: сыграйте партию ниже.'
+  ];
+  const termBody = document.getElementById('term-body');
+  let lineIndex = 0;
+  function typeLine() {
+    if (lineIndex >= lines.length) return;
+    const div = document.createElement('div');
+    div.className = 'tl';
+    div.style.opacity = 1;
+    termBody.appendChild(div);
+    const raw = lines[lineIndex];
+    let i = 0;
+    const plain = raw.replace(/<[^>]+>/g, '');
+    const htmlChars = raw;
+    // простая посимвольная печать по видимому тексту, сохраняя теги целиком
+    const parts = raw.split(/(<[^>]+>)/g).filter(Boolean);
+    let out = '';
+    let partIdx = 0, charIdx = 0;
+    const interval = setInterval(() => {
+      if (partIdx >= parts.length) {
+        clearInterval(interval);
+        div.innerHTML = raw;
+        lineIndex++;
+        setTimeout(typeLine, 260);
+        return;
+      }
+      const part = parts[partIdx];
+      if (part.startsWith('<')) {
+        out += part;
+        partIdx++;
+      } else {
+        out += part[charIdx];
+        charIdx++;
+        if (charIdx >= part.length) { partIdx++; charIdx = 0; }
+      }
+      div.innerHTML = out + '<span class="cursor"></span>';
+    }, 14);
+  }
+  typeLine();
+
+  /* ── Обратный отсчёт ── */
+  let secondsLeft = 30;
+  const ringFg = document.getElementById('ring-fg');
+  const ringNum = document.getElementById('ring-num');
+  const retrySec = document.getElementById('retry-sec');
+  const retryBtn = document.getElementById('retry-btn');
+  const circumference = 415;
+  function tick() {
+    ringNum.textContent = secondsLeft;
+    retrySec.textContent = secondsLeft;
+    const offset = circumference * (1 - secondsLeft / 30);
+    ringFg.style.strokeDashoffset = offset;
+    if (secondsLeft <= 0) {
+      retryBtn.classList.add('ready');
+      retryBtn.textContent = 'Повторить запрос';
+      ringNum.textContent = '✓';
+      clearInterval(timerInterval);
+      return;
+    }
+    secondsLeft--;
+  }
+  tick();
+  const timerInterval = setInterval(tick, 1000);
+  retryBtn.addEventListener('click', () => {
+    if (!retryBtn.classList.contains('ready')) return;
+    retryBtn.textContent = 'Отправка запроса...';
+    setTimeout(() => { retryBtn.textContent = 'Повторить запрос'; }, 1400);
+  });
+
+  /* ── Мини-игра "Защита сервера" ── */
+  const gameArea = document.getElementById('game-area');
+  const overlay = document.getElementById('game-overlay');
+  const playBtn = document.getElementById('play-btn');
+  const heartsEl = document.getElementById('hearts');
+  const scoreEl = document.getElementById('score');
+  let hp = 5, score = 0, spawnTimer = null, gameRunning = false;
+
+  function updateHearts() {
+    heartsEl.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const span = document.createElement('span');
+      span.textContent = '♥';
+      if (i >= hp) span.classList.add('dead');
+      heartsEl.appendChild(span);
+    }
+  }
+
+  function spawnMeteor() {
+    if (!gameRunning) return;
+    const m = document.createElement('div');
+    m.className = 'meteor';
+    const icons = ['♟','♟','♟','⚡'];
+    m.textContent = icons[Math.floor(Math.random() * icons.length)];
+    const badge = document.createElement('div');
+    badge.className = 'badge';
+    badge.textContent = 'REQ';
+    m.appendChild(badge);
+    m.style.left = (Math.random() * 85 + 3) + '%';
+    const duration = Math.max(1.6, Math.random() * 2.2 + 3.2 - score * 0.02);
+    m.style.animationDuration = duration + 's';
+    m.style.animationName = 'fall';
+
+    const onEnd = () => {
+      if (m.parentNode) {
+        m.remove();
+        hp--;
+        updateHearts();
+        if (hp <= 0) endGame(false);
+      }
+    };
+    m.addEventListener('animationend', onEnd);
+    m.addEventListener('click', () => {
+      m.removeEventListener('animationend', onEnd);
+      const pop = document.createElement('div');
+      pop.className = 'pop';
+      pop.textContent = '✦';
+      pop.style.left = m.style.left;
+      pop.style.top = m.style.top || '0px';
+      pop.style.top = m.getBoundingClientRect().top - gameArea.getBoundingClientRect().top + 'px';
+      gameArea.appendChild(pop);
+      setTimeout(() => pop.remove(), 500);
+      m.remove();
+      score += 10;
+      scoreEl.textContent = score;
+    });
+    gameArea.appendChild(m);
+  }
+
+  function startGame() {
+    hp = 5; score = 0;
+    updateHearts();
+    scoreEl.textContent = score;
+    overlay.style.display = 'none';
+    gameRunning = true;
+    document.querySelectorAll('.meteor').forEach(m => m.remove());
+    spawnTimer = setInterval(spawnMeteor, 900);
+  }
+
+  function endGame(won) {
+    gameRunning = false;
+    clearInterval(spawnTimer);
+    document.querySelectorAll('.meteor').forEach(m => m.remove());
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `
+      <h3>Сервер официально перегружен 😅</h3>
+      <p>Отбито запросов: <strong style="color:var(--gold-light)">${score / 10}</strong> · Очки: <strong style="color:var(--gold-light)">${score}</strong></p>
+      <button class="play-btn" id="play-btn">Играть ещё раз</button>
+    `;
+    document.getElementById('play-btn').addEventListener('click', startGame);
+  }
+
+  playBtn.addEventListener('click', startGame);
+</script>
+
+</body>
+</html>
