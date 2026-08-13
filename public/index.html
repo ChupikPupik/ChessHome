@@ -1243,6 +1243,40 @@
       #puzzle-board { width: min(340px,calc(100vw - 32px)) !important; height: min(340px,calc(100vw - 32px)) !important; }
       .puzzle-solve-panel { max-width: 100% !important; width: 100% !important; }
       #puzzle-daily-card { padding: 14px !important; }
+
+      /* Обёртки страниц задач используют другой max-width (не 1200px),
+         поэтому общее мобильное правило [style*="max-width:1200px"] их не
+         подхватывает и padding:24px остаётся как на десктопе. Уравниваем
+         с остальными страницами (как #page-lobby > div выше). */
+      #page-puzzles > div,
+      #page-puzzle-topic > div,
+      #page-puzzle-leaderboard > div { padding: 16px !important; }
+    }
+
+    /* mobile puzzles — landscape:
+       Портретная ширина укладывается в 768px, но при повороте телефона
+       в landscape ширина экрана часто становится БОЛЬШЕ 768px (например,
+       iPhone landscape ~812px, крупные Android ~850px), и тогда действуют
+       уже ДЕСКТОПНЫЕ правила выше: доска считается как
+       min(460px, calc(100vw - 360px)) и получается выше, чем весь экран
+       (высота в landscape обычно 375–430px) — доска обрезается снизу, а
+       кнопки "Повернуть/Заново" и навигация по ходам уезжают за пределы
+       экрана. Привязываемся к высоте экрана, а не к ширине — так же, как
+       уже сделано для страницы игры (.game-layout) выше. */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .puzzle-solve-layout { flex-direction: row !important; align-items: flex-start !important; }
+      #puzzle-board {
+        width: min(calc(100vh - 160px), 400px) !important;
+        height: min(calc(100vh - 160px), 400px) !important;
+      }
+      .puzzle-board-area { flex-shrink: 0 !important; }
+      .puzzle-solve-panel {
+        flex: 1 !important; min-width: 0 !important; max-width: none !important; width: auto !important;
+        max-height: calc(100vh - 90px) !important; overflow-y: auto !important;
+      }
+      #puzzles-sidebar { display: none !important; }
+      #puzzles-main-grid { grid-template-columns: 1fr !important; }
+      .puzzle-topics-grid { grid-template-columns: repeat(3, 1fr) !important; }
     }
 
     /* ══════════════════════════════════════════════════════
