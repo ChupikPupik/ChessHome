@@ -1002,14 +1002,64 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ── Cache-busting для /js/*.js внутри HTML ─────────────────────
+// Проблема, которую это решает: браузер кэширует /js/app.js на 1 час
+// (см. maxAge статики ниже). HTML при этом всегда отдаётся свежим
+// (no-store), но <script src="/js/app.js"> — это один и тот же URL,
+// поэтому после деплоя пользователи до часа могли получать старый
+// app.js, хотя страница уже новая (отсюда "ReferenceError: X is not
+// defined" после обновления кода).
+//
+// BUILD_VERSION генерируется один раз при старте процесса. Деплой =
+// перезапуск сервера => новая версия => во всех отдающихся HTML
+// автоматически подставляется новый ?v=..., браузер воспринимает это
+// как новый URL и гарантированно скачивает свежий файл, игнорируя
+// старый закэшированный. Уже открытые у пользователей вкладки этим не
+// затронуты (их не заставить перезагрузиться), но любая новая загрузка/
+// обновление страницы получает актуальный код.
+const BUILD_VERSION = Date.now();
+const JS_SRC_RE = /(<script\b[^>]*\bsrc=["'])(\/js\/[^"']+\.js)(["'])/g;
+
+function sendVersionedHtml(res, filePath) {
+  fs.readFile(filePath, 'utf8', (err, html) => {
+    if (err) return res.status(404).end();
+    const versioned = html.replace(JS_SRC_RE, `$1$2?v=${BUILD_VERSION}$3`);
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(versioned);
+  });
+}
+
+// Подменяем res.sendFile для .html-ответов на версию с подстановкой ?v=,
+// чтобы не переписывать вручную каждый из ~40 app.get(...).sendFile(...)
+// ниже по файлу — они продолжают работать как есть.
+app.use((req, res, next) => {
+  const originalSendFile = res.sendFile.bind(res);
+  res.sendFile = function (filePath, ...args) {
+    if (typeof filePath === 'string' && filePath.endsWith('.html')) {
+      return sendVersionedHtml(res, filePath);
+    }
+    return originalSendFile(filePath, ...args);
+  };
+  next();
+});
+
+// Корень "/" отдаём тем же путём (версия + no-store), а не через
+// автоматический index.html из express.static — поэтому ниже у
+// express.static выставлен index:false.
+app.get('/', (req, res) => sendVersionedHtml(res, path.join(__dirname, '../public/index.html')));
+
 app.use(express.static(path.join(__dirname, '../public'), {
   // Раньше статика (js/css/картинки/шрифты) отдавалась без Cache-Control —
   // каждый клиент дергал сервер за одними и теми же файлами на каждой
   // загрузке страницы. maxAge даёт браузеру право не перезапрашивать файл
   // повторно в течение часа, что на 1 ядре и 100 юзерах заметно снижает
   // число обслуживаемых HTTP-запросов. HTML по-прежнему no-store (см. выше).
+  // index:false — index.html отдаём вручную (см. app.get('/') выше), чтобы
+  // он тоже проходил через версионирование /js/*.js.
   maxAge: '1h',
   etag: true,
+  index: false,
 }));
 
 const LICHESS_TOKEN = process.env.LICHESS_API_TOKEN; // положите токен в .env
@@ -1602,6 +1652,7 @@ app.get('/api/users/:username/games', async (req, res) => {
     endedAt: row.ended_at ? Number(row.ended_at) : null,
     berserk: row.berserk, accuracy: row.accuracy,
     tournamentId: row.tournament_id,
+    rated: row.rated !== false,
   })));
 });
 
@@ -1629,6 +1680,7 @@ app.get('/api/games/:gameId', async (req, res) => {
     id: row.id, white: row.white, black: row.black,
     result: row.result, reason: row.reason, moves: row.moves,
     timeControl: row.time_control, endedAt: row.ended_at ? Number(row.ended_at) : null,
+    rated: row.rated !== false,
   });
 });
 
@@ -5215,7 +5267,7 @@ async function endGameAuthoritative(gameId, game, result, reason) {
     if (t) await finishTournamentGame(t, game, result, reason);
   } else if (hasFullMove(game)) {
     await recordGame(game, result, reason);
-    await updateStats(game.white, game.black, result);
+    await updateStats(game.white, game.black, result, game.rated !== false);
   }
   const payload = { gameId, result, reason, white: game.white, black: game.black };
   [findSocketByUsername(game.white), findSocketByUsername(game.black)].forEach(s => s?.emit('game_ended', payload));
@@ -5257,28 +5309,39 @@ async function emitToAdmins(event, payload) {
 }
 
 async function recordGame(game, result, reason) {
+  // Товарищеские (нерейтинговые) партии тоже сохраняются в историю — просто
+  // без пересчёта рейтинга (см. updateStats и её вызовы ниже). Турнирные
+  // партии всегда рейтинговые.
+  const rated = game.tournamentId ? true : (game.rated !== false);
   await db(`
-    INSERT INTO games (id, white, black, result, reason, moves, time_control, ended_at, berserk, accuracy, tournament_id)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+    INSERT INTO games (id, white, black, result, reason, moves, time_control, ended_at, berserk, accuracy, tournament_id, rated)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
     ON CONFLICT (id) DO NOTHING
   `, [game.id, game.white, game.black, result, reason,
       JSON.stringify(game.moves || []), game.timeControl || null,
       Date.now(), JSON.stringify(game.berserk || null),
-      JSON.stringify(game.accuracy || null), game.tournamentId || null]);
+      JSON.stringify(game.accuracy || null), game.tournamentId || null, rated]);
 }
 
-async function updateStats(white, black, result) {
+async function updateStats(white, black, result, rated = true) {
   const w = await getUser(white.toLowerCase());
   const b = await getUser(black.toLowerCase());
   if (!w || !b) return;
   w.gamesPlayed++; b.gamesPlayed++;
-  const K = 32, expW = 1 / (1 + Math.pow(10, (b.rating - w.rating) / 400)), expB = 1 - expW;
-  let sW, sB;
-  if (result === 'white')      { sW = 1; sB = 0; w.wins++; b.losses++; }
-  else if (result === 'black') { sW = 0; sB = 1; b.wins++; w.losses++; }
-  else                         { sW = 0.5; sB = 0.5; w.draws++; b.draws++; }
-  w.rating = Math.max(100, Math.round(w.rating + K * (sW - expW)));
-  b.rating = Math.max(100, Math.round(b.rating + K * (sB - expB)));
+  if (result === 'white')      { w.wins++; b.losses++; }
+  else if (result === 'black') { b.wins++; w.losses++; }
+  else                         { w.draws++; b.draws++; }
+  // Товарищеская партия: счётчики побед/поражений/партий обновляются как
+  // обычно, но сам рейтинг (Elo) не пересчитывается.
+  if (rated) {
+    const K = 32, expW = 1 / (1 + Math.pow(10, (b.rating - w.rating) / 400)), expB = 1 - expW;
+    let sW, sB;
+    if (result === 'white')      { sW = 1; sB = 0; }
+    else if (result === 'black') { sW = 0; sB = 1; }
+    else                         { sW = 0.5; sB = 0.5; }
+    w.rating = Math.max(100, Math.round(w.rating + K * (sW - expW)));
+    b.rating = Math.max(100, Math.round(b.rating + K * (sB - expB)));
+  }
   await saveUser(w); await saveUser(b);
 }
 
@@ -5516,13 +5579,16 @@ function startGame(acceptorSocket, challenge) {
   const tcInc = Number(tcIncStr);
   const tcSec = tcBase && tcBase.endsWith('s') ? (Number(tcBase.slice(0, -1)) || 15) : (Number(tcBase) || 10) * 60;
   const gameNow = Date.now();
-  const game = { id: gameId, white, black, turn: 'white', moves: [], createdAt: gameNow, lastActivity: gameNow, timeControl: challenge.timeControl, whiteTime: tcSec, blackTime: tcSec, tcIncrement: tcInc || 0, lastMoveAt: gameNow, _board: serverChess.startBoard() };
+  // Товарищеская партия: challenge.rated === false явно выставляется при
+  // создании вызова (post_challenge / challenge_user). По умолчанию — рейтинговая.
+  const rated = challenge.rated !== false;
+  const game = { id: gameId, white, black, turn: 'white', moves: [], createdAt: gameNow, lastActivity: gameNow, timeControl: challenge.timeControl, whiteTime: tcSec, blackTime: tcSec, tcIncrement: tcInc || 0, lastMoveAt: gameNow, _board: serverChess.startBoard(), rated };
   activeGames.set(gameId, game);
   const wR = usersCache.get(white.toLowerCase())?.rating ?? '?';
   const bR = usersCache.get(black.toLowerCase())?.rating ?? '?';
   const ws = findSocketByUsername(white); const bs = findSocketByUsername(black);
-  if (ws) ws.emit('game_start', { gameId, color: 'white', opponent: black, opponentRating: bR, timeControl: game.timeControl });
-  if (bs) bs.emit('game_start', { gameId, color: 'black', opponent: white, opponentRating: wR, timeControl: game.timeControl });
+  if (ws) ws.emit('game_start', { gameId, color: 'white', opponent: black, opponentRating: bR, timeControl: game.timeControl, rated });
+  if (bs) bs.emit('game_start', { gameId, color: 'black', opponent: white, opponentRating: wR, timeControl: game.timeControl, rated });
 }
 
 setInterval(async () => {
@@ -5864,7 +5930,7 @@ io.on('connection', (socket) => {
 
   socket.on('post_challenge', (data) => {
     if (!socket.username) return;
-    const challenge = { id: uuidv4(), from: socket.username, timeControl: data.timeControl || '10+0', color: data.color || 'random', createdAt: Date.now(), socketId: socket.id };
+    const challenge = { id: uuidv4(), from: socket.username, timeControl: data.timeControl || '10+0', color: data.color || 'random', rated: data.rated !== false, createdAt: Date.now(), socketId: socket.id };
     const idx = pendingChallenges.findIndex(c => c.from === socket.username);
     if (idx !== -1) pendingChallenges.splice(idx, 1);
     pendingChallenges.push(challenge);
@@ -5889,18 +5955,25 @@ io.on('connection', (socket) => {
     setTimeout(() => startGame(socket, challenge), 50);
   });
 
-  socket.on('challenge_user', (targetUsername) => {
+  socket.on('challenge_user', (data) => {
     if (!socket.username) return;
+    // Поддерживаем и старый формат вызова (просто ник строкой), и новый
+    // объект { username, rated } — чтобы можно было выбрать товарищескую партию.
+    const targetUsername = typeof data === 'string' ? data : data?.username;
+    const rated = typeof data === 'string' ? true : data?.rated !== false;
+    if (!targetUsername) return;
     const t = findSocketByUsername(targetUsername);
     if (!t) return socket.emit('error', 'Не в сети');
-    t.emit('incoming_challenge', { from: socket.username, socketId: socket.id });
+    t.emit('incoming_challenge', { from: socket.username, socketId: socket.id, rated });
   });
 
-  socket.on('accept_direct_challenge', (fromSocketId) => {
+  socket.on('accept_direct_challenge', (data) => {
     if (!socket.username) return;
+    const fromSocketId = typeof data === 'string' ? data : data?.fromSocketId;
+    const rated = typeof data === 'string' ? true : data?.rated !== false;
     const fromSocket = io.sockets.sockets.get(fromSocketId);
     if (!fromSocket) return socket.emit('error', 'Игрок отключился');
-    startGame(socket, { from: fromSocket.username, timeControl: '10+0', color: 'random', socketId: fromSocketId });
+    startGame(socket, { from: fromSocket.username, timeControl: '10+0', color: 'random', rated, socketId: fromSocketId });
   });
 
   socket.on('decline_challenge', (fromSocketId) => {
@@ -6020,7 +6093,7 @@ io.on('connection', (socket) => {
     if (winSock) winSock.emit('game_ended', { gameId, result: wc, reason: 'opponent_resign' });
     const isTournament = !!game.tournamentId;
     if (isTournament) { const t = tournaments.find(t => t.id === game.tournamentId); if (t) await finishTournamentGame(t, game, wc, 'resign'); }
-    else if (hasFullMove(game)) { await recordGame(game, wc, 'resign'); await updateStats(game.white, game.black, wc); }
+    else if (hasFullMove(game)) { await recordGame(game, wc, 'resign'); await updateStats(game.white, game.black, wc, game.rated !== false); }
   });
 
   socket.on('offer_draw', ({ gameId }) => {
@@ -6037,7 +6110,7 @@ io.on('connection', (socket) => {
     [findSocketByUsername(game.white), findSocketByUsername(game.black)].forEach(s => s?.emit('game_ended', payload));
     const isTournament = !!game.tournamentId;
     if (isTournament) { const t = tournaments.find(t => t.id === game.tournamentId); if (t) await finishTournamentGame(t, game, 'draw', 'agreement'); }
-    else if (hasFullMove(game)) { await recordGame(game, 'draw', 'agreement'); await updateStats(game.white, game.black, 'draw'); }
+    else if (hasFullMove(game)) { await recordGame(game, 'draw', 'agreement'); await updateStats(game.white, game.black, 'draw', game.rated !== false); }
   });
 
   socket.on('game_chat', ({ gameId, message }) => {
@@ -6169,6 +6242,8 @@ async function main() {
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fide_rating INT`);
   // 2FA по email при входе
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE`);
+  // Товарищеские (нерейтинговые) партии: старые записи считаются рейтинговыми
+  await db(`ALTER TABLE games ADD COLUMN IF NOT EXISTS rated BOOLEAN DEFAULT TRUE`);
   // Создание таблицы для дневника разработки (перенесено сюда из глобальной области)
   await db(`
     CREATE TABLE IF NOT EXISTS dev_diary (
@@ -6232,6 +6307,12 @@ async function main() {
   await loadClubChats();
   await loadForum();
   await loadBlog();
+  // БАГ: эти два вызова отсутствовали, из-за чего newsPosts/newsAuthors
+  // оставались пустыми в памяти после каждого рестарта (pm2 restart и т.п.),
+  // хотя в таблицах news_posts/news_authors в Postgres данные не терялись —
+  // просто не подгружались обратно при старте процесса.
+  await loadNewsAuthors();
+  await loadNews();
 
   await db(`
     CREATE TABLE IF NOT EXISTS follows (

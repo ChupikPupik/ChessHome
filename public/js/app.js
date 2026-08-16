@@ -427,13 +427,14 @@ function connectSocket() {
       setTimeout(() => showTournamentReturnBanner(data.tournamentId, data.tournamentName), 300);
     } else {
       // Обычная игра — сразу
-      toast(`Игра! Вы ${data.color === 'white' ? 'белые ♙' : 'чёрные ♟'}`, 'success');
+      const kind = data.rated === false ? ' (товарищеская)' : '';
+      toast(`Игра! Вы ${data.color === 'white' ? 'белые ♙' : 'чёрные ♟'}${kind}`, 'success');
       startGameUI(data);
     }
   });
   socket.on('opponent_move', (data) => chessBoard.applyOpponentMove(data.move, data.whiteTime, data.blackTime));
   socket.on('move_confirmed', (data) => chessBoard.syncClockFromServer(data.whiteTime, data.blackTime));
-  socket.on('incoming_challenge', ({ from, socketId }) => showIncomingChallenge(from, socketId));
+  socket.on('incoming_challenge', ({ from, socketId, rated }) => showIncomingChallenge(from, socketId, rated));
   socket.on('challenge_declined', by => toast(by + ' отклонил вызов', 'info'));
   socket.on('game_ended', data => {
     const wasInTournament = _currentGameData && _currentGameData.tournamentId;
@@ -589,6 +590,7 @@ async function fetchOnline() {
 // ─── LOBBY ────────────────────────────────────────────────────
 let selectedTC = '10+0';
 let selectedColor = 'random';
+let selectedRated = true;
 let myCurrentChallengeId = null; // ID своего вызова в зале
 
 pages['lobby'] = async () => {
@@ -649,7 +651,7 @@ function renderChallengeList(challenges) {
     nameEl.addEventListener('click', () => openUserProfile(c.from));
     const meta = document.createElement('div');
     meta.className = 'challenge-meta';
-    meta.textContent = '⏱ ' + c.timeControl + ' · ' + tcColor;
+    meta.textContent = '⏱ ' + c.timeControl + ' · ' + tcColor + (c.rated === false ? ' · 🤝 товарищеская' : '');
     info.appendChild(nameEl);
     info.appendChild(meta);
     item.appendChild(info);
@@ -686,12 +688,17 @@ function selectColor(color) {
   document.querySelectorAll('.color-btn').forEach(b => b.classList.toggle('selected', b.dataset.color === color));
 }
 
+function selectRated(rated) {
+  selectedRated = rated;
+  document.querySelectorAll('.rated-btn').forEach(b => b.classList.toggle('selected', b.dataset.rated === String(rated)));
+}
+
 function postChallenge() {
   if (!currentUser) { openModal('modal-login'); return; }
   if (!socket) { toast('Нет соединения. Войдите заново.', 'error'); return; }
   if (!socket.connected) { toast('Нет соединения с сервером', 'error'); return; }
-  socket.emit('post_challenge', { timeControl: selectedTC, color: selectedColor });
-  toast('Вызов выставлен в зал!', 'success');
+  socket.emit('post_challenge', { timeControl: selectedTC, color: selectedColor, rated: selectedRated });
+  toast(selectedRated ? 'Вызов выставлен в зал!' : 'Товарищеский вызов выставлен в зал!', 'success');
 }
 
 function cancelChallenge() {
@@ -705,9 +712,10 @@ function acceptChallenge(id) {
   socket.emit('accept_challenge', id);
 }
 
-function showIncomingChallenge(from, socketId) {
-  const accept = confirm(`${from} вызывает вас! Принять?`);
-  if (accept) socket.emit('accept_direct_challenge', socketId);
+function showIncomingChallenge(from, socketId, rated = true) {
+  const kind = rated === false ? 'товарищескую партию' : 'партию';
+  const accept = confirm(`${from} вызывает вас на ${kind}! Принять?`);
+  if (accept) socket.emit('accept_direct_challenge', { fromSocketId: socketId, rated });
   else socket.emit('decline_challenge', socketId);
 }
 
@@ -914,7 +922,8 @@ function challengeUserFromProfile(username) {
   document.getElementById('modal-user-profile')?.classList.remove('open');
   if (!currentUser) { openModal('modal-login'); return; }
   if (!socket?.connected) { toast('Нет соединения', 'error'); return; }
-  socket.emit('challenge_user', username);
+  const rated = !confirm('Сделать партию товарищеской (без изменения рейтинга)?\n\nОК — товарищеская, Отмена — рейтинговая.');
+  socket.emit('challenge_user', { username, rated });
   toast(`Вызов отправлен ${username}!`, 'success');
 }
 
