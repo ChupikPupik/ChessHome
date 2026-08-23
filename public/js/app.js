@@ -799,6 +799,14 @@ function showUserProfileModal(user) {
   const h2 = document.createElement('h2');
   h2.style.cssText = 'font-family:var(--font-display);font-size:22px;margin-bottom:4px';
   h2.textContent = user.username;
+  if (user.vip) {
+    const vipImg = document.createElement('img');
+    vipImg.src = '/img/vip.png';
+    vipImg.alt = 'VIP';
+    vipImg.title = 'VIP-игрок';
+    vipImg.style.cssText = 'height:20px;width:auto;vertical-align:middle;margin-left:6px';
+    h2.appendChild(vipImg);
+  }
   if (user.role === 'admin') {
     const badge = document.createElement('span');
     badge.style.cssText = 'color:var(--accent);font-size:13px;margin-left:8px';
@@ -1250,6 +1258,16 @@ function appendGlobalChatMsg(msg, scroll = true) {
   nameEl.textContent = (isAdmin ? '👑 ' : '') + msg.username;
   nameEl.onclick = () => openUserProfile(msg.username);
   header.appendChild(nameEl);
+
+  // ─── VIP-значок сразу после ника ─────────────────────────────
+  if (msg.vip) {
+    const vipImg = document.createElement('img');
+    vipImg.src = '/img/vip.png';
+    vipImg.alt = 'VIP';
+    vipImg.title = 'VIP-игрок';
+    vipImg.style.cssText = 'height:15px;width:auto;vertical-align:middle;flex-shrink:0';
+    header.appendChild(vipImg);
+  }
 
   // ─── ЭМОДЗИ после ника (только если есть) ──────────────────
   const emoji = msg.emoji || '';
@@ -2355,6 +2373,14 @@ function renderAdminUserList(users, container) {
       badge.textContent = 'ADMIN';
       nameEl.appendChild(badge);
     }
+    if (u.vip) {
+      const vipImg = document.createElement('img');
+      vipImg.src = '/img/vip.png';
+      vipImg.alt = 'VIP';
+      vipImg.title = u.vipUntil ? ('VIP до ' + new Date(u.vipUntil).toLocaleDateString('ru')) : 'VIP';
+      vipImg.style.cssText = 'height:15px;width:auto;vertical-align:middle;margin-left:6px';
+      nameEl.appendChild(vipImg);
+    }
     if (u.banned) {
       const ban = document.createElement('span');
       ban.style.cssText = 'color:var(--red);font-size:11px;margin-left:6px';
@@ -2371,6 +2397,31 @@ function renderAdminUserList(users, container) {
     // Кнопки
     const btns = document.createElement('div');
     btns.style.cssText = 'display:flex;gap:6px';
+    const canGrantVip = currentUser && ['chesshome', 'marina64'].includes(currentUser.username.toLowerCase());
+    if (canGrantVip) {
+      if (u.vip) {
+        const revokeBtn = document.createElement('button');
+        revokeBtn.className = 'btn btn-ghost btn-sm';
+        revokeBtn.textContent = '✨ Снять VIP';
+        revokeBtn.addEventListener('click', async () => {
+          if (!confirm('Снять VIP-значок у ' + u.username + '?')) return;
+          try { await apiPost('/admin/vip/revoke', { username: u.username }); toast('VIP снят', 'success'); adminLoadUsers(); }
+          catch (e) { toast(e.message, 'error'); }
+        });
+        btns.appendChild(revokeBtn);
+      } else {
+        const grantBtn = document.createElement('button');
+        grantBtn.className = 'btn btn-ghost btn-sm';
+        grantBtn.textContent = '✨ Выдать VIP';
+        grantBtn.addEventListener('click', async () => {
+          const days = prompt('На сколько дней выдать VIP-значок ' + u.username + '?', '30');
+          if (days === null) return;
+          try { await apiPost('/admin/vip/grant', { username: u.username, days: parseInt(days) || 30 }); toast('VIP выдан', 'success'); adminLoadUsers(); }
+          catch (e) { toast(e.message, 'error'); }
+        });
+        btns.appendChild(grantBtn);
+      }
+    }
     if (u.username === currentUser.username) {
       const self = document.createElement('span');
       self.style.cssText = 'color:var(--text-muted);font-size:12px';

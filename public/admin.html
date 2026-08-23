@@ -502,11 +502,35 @@ function renderUserList(users, container) {
     const info = document.createElement('div'); info.style.flex = '1';
     const nm = document.createElement('div'); nm.style.cssText = 'font-weight:600;font-size:14px'; nm.textContent = u.username;
     if (u.role === 'admin') { const b = document.createElement('span'); b.style.cssText='color:var(--accent);font-size:11px;margin-left:6px'; b.textContent='ADMIN'; nm.appendChild(b); }
+    if (u.vip) { const vipImg = document.createElement('img'); vipImg.src='/img/vip.png'; vipImg.alt='VIP'; vipImg.title = u.vipUntil ? ('VIP до ' + new Date(u.vipUntil).toLocaleDateString('ru')) : 'VIP'; vipImg.style.cssText='height:15px;width:auto;vertical-align:middle;margin-left:6px'; nm.appendChild(vipImg); }
     if (u.banned) { const b = document.createElement('span'); b.style.cssText='color:var(--red);font-size:11px;margin-left:6px'; b.textContent='БАН'; nm.appendChild(b); }
     const st = document.createElement('div'); st.style.cssText = 'font-size:12px;color:var(--text-muted)';
     st.textContent = '★' + u.rating + ' · ' + u.gamesPlayed + ' партий · ' + u.wins + 'W/' + u.losses + 'L';
     info.appendChild(nm); info.appendChild(st); row.appendChild(info);
     const btns = document.createElement('div'); btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
+    const canGrantVip = currentUser && ['chesshome','marina64'].includes(currentUser.username.toLowerCase());
+    if (canGrantVip) {
+      if (u.vip) {
+        const rv = document.createElement('button'); rv.className='btn btn-ghost btn-sm'; rv.textContent='✨ Снять VIP';
+        rv.onclick = async () => {
+          if (!confirm('Снять VIP-значок у ' + u.username + '?')) return;
+          rv.disabled = true;
+          try { await apiPost('/admin/vip/revoke', { username: u.username }); toast('VIP снят', 'success'); loadAdminUsers(); }
+          catch(e) { toast('Ошибка: ' + e.message, 'error'); rv.disabled = false; }
+        };
+        btns.appendChild(rv);
+      } else {
+        const gv = document.createElement('button'); gv.className='btn btn-ghost btn-sm'; gv.textContent='✨ Выдать VIP';
+        gv.onclick = async () => {
+          const days = prompt('На сколько дней выдать VIP-значок ' + u.username + '?', '30');
+          if (days === null) return;
+          gv.disabled = true;
+          try { await apiPost('/admin/vip/grant', { username: u.username, days: parseInt(days) || 30 }); toast('VIP выдан', 'success'); loadAdminUsers(); }
+          catch(e) { toast('Ошибка: ' + e.message, 'error'); gv.disabled = false; }
+        };
+        btns.appendChild(gv);
+      }
+    }
     if (u.username === currentUser.username) {
       const s = document.createElement('span'); s.style.cssText='color:var(--text-muted);font-size:12px'; s.textContent='это вы'; btns.appendChild(s);
     } else if (u.banned) {

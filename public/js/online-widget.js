@@ -158,13 +158,14 @@
 
       var html = '';
       users.forEach(function (u) {
+        var vipImg = u.vip ? '<img src="/img/vip.png" alt="VIP" title="VIP-игрок" style="height:14px;width:auto;vertical-align:-2px;margin-left:3px;flex-shrink:0">' : '';
         html +=
           '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer" onclick="window.location=\'/profile/' + escHtml(u.username) + '\'">' +
             '<div style="width:28px;height:28px;border-radius:50%;background:var(--accent,#c9a84c);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#000;flex-shrink:0">' +
               escHtml(u.username[0].toUpperCase()) +
             '</div>' +
             '<div style="flex:1;min-width:0">' +
-              '<div style="font-weight:600;color:var(--text-primary,#e8e8f0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(u.username) + '</div>' +
+              '<div style="font-weight:600;color:var(--text-primary,#e8e8f0);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(u.username) + vipImg + '</div>' +
               (u.rating != null ? '<div style="font-size:11px;color:var(--text-muted,#888)">★ ' + u.rating + '</div>' : '') +
             '</div>' +
             '<div style="width:7px;height:7px;border-radius:50%;background:#3ecf8e;flex-shrink:0"></div>' +

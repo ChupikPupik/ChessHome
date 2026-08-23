@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Дурка — сводный лидерборд турниров | Chess Home</title>
+<meta name="description" content="Сводный лидерборд игроков по результатам серии клубных турниров на lichess.org">
+<link rel="icon" type="image/png" href="/img/logo/favicon.png">
+
+<link rel="stylesheet" href="/header.css">
+<script src="/header.js" defer></script>
+
+<style>
+  :root{
+    /* ── palette: тёмная доска, латунь, слоновая кость ── */
+    --bg:            #0a0c12;
+    --bg-panel:      #12151e;
+    --bg-panel-2:    #171b27;
+    --bg-raised:     #1b202e;
+    --border:        #262c3d;
+    --border-soft:   #1b2030;
+
+    --gold:          #c8a44d;
+    --gold-hi:       #ecce85;
+    --gold-dim:      #7c652f;
+
+    --ivory:         #edf0ee;
+    --ink-2:         #99a0b6;
+    --ink-3:         #575e77;
+
+    --crimson:       #b5573c;
+    --crimson-hi:    #d98362;
+
+    --sq-light:      #262c40;
+    --sq-dark:       #12141c;
+
+    --font-display: 'Iowan Old Style','Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
+    --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: 'SF Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+    --ease: cubic-bezier(.16,.8,.28,1);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{-webkit-text-size-adjust:100%;}
+  html,body{
+    background:var(--bg);
+    color:var(--ivory);
+    font-family:var(--font-body);
+    min-height:100vh;
+  }
+  body{
+    background-image:
+      radial-gradient(ellipse 820px 460px at 12% -8%, rgba(200,164,77,0.08), transparent 60%),
+      radial-gradient(ellipse 620px 460px at 104% 6%, rgba(181,87,60,0.07), transparent 55%);
+    background-repeat:no-repeat;
+  }
+  a{color:inherit; text-decoration:none;}
+  img{max-width:100%; display:block;}
+
+  ::selection{background:rgba(200,164,77,0.28); color:#fff;}
+
+  :focus-visible{outline:2px solid var(--gold-hi); outline-offset:3px; border-radius:4px;}
+
+  .wrap{max-width:900px; margin:0 auto; padding:clamp(20px,4vw,36px) clamp(14px,4vw,18px) 90px;}
+
+  .top-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:clamp(18px,3vw,28px);}
+  .top-nav a.back{
+    font-size:13px; color:var(--ink-3); display:flex; align-items:center; gap:6px;
+    transition:color .15s var(--ease);
+  }
+  .top-nav a.back:hover{color:var(--gold-hi);}
+
+  /* ══════════════════════════ HERO ══════════════════════════ */
+  .hero{
+    position:relative; text-align:center; padding:clamp(34px,7vw,52px) clamp(16px,5vw,28px) clamp(30px,6vw,40px);
+    margin-bottom:clamp(22px,4vw,32px);
+    border:1px solid var(--border); border-radius:20px;
+    background:linear-gradient(180deg, rgba(200,164,77,0.055), transparent 65%), var(--bg-panel);
+    overflow:hidden;
+    isolation:isolate;
+  }
+  /* тонкая шахматная клетка по всему фону героя — реальный узор доски, не декор ради декора */
+  .hero::before{
+    content:"";
+    position:absolute; inset:0; z-index:-2;
+    opacity:.55;
+    background-image:
+      repeating-conic-gradient(from 0deg, rgba(255,255,255,0.028) 0% 25%, transparent 0% 50%);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 20%, #000 0%, transparent 78%);
+            mask-image:radial-gradient(ellipse 80% 70% at 50% 20%, #000 0%, transparent 78%);
+  }
+  .hero-crest{
+    position:absolute; top:-18px; right:clamp(-10px,2vw,18px); z-index:-1;
+    font-size:clamp(120px,22vw,190px); line-height:1;
+    color:transparent; -webkit-text-stroke:1px rgba(200,164,77,0.16);
+    font-family:var(--font-display); user-select:none; pointer-events:none;
+    filter:drop-shadow(0 0 26px rgba(200,164,77,0.05));
+  }
+  .hero .eyebrow{
+    font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--gold); font-weight:700; margin-bottom:12px;
+  }
+  .hero h1{
+    font-family:var(--font-display); font-size:clamp(38px,8vw,58px);
+    font-weight:700; letter-spacing:.01em; line-height:1.05;
+    background:linear-gradient(180deg, var(--gold-hi) 15%, var(--gold-dim) 115%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero p{
+    margin-top:12px; color:var(--ink-2); font-size:14.5px; line-height:1.6;
+    max-width:460px; margin-left:auto; margin-right:auto;
+  }
+
+  /* ── "часы" статистики — фирменный элемент страницы ── */
+  .clock-row{
+    display:flex; justify-content:center; gap:clamp(8px,2.4vw,14px); margin-top:clamp(24px,5vw,30px);
+    flex-wrap:wrap;
+  }
+  .clock{
+    position:relative; min-width:104px; padding:12px 16px 11px;
+    background:var(--bg-raised); border:1px solid var(--border); border-radius:10px;
+  }
+  .clock::before,.clock::after{
+    content:""; position:absolute; width:9px; height:9px; border-color:var(--gold-dim); opacity:.7;
+  }
+  .clock::before{top:5px; left:5px; border-top:1.5px solid; border-left:1.5px solid;}
+  .clock::after{bottom:5px; right:5px; border-bottom:1.5px solid; border-right:1.5px solid;}
+  .clock b{
+    display:block; font-family:var(--font-mono); font-variant-numeric:tabular-nums;
+    font-size:clamp(21px,4vw,26px); font-weight:700; color:var(--ivory); letter-spacing:.01em;
+  }
+  .clock span{
+    display:block; margin-top:3px; font-size:10px; color:var(--ink-3);
+    text-transform:uppercase; letter-spacing:.09em;
+  }
+
+  /* ══════════════════════════ PODIUM ══════════════════════════ */
+  .podium{
+    display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:22px;
+    align-items:end;
+  }
+  .podium-card{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:16px;
+    padding:20px 10px 18px; text-align:center; position:relative;
+    animation:riseIn .5s var(--ease) backwards;
+  }
+  .podium-card.p1{
+    order:2; padding-top:28px;
+    border-color:rgba(200,164,77,0.45);
+    background:linear-gradient(180deg, rgba(200,164,77,0.09), transparent 60%), var(--bg-panel);
+    box-shadow:0 0 0 1px rgba(200,164,77,0.12), 0 16px 34px rgba(0,0,0,0.35);
+    animation-delay:.08s;
+  }
+  .podium-card.p2{order:1; animation-delay:.16s;}
+  .podium-card.p3{order:3; animation-delay:.02s;}
+  .podium-num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:38px; height:38px; margin-bottom:10px; border-radius:50%;
+    font-family:var(--font-mono); font-size:16px; font-weight:700;
+    border:1px solid var(--border); background:var(--bg-raised);
+  }
+  .p1 .podium-num{color:var(--gold-hi); border-color:rgba(200,164,77,0.5); box-shadow:0 0 0 4px rgba(200,164,77,0.08);}
+  .p2 .podium-num{color:#d7dae6;}
+  .p3 .podium-num{color:var(--crimson-hi); border-color:rgba(181,87,60,0.4);}
+  .podium-piece{
+    display:block; font-size:clamp(30px,6vw,38px); line-height:1; margin-bottom:8px;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+  }
+  .p1 .podium-piece{color:var(--gold-hi); text-shadow:0 0 22px rgba(236,206,133,0.35);}
+  .p2 .podium-piece{color:#c3c8db;}
+  .p3 .podium-piece{color:var(--crimson-hi); text-shadow:0 0 16px rgba(217,131,98,0.25);}
+  .podium-rank{
+    font-family:var(--font-mono); font-size:10px; color:var(--ink-3);
+    letter-spacing:.1em; text-transform:uppercase; margin-bottom:6px;
+  }
+  .podium-name{
+    font-weight:700; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .podium-pts{margin-top:6px; font-family:var(--font-mono); font-size:19px; font-weight:700; color:var(--gold);}
+  .podium-pts small{font-size:10px; color:var(--ink-3); font-weight:600; font-family:var(--font-body);}
+
+  @keyframes riseIn{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ══════════════════════════ BOARD / TABLE ══════════════════════════ */
+  .board{
+    background:var(--bg-panel); border:1px solid var(--border); border-radius:16px; overflow:hidden;
+  }
+  .board-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    padding:16px 20px; border-bottom:1px solid var(--border);
+  }
+  .board-head h2{
+    font-family:var(--font-display); font-size:17px; font-weight:700; letter-spacing:.01em;
+  }
+  .board-head .sub{font-size:11px; color:var(--ink-3); font-family:var(--font-mono);}
+
+  .lb-search-wrap{padding:12px 20px; border-bottom:1px solid var(--border);}
+  .search-field{position:relative; display:flex; align-items:center;}
+  .search-ic{
+    position:absolute; left:14px; color:var(--ink-3); pointer-events:none;
+    transition:color .15s var(--ease);
+  }
+  .lb-search{
+    width:100%; padding:10px 38px 10px 38px; border-radius:9px;
+    background:var(--bg-raised); border:1px solid var(--border);
+    color:var(--ivory); font-size:13.5px; font-family:var(--font-body);
+    transition:border-color .15s var(--ease), background .15s var(--ease);
+  }
+  .lb-search::placeholder{color:var(--ink-3);}
+  .lb-search:hover{background:var(--bg-panel-2);}
+  .lb-search:focus{outline:none; border-color:var(--gold-dim); background:var(--bg-panel-2);}
+  .lb-search:focus + .lb-search-clear ~ .search-ic,
+  .search-field:focus-within .search-ic{color:var(--gold-hi);}
+  .lb-search-clear{
+    position:absolute; right:8px; width:24px; height:24px; border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; border:none; color:var(--ink-3); font-size:18px; line-height:1;
+    cursor:pointer; transition:color .15s var(--ease), background .15s var(--ease);
+  }
+  .lb-search-clear:hover{color:var(--gold-hi); background:var(--bg-panel-2);}
+  .lb-no-match, .empty, .loading, .error{
+    padding:34px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; line-height:1.6;
+  }
+  .lb-no-match b{display:block; color:var(--ink-2); font-family:var(--font-display); font-size:16px; margin-bottom:6px; font-weight:700;}
+  .lb-row.is-hidden{display:none;}
+  .lb-match{color:var(--gold-hi); font-weight:700;}
+
+  .row-grid{display:grid; grid-template-columns:56px 1fr 96px 92px;}
+
+  .lb-header{
+    font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-3);
+    font-weight:700; padding:11px 20px; border-bottom:1px solid var(--border);
+  }
+  .lb-header > div:nth-child(3), .lb-header > div:nth-child(4){text-align:right;}
+
+  .lb-row{
+    padding:12px 20px; border-bottom:1px solid var(--border-soft); align-items:center;
+    transition:background .12s var(--ease);
+    animation:fadeUp .4s var(--ease) backwards;
+  }
+  .lb-row:last-child{border-bottom:none;}
+  .lb-row:hover{background:var(--bg-panel-2);}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  /* ранг: моно-число + клетка доски — чередование цвета клетки = чередование строк, как на реальной доске */
+  .lb-rank-wrap{display:flex; align-items:center; gap:9px;}
+  .sq-chip{
+    width:9px; height:9px; border-radius:2px; flex:none;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
+  }
+  .lb-row:nth-child(odd) .sq-chip{background:var(--sq-light);}
+  .lb-row:nth-child(even) .sq-chip{background:var(--sq-dark); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.03);}
+  .lb-rank{font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--ink-2); font-variant-numeric:tabular-nums;}
+  .lb-rank.top1{color:var(--gold-hi);}
+  .lb-rank.top2{color:#d7dae6;}
+  .lb-rank.top3{color:var(--crimson-hi);}
+
+  .lb-name{font-weight:600; font-size:14.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .lb-pts{text-align:right; font-family:var(--font-mono); font-weight:700; color:var(--gold); font-size:14.5px; font-variant-numeric:tabular-nums;}
+  .lb-tours{text-align:right; font-family:var(--font-mono); font-size:12.5px; color:var(--ink-3); font-variant-numeric:tabular-nums;}
+
+  .empty, .loading, .error{padding:50px 20px; font-size:14px;}
+  .empty b, .error b{display:block; color:var(--ink-2); font-family:var(--font-display); font-size:16px; margin-bottom:6px; font-weight:700;}
+  .error b{color:var(--crimson-hi);}
+  .loading .spinner{
+    width:26px; height:26px; margin:0 auto 14px; border-radius:50%;
+    border:3px solid var(--border); border-top-color:var(--gold);
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ══════════════════════════ TOURNAMENTS LOG ══════════════════════════ */
+  .tours-section{margin-top:clamp(22px,4vw,30px);}
+  .tours-section h2{
+    font-family:var(--font-display); font-size:17px; font-weight:700; margin-bottom:12px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .tours-section h2 .ic{color:var(--gold-hi); font-size:19px;}
+  .tour-item{
+    display:flex; justify-content:space-between; gap:12px; align-items:center;
+    padding:13px 16px; border:1px solid var(--border); border-radius:12px; margin-bottom:8px;
+    background:var(--bg-panel); font-size:13.5px;
+    transition:border-color .15s var(--ease), background .15s var(--ease);
+  }
+  .tour-item:hover{border-color:var(--border-soft); background:var(--bg-panel-2);}
+  .tour-main{display:flex; align-items:baseline; gap:9px; min-width:0;}
+  .tour-idx{font-family:var(--font-mono); font-size:11px; color:var(--ink-3); flex:none;}
+  .tour-item a{color:var(--gold-hi); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .tour-item a:hover{text-decoration:underline;}
+  .tour-item span.tname{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;}
+  .tour-item .tour-meta{color:var(--ink-3); font-size:11.5px; font-family:var(--font-mono); flex:none; white-space:nowrap;}
+
+  /* ══════════════════════════ RESPONSIVE ══════════════════════════ */
+  @media (max-width:640px){
+    .row-grid{grid-template-columns:44px 1fr 76px 0;}
+    .lb-tours{display:none;}
+    .lb-header > div:nth-child(4){display:none;}
+    .board-head{padding:14px 16px;}
+    .lb-header, .lb-row{padding-left:16px; padding-right:16px;}
+  }
+  @media (max-width:520px){
+    .podium{grid-template-columns:1fr; gap:9px;}
+    .podium-card.p1, .podium-card.p2, .podium-card.p3{order:0; padding-top:18px;}
+    .tour-item{flex-direction:column; align-items:flex-start; gap:5px;}
+    .clock{min-width:90px; padding:10px 12px 9px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="top-nav">
+    <a href="/" class="back">← На главную</a>
+  </div>
+
+  <div class="hero">
+    <div class="hero-crest">♞</div>
+    <h1>Дурка</h1>
+    <p>Сводный зачёт по всем клубным турнирам lichess. Каждый сыгранный турнир добавляет очки в общий счёт — набирай их турнир за турниром.</p>
+    <div class="clock-row">
+      <div class="clock"><b id="stat-players">—</b><span>Игроков</span></div>
+      <div class="clock"><b id="stat-tournaments">—</b><span>Турниров</span></div>
+      <div class="clock"><b id="stat-points">—</b><span>Очков всего</span></div>
+    </div>
+  </div>
+
+  <div id="podium-wrap"></div>
+
+  <div class="board">
+    <div class="board-head">
+      <h2><span class="ic">♛</span>Лидерборд</h2>
+      <span class="sub" id="board-updated"></span>
+    </div>
+    <div class="lb-search-wrap" style="display:none;">
+      <div class="search-field">
+        <svg class="search-ic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="lb-search" class="lb-search" placeholder="Найти игрока…" autocomplete="off" aria-label="Поиск по игрокам">
+        <button type="button" id="lb-search-clear" class="lb-search-clear" aria-label="Очистить поиск" hidden>&times;</button>
+      </div>
+    </div>
+    <div class="lb-header row-grid">
+      <div>#</div><div>Игрок</div><div>Очки</div><div>Турниров</div>
+    </div>
+    <div id="lb-body">
+      <div class="loading"><div class="spinner"></div>Загружаем лидерборд…</div>
+    </div>
+    <div id="lb-no-match" class="lb-no-match" hidden><b>Никого не нашли</b>Попробуйте другой ник или его часть.</div>
+  </div>
+
+  <div class="tours-section">
+    <h2><span class="ic">♟</span>Учтённые турниры</h2>
+    <div id="tours-body">
+      <div class="loading" style="padding:20px;"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+let lbData = [];
+let lbQuery = '';
+
+function highlightMatch(name, query){
+  if(!query) return escapeHtml(name);
+  const idx = name.toLowerCase().indexOf(query.toLowerCase());
+  if(idx === -1) return escapeHtml(name);
+  const before = name.slice(0, idx);
+  const match = name.slice(idx, idx + query.length);
+  const after = name.slice(idx + query.length);
+  return `${escapeHtml(before)}<span class="lb-match">${escapeHtml(match)}</span>${escapeHtml(after)}`;
+}
+
+function renderLeaderboardRows(){
+  const body = document.getElementById('lb-body');
+  const noMatch = document.getElementById('lb-no-match');
+  const q = lbQuery.trim().toLowerCase();
+  const filtered = q ? lbData.filter(p => p.username.toLowerCase().includes(q)) : lbData;
+
+  body.innerHTML = '';
+  filtered.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row row-grid';
+    row.style.animationDelay = Math.min(i * 0.03, 0.4) + 's';
+    const rankCls = p.rank === 1 ? 'top1' : p.rank === 2 ? 'top2' : p.rank === 3 ? 'top3' : '';
+    const rankMark = p.rank <= 3
+      ? `<span class="medal-piece">${['♚','♛','♞'][p.rank-1]}</span>`
+      : String(p.rank).padStart(2,'0');
+    row.innerHTML = `
+      <div class="lb-rank-wrap">
+        <span class="sq-chip"></span>
+        <span class="lb-rank ${rankCls}">${rankMark}</span>
+      </div>
+      <div class="lb-name">${highlightMatch(p.username, q)}</div>
+      <div class="lb-pts">${p.points.toLocaleString('ru-RU')}</div>
+      <div class="lb-tours">${p.tournaments}</div>
+    `;
+    body.appendChild(row);
+  });
+
+  const isEmptySearch = q && filtered.length === 0;
+  noMatch.hidden = !isEmptySearch;
+  body.hidden = isEmptySearch;
+
+  const updated = document.getElementById('board-updated');
+  updated.textContent = q
+    ? `найдено: ${filtered.length} из ${lbData.length}`
+    : (lbData.length ? 'обновляется автоматически' : '');
+}
+
+async function loadLeaderboard(){
+  const body = document.getElementById('lb-body');
+  const podiumWrap = document.getElementById('podium-wrap');
+  const searchWrap = document.querySelector('.lb-search-wrap');
+  try{
+    const res = await fetch('/api/durka/leaderboard');
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    lbData = data;
+
+    document.getElementById('stat-players').textContent = data.length;
+    document.getElementById('stat-points').textContent = data.reduce((s,p)=>s+p.points,0).toLocaleString('ru-RU');
+
+    if(!data.length){
+      body.innerHTML = '<div class="empty"><b>Здесь пока тихо</b>Как только будет обработан первый турнир — тут появится лидерборд.</div>';
+      podiumWrap.innerHTML = '';
+      searchWrap.style.display = 'none';
+      document.getElementById('board-updated').textContent = '';
+      return;
+    }
+    searchWrap.style.display = '';
+
+    // Подиум (топ-3): король — 1 место, ферзь — 2, конь — 3
+    if(data.length >= 3){
+      const [p1,p2,p3] = data;
+      const medalCard = (p, piece, rankLabel, cls) => `
+        <div class="podium-card ${cls}">
+          <div class="podium-piece">${piece}</div>
+          <div class="podium-rank">${rankLabel}</div>
+          <div class="podium-name">${escapeHtml(p.username)}</div>
+          <div class="podium-pts">${p.points.toLocaleString('ru-RU')} <small>очк.</small></div>
+        </div>`;
+      podiumWrap.innerHTML = `<div class="podium">
+        ${medalCard(p2,'♛','2 место','p2')}
+        ${medalCard(p1,'♚','1 место','p1')}
+        ${medalCard(p3,'♞','3 место','p3')}
+      </div>`;
+    } else {
+      podiumWrap.innerHTML = '';
+    }
+
+    renderLeaderboardRows();
+  } catch(e){
+    body.innerHTML = '<div class="error"><b>Не удалось загрузить лидерборд</b>Обновите страницу — если ошибка повторится, попробуйте зайти чуть позже.</div>';
+    searchWrap.style.display = 'none';
+  }
+}
+
+function initSearch(){
+  const input = document.getElementById('lb-search');
+  const clearBtn = document.getElementById('lb-search-clear');
+
+  input.addEventListener('input', () => {
+    lbQuery = input.value;
+    clearBtn.hidden = lbQuery.length === 0;
+    if(lbData.length) renderLeaderboardRows();
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && input.value){
+      input.value = '';
+      lbQuery = '';
+      clearBtn.hidden = true;
+      if(lbData.length) renderLeaderboardRows();
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    lbQuery = '';
+    clearBtn.hidden = true;
+    if(lbData.length) renderLeaderboardRows();
+    input.focus();
+  });
+}
+
+async function loadTournaments(){
+  const body = document.getElementById('tours-body');
+  try{
+    const res = await fetch('/api/durka/tournaments');
+    if(!res.ok) throw new Error('bad response');
+    const list = await res.json();
+
+    document.getElementById('stat-tournaments').textContent = list.length;
+
+    if(!list.length){
+      body.innerHTML = '<div class="empty" style="padding:20px;"><b>Турниров пока нет</b>Как только клуб сыграет первый турнир, он появится в этом списке.</div>';
+      return;
+    }
+    body.innerHTML = '';
+    list.forEach((t, i) => {
+      const el = document.createElement('div');
+      el.className = 'tour-item';
+      const date = new Date(t.createdAt).toLocaleDateString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric' });
+      const idx = String(i + 1).padStart(2,'0');
+      el.innerHTML = `
+        <div class="tour-main">
+          <span class="tour-idx">${idx}</span>
+          ${t.url ? `<a href="${escapeHtml(t.url)}" target="_blank" rel="noopener">${escapeHtml(t.name || t.id)}</a>` : `<span class="tname">${escapeHtml(t.name || t.id)}</span>`}
+        </div>
+        <div class="tour-meta">${t.players} игроков · ${date}</div>
+      `;
+      body.appendChild(el);
+    });
+  } catch(e){
+    body.innerHTML = '<div class="error" style="padding:20px;"><b>Не удалось загрузить турниры</b>Попробуйте обновить страницу.</div>';
+  }
+}
+
+initSearch();
+loadLeaderboard();
+loadTournaments();
+// Автообновление раз в 60 секунд — на случай если скрипт как раз докидывает турнир
+setInterval(() => { loadLeaderboard(); loadTournaments(); }, 60000);
+</script>
+
+</body>
+</html>

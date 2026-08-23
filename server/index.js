@@ -409,8 +409,17 @@ function rowToUser(row) {
     fshrRating:       row.fshr_rating != null ? row.fshr_rating : null,
     fideRating:       row.fide_rating != null ? row.fide_rating : null,
     twoFactorEnabled: row.two_factor_enabled || false,
+    vipUntil:         row.vip_until != null ? Number(row.vip_until) : null,
   };
 }
+
+// ── VIP-значок ───────────────────────────────────────────────
+// Значок временный: активен, пока vipUntil в будущем. Никакой
+// отдельной чистки не требуется — как только время истекло,
+// isVip() везде начинает возвращать false сам по себе.
+function isVip(u) { return !!(u && u.vipUntil && u.vipUntil > Date.now()); }
+// Выдавать/снимать значок могут только эти два аккаунта (см. запрос владельца).
+function isVipGranter(username) { return ['chesshome', 'marina64'].includes((username || '').toLowerCase()); }
 
 async function getUser(usernameLow) {
   if (usersCache.has(usernameLow)) return usersCache.get(usernameLow);
@@ -426,17 +435,18 @@ async function saveUser(u) {
     INSERT INTO users (id, username, username_low, email, password_hash, rating,
       games_played, wins, losses, draws, avatar, role, banned, ban_reason,
       created_at, created_from_ip, created_device_id, emoji, bio, fshr_rating, fide_rating,
-      two_factor_enabled)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+      two_factor_enabled, vip_until)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
     ON CONFLICT (id) DO UPDATE SET
       rating=$6, games_played=$7, wins=$8, losses=$9, draws=$10,
       avatar=$11, role=$12, banned=$13, ban_reason=$14, emoji=$18,
-      bio=$19, fshr_rating=$20, fide_rating=$21, two_factor_enabled=$22
+      bio=$19, fshr_rating=$20, fide_rating=$21, two_factor_enabled=$22, vip_until=$23
   `, [u.id, u.username, u.username.toLowerCase(), u.email || null,
       u.passwordHash, u.rating, u.gamesPlayed, u.wins, u.losses, u.draws,
       u.avatar || null, u.role || 'user', u.banned || false, u.banReason || null,
       u.createdAt, u.createdFromIP || null, u.createdDeviceId || null, u.emoji || '',
-      u.bio || '', u.fshrRating ?? null, u.fideRating ?? null, u.twoFactorEnabled || false]);
+      u.bio || '', u.fshrRating ?? null, u.fideRating ?? null, u.twoFactorEnabled || false,
+      u.vipUntil ?? null]);
 }
 
 // ── Кэш глобального чата ──────────────────────────────────────
@@ -1109,6 +1119,7 @@ app.get('/following/:username', (req, res) => res.sendFile(path.join(__dirname, 
 
 app.get('/dev-diary', (req, res) => res.sendFile(path.join(__dirname, '../public/dev-diary.html')));
 app.get('/donate',   (req, res) => res.sendFile(path.join(__dirname, '../public/donate.html')));
+app.get('/durka',    (req, res) => res.sendFile(path.join(__dirname, '../public/durka.html')));
 
 // ── ЮKassa Донаты ─────────────────────────────────────────────
 const YUKASSA_SHOP_ID      = process.env.YUKASSA_SHOP_ID;
@@ -1694,7 +1705,7 @@ app.all('/api/ping',         (req, res) => res.status(200).end());
 app.get('/api/online/users', (req, res) => {
   const list = [...onlineUsers].map(username => {
     const u = usersCache.get(username.toLowerCase());
-    return u ? { username: u.username, rating: u.rating, role: u.role || 'user' } : { username, rating: null, role: 'user' };
+    return u ? { username: u.username, rating: u.rating, role: u.role || 'user', vip: isVip(u) } : { username, rating: null, role: 'user', vip: false };
   }).sort((a, b) => {
     if (a.role === 'admin' && b.role !== 'admin') return -1;
     if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -1925,6 +1936,53 @@ app.post('/api/admin/unban', authMiddleware, async (req, res) => {
       console.error('[Unban]', e);
       res.status(500).json({ error: 'Ошибка разбана: ' + e.message });
     }
+  });
+});
+
+// ── VIP-значок ──────────────────────────────────────────────────
+// Выдают/снимают только chesshome и Marina64 (requireVipGranter),
+// а не любой admin — так попросил владелец.
+app.post('/api/admin/vip/grant', authMiddleware, async (req, res) => {
+  await requireVipGranter(req, res, async () => {
+    try {
+      const target = await getUser((req.body.username || '').toLowerCase());
+      if (!target) return res.status(404).json({ error: 'Пользователь не найден' });
+      const days = Math.min(365, Math.max(1, parseInt(req.body.days) || 30));
+      // Если значок уже активен — продлеваем от текущей даты окончания, а не от "сейчас".
+      const base = isVip(target) ? target.vipUntil : Date.now();
+      target.vipUntil = base + days * 24 * 60 * 60 * 1000;
+      await saveUser(target);
+      const sock = findSocketByUsername(target.username);
+      if (sock) sock.emit('vip_updated', { vip: true, vipUntil: target.vipUntil });
+      res.json({ ok: true, username: target.username, vipUntil: target.vipUntil });
+    } catch (e) {
+      console.error('[VIP grant]', e);
+      res.status(500).json({ error: 'Ошибка выдачи значка: ' + e.message });
+    }
+  });
+});
+
+app.post('/api/admin/vip/revoke', authMiddleware, async (req, res) => {
+  await requireVipGranter(req, res, async () => {
+    try {
+      const target = await getUser((req.body.username || '').toLowerCase());
+      if (!target) return res.status(404).json({ error: 'Пользователь не найден' });
+      target.vipUntil = null;
+      await saveUser(target);
+      const sock = findSocketByUsername(target.username);
+      if (sock) sock.emit('vip_updated', { vip: false, vipUntil: null });
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[VIP revoke]', e);
+      res.status(500).json({ error: 'Ошибка снятия значка: ' + e.message });
+    }
+  });
+});
+
+app.get('/api/admin/vip/list', authMiddleware, async (req, res) => {
+  await requireVipGranter(req, res, async () => {
+    const r = await db('SELECT username, vip_until FROM users WHERE vip_until IS NOT NULL AND vip_until > $1 ORDER BY vip_until ASC', [Date.now()]);
+    res.json(r.rows.map(row => ({ username: row.username, vipUntil: Number(row.vip_until) })));
   });
 });
 
@@ -2658,8 +2716,11 @@ app.get('/api/dm/conversations', authMiddleware, async (req, res) => {
   const blockedRows = await db('SELECT blocked FROM dm_blocks WHERE blocker ILIKE $1', [me]);
   const blockedSet = new Set(blockedRows.rows.map(r => r.blocked.toLowerCase()));
 
-  const convs = Array.from(convMap.values())
-    .map(c => ({ ...c, unread: unreadMap.get(c.partner.toLowerCase()) || 0, blocked: blockedSet.has(c.partner.toLowerCase()) }))
+  const convsBase = Array.from(convMap.values())
+    .map(c => ({ ...c, unread: unreadMap.get(c.partner.toLowerCase()) || 0, blocked: blockedSet.has(c.partner.toLowerCase()) }));
+  // getUser() бьёт в кэш, если собеседник уже когда-то загружался — реального похода в БД
+  // почти никогда не будет; нужен только чтобы узнать текущий (живой) статус VIP.
+  const convs = (await Promise.all(convsBase.map(async c => ({ ...c, vip: isVip(await getUser(c.partner.toLowerCase())) }))))
     .sort((a, b) => new Date(b.lastTs) - new Date(a.lastTs));
 
   res.json(convs);
@@ -2676,7 +2737,8 @@ app.get('/api/dm/messages/:partner', authMiddleware, async (req, res) => {
   const msgs = r.rows.map(m => ({ id: m.id, from: m.from_user, to: m.to_user, text: m.text, ts: m.ts, read: m.read }));
   const blockedByMe      = await db('SELECT 1 FROM dm_blocks WHERE blocker ILIKE $1 AND blocked ILIKE $2', [me, partner]);
   const blockedByPartner = await db('SELECT 1 FROM dm_blocks WHERE blocker ILIKE $1 AND blocked ILIKE $2', [partner, me]);
-  res.json({ messages: msgs, blocked: blockedByMe.rows.length > 0, blockedByPartner: blockedByPartner.rows.length > 0 });
+  const partnerVip = isVip(await getUser(partner));
+  res.json({ messages: msgs, blocked: blockedByMe.rows.length > 0, blockedByPartner: blockedByPartner.rows.length > 0, partnerVip });
 });
 
 app.post('/api/dm/send', authMiddleware, rateLimit(limiterStrict), async (req, res) => {
@@ -4404,6 +4466,158 @@ app.get('/api/puzzles/topics', async (req, res) => {
   } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
 });
 
+// ══════════════════════════════════════════════════════════════
+//  DURKA — сводный лидерборд по результатам lichess-турниров
+// ══════════════════════════════════════════════════════════════
+//  Как это работает:
+//  1) durka_tournaments      — какие турниры уже засчитаны (защита от повторного начисления).
+//  2) durka_tournament_results — очки каждого игрока в каждом отдельном турнире (для истории/аудита).
+//  3) durka_players          — сумма очков по всем засчитанным турнирам (то, что видно на /durka).
+//
+//  Очки закидывает скрипт hi.py, который дергает Lichess API и шлёт
+//  результат сюда через POST /api/durka/add-tournament с секретным
+//  ключом в заголовке x-durka-key (см. DURKA_ADMIN_KEY в .env).
+//  Обычная сессия/логин тут не нужен — скрипт работает с сервера напрямую.
+
+async function initDurkaTables() {
+  try {
+    await db(`CREATE TABLE IF NOT EXISTS durka_players (
+      username_low TEXT PRIMARY KEY,
+      username     TEXT NOT NULL,
+      points       INT NOT NULL DEFAULT 0,
+      tournaments  INT NOT NULL DEFAULT 0,
+      updated_at   BIGINT NOT NULL
+    )`);
+    await db(`CREATE INDEX IF NOT EXISTS idx_durka_players_points ON durka_players(points DESC)`);
+
+    await db(`CREATE TABLE IF NOT EXISTS durka_tournaments (
+      id           TEXT PRIMARY KEY,
+      name         TEXT,
+      url          TEXT,
+      players      INT NOT NULL DEFAULT 0,
+      added_by     TEXT,
+      created_at   BIGINT NOT NULL
+    )`);
+
+    await db(`CREATE TABLE IF NOT EXISTS durka_tournament_results (
+      tournament_id TEXT NOT NULL,
+      username_low  TEXT NOT NULL,
+      username      TEXT NOT NULL,
+      points        INT NOT NULL DEFAULT 0,
+      rank          INT,
+      PRIMARY KEY (tournament_id, username_low)
+    )`);
+    await db(`CREATE INDEX IF NOT EXISTS idx_durka_results_tournament ON durka_tournament_results(tournament_id)`);
+
+    console.log('[Durka] Таблицы инициализированы');
+  } catch(e) { console.error('[Durka] init error:', e.message); }
+}
+
+// Публичный лидерборд — сумма очков по всем засчитанным турнирам.
+app.get('/api/durka/leaderboard', async (req, res) => {
+  try {
+    const r = await db(`SELECT username, points, tournaments FROM durka_players WHERE points > 0 ORDER BY points DESC, tournaments DESC LIMIT 200`);
+    res.json(r.rows.map((row, i) => ({
+      rank: i + 1,
+      username: row.username,
+      points: Number(row.points) || 0,
+      tournaments: Number(row.tournaments) || 0,
+    })));
+  } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
+});
+
+// Список уже засчитанных турниров — чтобы видеть историю на странице.
+app.get('/api/durka/tournaments', async (req, res) => {
+  try {
+    const r = await db(`SELECT id, name, url, players, created_at FROM durka_tournaments ORDER BY created_at DESC LIMIT 100`);
+    res.json(r.rows.map(row => ({
+      id: row.id, name: row.name, url: row.url,
+      players: Number(row.players) || 0,
+      createdAt: Number(row.created_at),
+    })));
+  } catch(e) { res.status(500).json({ error: 'Ошибка' }); }
+});
+
+// Проверка секретного ключа скрипта (НЕ обычная сессия пользователя).
+function durkaKeyMiddleware(req, res, next) {
+  const key = process.env.DURKA_ADMIN_KEY;
+  if (!key) return res.status(500).json({ error: 'DURKA_ADMIN_KEY не настроен на сервере' });
+  if (req.headers['x-durka-key'] !== key) return res.status(403).json({ error: 'Неверный ключ' });
+  next();
+}
+
+// Приём результатов одного турнира от hi.py.
+// body: { tournamentId, name, url, results: [{ username, points, rank }] }
+app.post('/api/durka/add-tournament', durkaKeyMiddleware, async (req, res) => {
+  try {
+    const { tournamentId, name, url, results } = req.body || {};
+    if (!tournamentId || !Array.isArray(results) || !results.length) {
+      return res.status(400).json({ error: 'tournamentId и results обязательны' });
+    }
+
+    const already = await db(`SELECT id FROM durka_tournaments WHERE id = $1`, [tournamentId]);
+    if (already.rows.length && req.query.force !== '1') {
+      return res.status(409).json({ error: 'Этот турнир уже засчитан в лидерборд', tournamentId });
+    }
+
+    const cleaned = results
+      .map(r => ({
+        username: String(r.username || '').trim(),
+        points: Number(r.points) || 0,
+        rank: r.rank != null ? Number(r.rank) : null,
+      }))
+      .filter(r => r.username);
+
+    if (!cleaned.length) return res.status(400).json({ error: 'Пустой список результатов' });
+
+    await withTransaction(async (client) => {
+      // Если пересчитываем турнир (force=1) — сначала вычитаем его старый вклад.
+      if (already.rows.length) {
+        const old = await client.query(`SELECT username_low, points FROM durka_tournament_results WHERE tournament_id = $1`, [tournamentId]);
+        for (const row of old.rows) {
+          await client.query(
+            `UPDATE durka_players SET points = GREATEST(points - $1, 0), tournaments = GREATEST(tournaments - 1, 0) WHERE username_low = $2`,
+            [row.points, row.username_low]
+          );
+        }
+        await client.query(`DELETE FROM durka_tournament_results WHERE tournament_id = $1`, [tournamentId]);
+      }
+
+      for (const r of cleaned) {
+        const usernameLow = r.username.toLowerCase();
+        await client.query(
+          `INSERT INTO durka_tournament_results (tournament_id, username_low, username, points, rank)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [tournamentId, usernameLow, r.username, r.points, r.rank]
+        );
+        await client.query(
+          `INSERT INTO durka_players (username_low, username, points, tournaments, updated_at)
+           VALUES ($1, $2, $3, 1, $4)
+           ON CONFLICT (username_low) DO UPDATE SET
+             username = EXCLUDED.username,
+             points = durka_players.points + EXCLUDED.points,
+             tournaments = durka_players.tournaments + 1,
+             updated_at = EXCLUDED.updated_at`,
+          [usernameLow, r.username, r.points, Date.now()]
+        );
+      }
+
+      await client.query(
+        `INSERT INTO durka_tournaments (id, name, url, players, added_by, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, url = EXCLUDED.url, players = EXCLUDED.players, created_at = durka_tournaments.created_at`,
+        [tournamentId, name || tournamentId, url || null, cleaned.length, 'hi.py', Date.now()]
+      );
+    });
+
+    console.log(`[Durka] Турнир ${tournamentId} засчитан: ${cleaned.length} игроков`);
+    res.json({ ok: true, tournamentId, playersAdded: cleaned.length });
+  } catch(e) {
+    console.error('[Durka] add-tournament error:', e.message);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 app.get('/api/puzzles/daily', async (req, res) => {
   try {
     const r = await db('SELECT * FROM puzzles ORDER BY created_at ASC');
@@ -5204,6 +5418,19 @@ async function requireAdmin(req, res, cb) {
   }
 }
 
+// Отдельная проверка для VIP-значка: не завязана на общую роль admin,
+// пускает только chesshome и Marina64 (см. isVipGranter выше).
+async function requireVipGranter(req, res, cb) {
+  try {
+    const me = await getUser(req.user.username.toLowerCase());
+    if (!me || !isVipGranter(me.username)) return res.status(403).json({ error: 'Нет прав на выдачу VIP-значка' });
+    await cb(me);
+  } catch (e) {
+    console.error('[requireVipGranter]', e);
+    if (!res.headersSent) res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
+}
+
 function sanitizeUser(u) {
   return {
     id: u.id, username: u.username, rating: u.rating,
@@ -5213,11 +5440,12 @@ function sanitizeUser(u) {
     puzzle_rating: u.puzzle_rating ?? 1200, puzzle_solved: u.puzzle_solved ?? 0,
     puzzle_attempted: u.puzzle_attempted ?? 0, emoji: u.emoji || '',
     bio: u.bio || '', fshrRating: u.fshrRating ?? null, fideRating: u.fideRating ?? null,
+    vip: isVip(u), vipUntil: isVip(u) ? u.vipUntil : null,
   };
 }
 
 function adminSanitizeUser(u) {
-  return { ...sanitizeUser(u), email: u.email || null, createdFromIP: u.createdFromIP || null, createdDeviceId: u.createdDeviceId || null };
+  return { ...sanitizeUser(u), email: u.email || null, createdFromIP: u.createdFromIP || null, createdDeviceId: u.createdDeviceId || null, vipUntil: u.vipUntil ?? null };
 }
 
 function sanitizeTournament(t) {
@@ -6181,7 +6409,7 @@ io.on('connection', (socket) => {
     }
     socket._lastChatMsg = text; socket._dupCount = 0;
 
-    const msg = { id: uuidv4(), username: socket.username, message: text, role: user?.role === 'admin' ? 'admin' : 'user', timestamp: now, emoji: user.emoji || '' };
+    const msg = { id: uuidv4(), username: socket.username, message: text, role: user?.role === 'admin' ? 'admin' : 'user', timestamp: now, emoji: user.emoji || '', vip: isVip(user) };
     globalChat.push(msg); if (globalChat.length > 500) globalChat.shift();
     io.emit('global_chat', msg);
     saveChatMsg(msg).catch(e => console.error('[Chat save]', e.message));
@@ -6223,6 +6451,7 @@ async function main() {
 
   await loadBansFromDB();
   await initPuzzleTables();
+  await initDurkaTables();
   await initClubChatTable();
   await initDonateTable();
   await initTournamentChatTable();
@@ -6242,6 +6471,9 @@ async function main() {
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS fide_rating INT`);
   // 2FA по email при входе
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE`);
+  // VIP-значок: временный статус (метка времени окончания в мс), выдаётся вручную
+  // из админ-панели только chesshome и Marina64 (см. isVipGranter/requireVipGranter).
+  await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS vip_until BIGINT`);
   // Товарищеские (нерейтинговые) партии: старые записи считаются рейтинговыми
   await db(`ALTER TABLE games ADD COLUMN IF NOT EXISTS rated BOOLEAN DEFAULT TRUE`);
   // Создание таблицы для дневника разработки (перенесено сюда из глобальной области)

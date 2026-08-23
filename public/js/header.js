@@ -155,6 +155,11 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
   function isAdmin(u) { return u && ADMINS.includes(u.username); }
+  // Значок VIP приходит с сервера уже посчитанным (u.vip) — сам гаснет через месяц,
+  // здесь просто рисуем картинку, если он активен.
+  function vipBadgeHTML(u) {
+    return (u && u.vip) ? `<img src="/img/vip.png" class="ch-vip-badge" alt="VIP" title="VIP-игрок">` : '';
+  }
   function avatarHTML(u) {
     if (u.avatar) return `<img src="${esc(u.avatar)}" alt="">`;
     return esc((u.username || '?')[0].toUpperCase());
@@ -485,6 +490,8 @@
     }
     .ch-notif-dot { width: 7px; height: 7px; border-radius: 50%; background: #e74c3c; }
     .ch-caret { font-size: 8px; opacity: 0.38; }
+    .ch-vip-badge { height: 15px; width: auto; vertical-align: -3px; margin-left: 3px; flex-shrink: 0; }
+    .ch-udrop-name .ch-vip-badge { height: 17px; width: auto; vertical-align: -3px; }
 
     /* НЕПРОЧИТАННЫЕ СООБЩЕНИЯ — золотой счётчик рядом с ником */
     .ch-msg-count {
@@ -891,14 +898,14 @@
       <div id="ch-user-wrap">
         <button class="ch-user-btn" id="ch-user-btn" aria-haspopup="true" aria-expanded="false">
           <div class="ch-ava">${avatarHTML(u)}</div>
-          <span class="ch-user-name">${esc(u.username)}${_s.unreadCount > 0 ? `<span class="ch-msg-count" id="ch-msg-count">${_s.unreadCount > 99 ? '99+' : _s.unreadCount}</span>` : ''}</span>
+          <span class="ch-user-name">${esc(u.username)}${vipBadgeHTML(u)}${_s.unreadCount > 0 ? `<span class="ch-msg-count" id="ch-msg-count">${_s.unreadCount > 99 ? '99+' : _s.unreadCount}</span>` : ''}</span>
           <span class="ch-rating">${u.rating || 1200}</span>
           ${admin ? `<span class="ch-admin-badge">ADMIN</span>` : ''}
           <span class="ch-caret">▾</span>
         </button>
         <div class="ch-udrop" id="ch-udrop">
           <div class="ch-udrop-head">
-            <div class="ch-udrop-name">${esc(u.username)}</div>
+            <div class="ch-udrop-name">${esc(u.username)}${vipBadgeHTML(u)}</div>
             <div class="ch-udrop-stats">
               <div class="ch-udrop-stat"><strong>${u.rating || 1200}</strong>рейтинг</div>
               <div class="ch-udrop-stat"><strong>${u.wins || 0}</strong>побед</div>

@@ -157,6 +157,8 @@
       color: var(--text-primary);
     }
 
+    .vip-badge-sm { height: 14px; width: auto; vertical-align: -2px; margin-left: 2px; }
+
     .inbox-conv-preview {
       font-size: 12px;
       color: var(--text-muted);
@@ -1159,7 +1161,7 @@ function renderConvList() {
         ${isOnline && !isSystem ? '<div class="online-dot-sm"></div>' : ''}
       </div>
       <div class="inbox-conv-info">
-        <div class="inbox-conv-name">${escapeHtml(c.partner)}${isSystem ? ' <span style="font-size:10.5px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:middle">СИСТЕМА</span>' : ''}</div>
+        <div class="inbox-conv-name">${escapeHtml(c.partner)}${c.vip ? ' <img src="/img/vip.png" class="vip-badge-sm" alt="VIP" title="VIP-игрок">' : ''}${isSystem ? ' <span style="font-size:10.5px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:1px 5px;margin-left:4px;vertical-align:middle">СИСТЕМА</span>' : ''}</div>
         <div class="inbox-conv-preview">${c.blocked ? '🚫 Заблокирован' : escapeHtml(c.lastMsg || '')}</div>
       </div>
       <div class="inbox-conv-meta">
@@ -1211,6 +1213,9 @@ async function openConversation(partner) {
     messages = data.messages || [];
     const conv = conversations.find(c => c.partner === partner) || {};
     conv.unread = 0;
+    // На случай новой переписки, которой ещё не было в списке диалогов —
+    // берём актуальный VIP-статус собеседника прямо из ответа /dm/messages.
+    conv.vip = !!data.partnerVip;
     renderConvList();
 
     // Mark as read
@@ -1237,6 +1242,7 @@ function buildChatUI(partner, data) {
   const conv = conversations.find(c => c.partner === partner) || {};
   const isBlocked = conv.blocked;
   const isBlockedBy = data.blockedByPartner;
+  const isVipPartner = data.partnerVip != null ? !!data.partnerVip : !!conv.vip;
   const isOnline = onlineUsers.has(partner);
   const isSystem = isSystemPartner(partner);
   const profileClick = isSystem ? '' : `onclick="window.location='/profile/${escapeHtml(partner)}'"`;
@@ -1246,7 +1252,7 @@ function buildChatUI(partner, data) {
       <button class="back-btn" onclick="mobileBack()">← Назад</button>
       <div class="inbox-conv-avatar" style="width:40px;height:40px;font-size:16px;${isSystem ? '' : 'cursor:pointer'}" ${profileClick}>${isSystem ? '📢' : escapeHtml(partner[0].toUpperCase())}${isOnline && !isSystem ? '<div class="online-dot-sm"></div>' : ''}</div>
       <div class="chat-user-info">
-        <div class="chat-user-name" ${isSystem ? '' : 'style="cursor:pointer"'} ${profileClick}>${escapeHtml(partner)}</div>
+        <div class="chat-user-name" ${isSystem ? '' : 'style="cursor:pointer"'} ${profileClick}>${escapeHtml(partner)}${isVipPartner ? ' <img src="/img/vip.png" class="vip-badge-sm" alt="VIP" title="VIP-игрок">' : ''}</div>
         <div class="chat-user-status ${isOnline && !isSystem ? 'chat-online-status' : ''}">${isSystem ? 'Системные уведомления' : (isOnline ? '● онлайн' : 'не в сети')}</div>
       </div>
       <div class="inbox-chat-actions">

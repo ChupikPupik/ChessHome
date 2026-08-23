@@ -64,6 +64,7 @@
     .rating-brush-window:active { cursor: grabbing; }
     .rating-brush-handle { fill: var(--accent); cursor: ew-resize; }
     .rating-brush-hint { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+    .vip-badge-lg { height: 24px; width: auto; vertical-align: -4px; margin-left: 6px; }
   </style>
 </head>
 <body>
@@ -691,7 +692,7 @@ async function loadProfile(username){
     const isMe = !!(currentUser && currentUser.username === user.username);
 
     document.getElementById('profile-avatar').innerText = user.username[0].toUpperCase();
-    document.getElementById('profile-name').innerText = user.username;
+    document.getElementById('profile-name').innerHTML = escapeHtml(user.username) + (user.vip ? ' <img src="/img/vip.png" class="vip-badge-lg" alt="VIP" title="VIP-игрок">' : '');
     document.getElementById('profile-rating').innerText = '★ ' + user.rating;
     document.getElementById('profile-joined').innerText = 'На сайте с ' + new Date(user.createdAt).toLocaleDateString('ru');
     document.title = user.username + ' — Chess Home';
@@ -736,7 +737,8 @@ async function loadProfile(username){
     
     let badgeHtml = '';
     if (user.banned) badgeHtml += '<span style="background:var(--red);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px">🚫 Заблокирован</span> ';
-    if (user.role === 'admin') badgeHtml += '<span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px">⚙️ Администратор</span>';
+    if (user.role === 'admin') badgeHtml += '<span style="background:var(--accent);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px">⚙️ Администратор</span> ';
+    if (user.vip) badgeHtml += '<span style="background:linear-gradient(135deg,#f5c542,#f59e0b);color:#1a1a2e;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">👑 VIP' + (user.vipUntil ? (' до ' + new Date(user.vipUntil).toLocaleDateString('ru')) : '') + '</span>';
     document.getElementById('profile-badge').innerHTML = badgeHtml;
 
     document.getElementById('stat-games').innerText = user.gamesPlayed || 0;

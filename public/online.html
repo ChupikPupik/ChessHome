@@ -246,6 +246,8 @@
       margin-bottom: 3px;
     }
 
+    .vip-badge { height: 15px; width: auto; vertical-align: -2px; margin-left: 2px; }
+
     .player-stats {
       display: flex;
       align-items: center;
@@ -595,7 +597,7 @@ function render() {
         </div>
 
         <div class="player-info">
-          <div class="player-name">${escH(u.username)}${isMe ? ' <span style="font-size:11px;color:var(--accent)">(вы)</span>' : ''}</div>
+          <div class="player-name">${escH(u.username)}${u.vip ? ' <img src="/img/vip.png" class="vip-badge" alt="VIP" title="VIP-игрок">' : ''}${isMe ? ' <span style="font-size:11px;color:var(--accent)">(вы)</span>' : ''}</div>
           <div class="player-stats">
             ${sortMode !== 'rating' ? `<span class="player-stat">⭐ <span class="stat-val">${rating}</span></span>` : ''}
             ${sortMode !== 'games'  ? `<span class="player-stat">♟ <span class="stat-val">${games}</span></span>` : ''}
