@@ -1792,6 +1792,7 @@ app.post('/api/admin/ban', authMiddleware, async (req, res) => {
         if (sock) { sock.emit('error', 'Аккаунт заблокирован'); sock.disconnect(); }
         count++;
       }
+      await logAdminAction(req.user.username, 'ban', target.username, { reason, accountsBanned: count, viaDeviceId: targetDevice || null });
       res.json({ ok: true, accountsBanned: count });
     } catch (e) {
       console.error('[Ban]', e);
@@ -1809,6 +1810,7 @@ app.post('/api/admin/unban', authMiddleware, async (req, res) => {
       if (target.createdDeviceId) { bannedDevices.delete(target.createdDeviceId); await removeBanFromDB(null, target.createdDeviceId); }
       if (req.body.unbanIP && target.createdFromIP) { bannedIPs.delete(target.createdFromIP); await removeBanFromDB(target.createdFromIP, null); }
       await saveUser(target);
+      await logAdminAction(req.user.username, 'unban', target.username, { unbanIP: !!req.body.unbanIP });
       res.json({ ok: true });
     } catch (e) {
       console.error('[Unban]', e);
@@ -1830,6 +1832,7 @@ app.post('/api/admin/vip/grant', authMiddleware, async (req, res) => {
       const base = isVip(target) ? target.vipUntil : Date.now();
       target.vipUntil = base + days * 24 * 60 * 60 * 1000;
       await saveUser(target);
+      await logAdminAction(req.user.username, 'vip_grant', target.username, { days, vipUntil: target.vipUntil });
       const sock = findSocketByUsername(target.username);
       if (sock) sock.emit('vip_updated', { vip: true, vipUntil: target.vipUntil });
       res.json({ ok: true, username: target.username, vipUntil: target.vipUntil });
@@ -1847,6 +1850,7 @@ app.post('/api/admin/vip/revoke', authMiddleware, async (req, res) => {
       if (!target) return res.status(404).json({ error: 'Пользователь не найден' });
       target.vipUntil = null;
       await saveUser(target);
+      await logAdminAction(req.user.username, 'vip_revoke', target.username, {});
       const sock = findSocketByUsername(target.username);
       if (sock) sock.emit('vip_updated', { vip: false, vipUntil: null });
       res.json({ ok: true });
@@ -1893,6 +1897,7 @@ app.post('/api/admin/ipban', authMiddleware, async (req, res) => {
         count++;
       }
     }
+    await logAdminAction(req.user.username, 'ip_ban', ip, { viaUser: target.username, accountsBanned: count });
     res.json({ ok: true, ip, accountsBanned: count });
   });
 });
@@ -1902,6 +1907,7 @@ app.post('/api/admin/ipunban', authMiddleware, async (req, res) => {
     const ip = req.body.ip;
     if (!ip) return res.status(400).json({ error: 'Укажите IP' });
     bannedIPs.delete(ip); await removeBanFromDB(ip, null);
+    await logAdminAction(req.user.username, 'ip_unban', ip, {});
     res.json({ ok: true });
   });
 });
@@ -1911,6 +1917,7 @@ app.post('/api/admin/unban-device', authMiddleware, async (req, res) => {
     const deviceId = req.body.deviceId;
     if (!deviceId) return res.status(400).json({ error: 'Укажите deviceId' });
     bannedDevices.delete(deviceId); await removeBanFromDB(null, deviceId);
+    await logAdminAction(req.user.username, 'device_unban', deviceId, {});
     res.json({ ok: true });
   });
 });
@@ -1923,6 +1930,7 @@ app.post('/api/admin/unban-full', authMiddleware, async (req, res) => {
     if (target.createdDeviceId) { bannedDevices.delete(target.createdDeviceId); await removeBanFromDB(null, target.createdDeviceId); }
     if (target.createdFromIP)   { bannedIPs.delete(target.createdFromIP); await removeBanFromDB(target.createdFromIP, null); }
     await saveUser(target);
+    await logAdminAction(req.user.username, 'unban_full', target.username, {});
     res.json({ ok: true });
   });
 });
@@ -1931,8 +1939,10 @@ async function handleDeleteChatMsg(req, res) {
   await requireAdmin(req, res, async () => {
     const idx = globalChat.findIndex(m => m.id === req.params.msgId);
     if (idx === -1) return res.status(404).json({ error: 'Не найдено' });
+    const removed = globalChat[idx];
     globalChat.splice(idx, 1);
     await deleteChatMsg(req.params.msgId);
+    await logAdminAction(req.user.username, 'chat_delete', removed?.username || null, { msgId: req.params.msgId, text: (removed?.message || '').slice(0, 200) });
     io.emit('chat_msg_deleted', req.params.msgId);
     res.json({ ok: true });
   });
@@ -1957,6 +1967,7 @@ async function removeUserChatMessages(username) {
 app.delete('/api/admin/chat/user/:username', authMiddleware, async (req, res) => {
   await requireAdmin(req, res, async () => {
     const removed = await removeUserChatMessages(req.params.username);
+    await logAdminAction(req.user.username, 'chat_clear_user', req.params.username, { removed });
     res.json({ ok: true, removed });
   });
 });
@@ -1990,6 +2001,7 @@ app.post('/api/admin/chat-ban', authMiddleware, async (req, res) => {
 
       io.emit('chat_system_msg', sysMsg);
 
+      await logAdminAction(req.user.username, 'chat_ban', username, { durationMinutes: dur, unbanAt });
       res.json({ ok: true, unbanAt });
     } catch (e) {
       console.error('[ChatBan]', e);
@@ -2057,6 +2069,7 @@ async function handleUpdateReportStatus(req, res) {
       if (r.rowCount === 0) {
         return res.status(404).json({ error: 'Жалоба не найдена (возможно, неверный id)' });
       }
+      await logAdminAction(req.user.username, 'report_status', req.params.reportId, { status });
       res.json({ ok: true });
     } catch (e) {
       console.error('[Reports PATCH]', e.message);
@@ -2194,6 +2207,7 @@ app.post('/api/admin/appeals/:id/reply', authMiddleware, rateLimit(limiterStrict
 
     const sock = findSocketByUsername(appeal.username);
     if (sock) sock.emit('appeal_reply', { appealId: appeal.id });
+    await logAdminAction(req.user.username, 'appeal_reply', appeal.username, { appealId: appeal.id, text: text.slice(0, 200) });
     res.json({ ok: true });
   });
 });
@@ -2213,6 +2227,7 @@ async function handleUpdateAppealStatus(req, res) {
       } else {
         await db(`UPDATE appeals SET status='closed', updated_at=$1 WHERE id=$2`, [now, req.params.id]);
       }
+      await logAdminAction(req.user.username, 'appeal_status', req.params.id, { status });
       res.json({ ok: true });
     } catch (e) {
       console.error('[Appeals PATCH]', e);
@@ -2702,6 +2717,7 @@ app.post('/api/admin/system-message', authMiddleware, rateLimit(limiterStrict), 
         if (sock) sock.emit('dm_message', msg);
       }
       await client.query('COMMIT');
+      await logAdminAction(req.user.username, 'system_message', to.toLowerCase() === 'all' ? 'all' : recipients[0], { to: to.toLowerCase() === 'all' ? 'all' : recipients[0], count: recipients.length, text: text.slice(0, 200) });
       res.json({ ok: true, count: recipients.length });
     } catch (e) {
       await client.query('ROLLBACK').catch(() => {});
@@ -2724,6 +2740,17 @@ async function logDmAudit(admin, target, partner, action) {
     await db('INSERT INTO admin_dm_audit (id, admin, target, partner, action, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
       [uuidv4(), admin, target, partner, action, Date.now()]);
   } catch (e) { console.error('[DM Audit]', e.message); }
+}
+
+// Общий лог действий админов — вызывается из всех модерационных
+// эндпоинтов ниже (бан, IP-бан, VIP, задачи, чат, жалобы, обращения,
+// системные сообщения и т.п.). details — произвольный объект,
+// сохраняется как JSON-строка.
+async function logAdminAction(admin, action, target, details) {
+  try {
+    await db('INSERT INTO admin_action_log (id, admin, action, target, details, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+      [uuidv4(), admin, action, target || null, details ? JSON.stringify(details) : null, Date.now()]);
+  } catch (e) { console.error('[AdminLog]', e.message); }
 }
 
 app.get('/api/admin/dm/conversations/:username', authMiddleware, async (req, res) => {
@@ -2774,6 +2801,115 @@ app.get('/api/admin/dm/audit', authMiddleware, async (req, res) => {
       ? await db('SELECT * FROM admin_dm_audit WHERE target ILIKE $1 ORDER BY created_at DESC LIMIT 200', [target])
       : await db('SELECT * FROM admin_dm_audit ORDER BY created_at DESC LIMIT 200');
     res.json(r.rows.map(a => ({ admin: a.admin, target: a.target, partner: a.partner, action: a.action, createdAt: Number(a.created_at) })));
+  });
+});
+
+// ── Общий лог действий админов ──────────────────────────────────
+// Читает admin_action_log, заполняемый logAdminAction() из всех
+// модерационных эндпоинтов (бан/разбан, IP-баны, VIP, чат, задачи,
+// жалобы, обращения, системные сообщения). Только для чтения.
+app.get('/api/admin/logs', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    const { admin, action, target } = req.query;
+    const conds = [];
+    const params = [];
+    if (admin)  { params.push(admin.toLowerCase());  conds.push(`LOWER(admin) = $${params.length}`); }
+    if (action) { params.push(action);                conds.push(`action = $${params.length}`); }
+    if (target) { params.push('%' + target.toLowerCase() + '%'); conds.push(`LOWER(target) LIKE $${params.length}`); }
+    const where = conds.length ? 'WHERE ' + conds.join(' AND ') : '';
+    const r = await db(`SELECT * FROM admin_action_log ${where} ORDER BY created_at DESC LIMIT 300`, params);
+    res.json(r.rows.map(row => ({
+      admin: row.admin, action: row.action, target: row.target,
+      details: row.details ? JSON.parse(row.details) : null,
+      createdAt: Number(row.created_at),
+    })));
+  });
+});
+
+// ── Подозрения на мультиаккаунты ────────────────────────────────
+// Только показывает: группирует существующих пользователей по
+// created_from_ip и created_device_id и возвращает группы из 2+
+// аккаунтов как "подозрительные". НИКОГО НЕ БАНИТ — исключительно
+// информация для ручного решения администратора (см. requireAdmin).
+app.get('/api/admin/multiaccounts', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    const r = await db('SELECT username, role, banned, ban_reason, created_from_ip, created_device_id, created_at, rating FROM users ORDER BY created_at ASC');
+
+    const byIP = new Map();
+    const byDevice = new Map();
+    for (const row of r.rows) {
+      const u = {
+        username: row.username, role: row.role, banned: row.banned,
+        banReason: row.ban_reason, createdAt: Number(row.created_at), rating: row.rating,
+      };
+      const ip = row.created_from_ip;
+      if (ip && !isLocalIP(ip)) {
+        if (!byIP.has(ip)) byIP.set(ip, []);
+        byIP.get(ip).push(u);
+      }
+      const dev = row.created_device_id;
+      if (dev) {
+        if (!byDevice.has(dev)) byDevice.set(dev, []);
+        byDevice.get(dev).push(u);
+      }
+    }
+
+    const ipGroups = [...byIP.entries()]
+      .filter(([, users]) => users.length > 1)
+      .map(([ip, users]) => ({ ip, users }))
+      .sort((a, b) => b.users.length - a.users.length);
+
+    const deviceGroups = [...byDevice.entries()]
+      .filter(([, users]) => users.length > 1)
+      .map(([deviceId, users]) => ({ deviceId, users }))
+      .sort((a, b) => b.users.length - a.users.length);
+
+    res.json({ ipGroups, deviceGroups });
+  });
+});
+
+// ── Дашборд администратора ──────────────────────────────────────
+// Сводка для главного экрана админки: онлайн, регистрации/партии по
+// дням, баны, открытые жалобы/обращения. Отдельно от публичного
+// /api/stats, т.к. включает чувствительные для админов цифры (баны,
+// открытые обращения) и более короткое окно (14 дней) для графиков.
+app.get('/api/admin/dashboard', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const [
+        totalUsers, bannedUsersCnt, newUsersToday, totalGames, gamesToday,
+        openReports, openAppeals, regByDay, gamesByDay,
+      ] = await Promise.all([
+        db('SELECT COUNT(*) FROM users'),
+        db('SELECT COUNT(*) FROM users WHERE banned = true'),
+        db(`SELECT COUNT(*) FROM users WHERE created_at >= extract(epoch from date_trunc('day', now()))*1000`),
+        db('SELECT COUNT(*) FROM games'),
+        db(`SELECT COUNT(*) FROM games WHERE ended_at >= extract(epoch from date_trunc('day', now()))*1000`),
+        db(`SELECT COUNT(*) FROM reports WHERE status = 'new'`),
+        db(`SELECT COUNT(*) FROM appeals WHERE status = 'open'`),
+        db(`SELECT DATE(to_timestamp(created_at/1000)) as day, COUNT(*) as cnt FROM users WHERE created_at > extract(epoch from now()-interval '14 days')*1000 GROUP BY day ORDER BY day ASC`),
+        db(`SELECT DATE(to_timestamp(ended_at/1000)) as day, COUNT(*) as cnt FROM games WHERE ended_at > extract(epoch from now()-interval '14 days')*1000 GROUP BY day ORDER BY day ASC`),
+      ]);
+
+      res.json({
+        online: onlineUsers.size,
+        totals: {
+          users: parseInt(totalUsers.rows[0].count),
+          bannedUsers: parseInt(bannedUsersCnt.rows[0].count),
+          newUsersToday: parseInt(newUsersToday.rows[0].count),
+          games: parseInt(totalGames.rows[0].count),
+          gamesToday: parseInt(gamesToday.rows[0].count),
+          bannedIPs: bannedIPs.size,
+          bannedDevices: bannedDevices.size,
+          openReports: parseInt(openReports.rows[0].count),
+          openAppeals: parseInt(openAppeals.rows[0].count),
+        },
+        charts: { regByDay: regByDay.rows, gamesByDay: gamesByDay.rows },
+      });
+    } catch (e) {
+      console.error('[AdminDashboard]', e.message);
+      res.status(500).json({ error: 'Ошибка загрузки дашборда' });
+    }
   });
 });
 
@@ -4750,6 +4886,7 @@ app.post('/api/admin/puzzles', authMiddleware, async (req, res) => {
     if (!title||!fen||!solution||!topic) return res.status(400).json({ error: 'title,fen,solution,topic обязательны' });
     const id = uuidv4();
     await db(`INSERT INTO puzzles (id,title,description,fen,solution,topic,difficulty,created_by,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, [id,title.trim().slice(0,100),(description||'').trim().slice(0,300), fen.trim(),solution.trim(),topic,difficulty||'medium',req.user.username,Date.now()]);
+    await logAdminAction(req.user.username, 'puzzle_create', id, { title: title.trim().slice(0,100), topic, difficulty: difficulty||'medium' });
     res.json({ ok:true, id });
   });
 });
@@ -4757,6 +4894,7 @@ app.post('/api/admin/puzzles', authMiddleware, async (req, res) => {
 async function handleDeletePuzzle(req, res) {
   await requireAdmin(req, res, async () => {
     await db('DELETE FROM puzzles WHERE id=$1',[req.params.id]);
+    await logAdminAction(req.user.username, 'puzzle_delete', req.params.id, {});
     res.json({ ok:true });
   });
 }
@@ -5025,6 +5163,7 @@ app.post('/api/admin/dev-diary-comment-ban', authMiddleware, async (req, res) =>
       } else {
         await db(`DELETE FROM dev_diary_comment_bans WHERE username_low=$1`, [ulow]);
       }
+      await logAdminAction(req.user.username, 'dev_diary_comment_' + (action === 'ban' ? 'ban' : 'unban'), username, {});
       res.json({ ok: true });
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -6409,6 +6548,23 @@ async function main() {
   `);
   await db(`CREATE INDEX IF NOT EXISTS idx_admin_dm_audit_target ON admin_dm_audit(target, created_at DESC)`);
   await db(`CREATE INDEX IF NOT EXISTS idx_admin_dm_audit_admin  ON admin_dm_audit(admin, created_at DESC)`);
+
+  // Общий лог всех значимых действий админов (бан/разбан, IP-баны, VIP,
+  // задачи, системные сообщения, жалобы, обращения и т.п.) — максимальный
+  // уровень контроля: видно, кто из админов что сделал и когда.
+  await db(`
+    CREATE TABLE IF NOT EXISTS admin_action_log (
+      id         TEXT PRIMARY KEY,
+      admin      TEXT NOT NULL,
+      action     TEXT NOT NULL,
+      target     TEXT,
+      details    TEXT,
+      created_at BIGINT NOT NULL
+    )
+  `);
+  await db(`CREATE INDEX IF NOT EXISTS idx_admin_action_log_admin  ON admin_action_log(admin, created_at DESC)`);
+  await db(`CREATE INDEX IF NOT EXISTS idx_admin_action_log_target ON admin_action_log(target, created_at DESC)`);
+  await db(`CREATE INDEX IF NOT EXISTS idx_admin_action_log_action ON admin_action_log(action, created_at DESC)`);
 
   await loadChat();
   await loadTournaments();

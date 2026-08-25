@@ -50,17 +50,35 @@
 
       <!-- Вкладки -->
       <div style="display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;flex-wrap:wrap">
-        <button class="tab-btn active" id="tab-users"   onclick="switchTab('tab-users')"   style="padding:10px 20px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;cursor:pointer;font-size:14px">👥 Пользователи</button>
+        <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('tab-dashboard')" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid var(--accent);color:var(--accent);font-weight:700;cursor:pointer;font-size:14px">📊 Дашборд</button>
+        <button class="tab-btn"        id="tab-users"   onclick="switchTab('tab-users')"   style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">👥 Пользователи</button>
         <button class="tab-btn"        id="tab-reports" onclick="switchTab('tab-reports')" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">🚩 Жалобы</button>
         <button class="tab-btn"        id="tab-appeals" onclick="switchTab('tab-appeals')" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">📩 Обращения</button>
         <button class="tab-btn"        id="tab-chat"    onclick="switchTab('tab-chat')"    style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">💬 Чат</button>
         <button class="tab-btn"        id="tab-puzzles" onclick="switchTab('tab-puzzles')" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">♟ Задачи</button>
         <button class="tab-btn"        id="tab-broadcast" onclick="switchTab('tab-broadcast')" style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">📨 Сообщения</button>
         <button class="tab-btn"        id="tab-dms"       onclick="switchTab('tab-dms')"       style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">🔒 Переписки</button>
+        <button class="tab-btn"        id="tab-twinks"    onclick="switchTab('tab-twinks')"    style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">🕵 Твинки</button>
+        <button class="tab-btn"        id="tab-logs"      onclick="switchTab('tab-logs')"      style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-secondary);cursor:pointer;font-size:14px">📜 Логи админов</button>
+      </div>
+
+      <!-- Вкладка: Дашборд -->
+      <div id="panel-dashboard">
+        <div id="dash-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">
+          <div style="text-align:center;padding:40px;grid-column:1/-1"><div class="spinner" style="margin:0 auto"></div></div>
+        </div>
+        <div class="settings-section" style="margin-bottom:16px">
+          <div class="settings-title">📈 Регистрации за 14 дней</div>
+          <div id="dash-reg-chart" style="margin-top:14px"></div>
+        </div>
+        <div class="settings-section">
+          <div class="settings-title">♟ Сыгранные партии за 14 дней</div>
+          <div id="dash-games-chart" style="margin-top:14px"></div>
+        </div>
       </div>
 
       <!-- Вкладка: Пользователи -->
-      <div id="panel-users">
+      <div id="panel-users" style="display:none">
         <div class="settings-section" style="margin-bottom:16px">
           <input class="form-input" id="admin-search" placeholder="🔍 Поиск по нику..." oninput="adminSearch(this.value)" style="max-width:400px">
           <div id="admin-search-results" style="margin-top:12px"></div>
@@ -215,6 +233,52 @@
         </div>
       </div>
 
+      <!-- Вкладка: Твинки / мультиаккаунты -->
+      <div id="panel-twinks" style="display:none">
+        <div class="settings-section" style="margin-bottom:16px">
+          <div class="settings-title">🕵 Поиск мультиаккаунтов</div>
+          <p style="color:var(--text-muted);font-size:12.5px;margin:8px 0 16px;line-height:1.5">
+            Группы аккаунтов, зарегистрированных с одного IP-адреса или устройства (по серверной HttpOnly-cookie
+            <code>ch_device_id</code>, которую нельзя подделать со стороны клиента). Это не автоматическое доказательство
+            читерства/обхода бана — только повод присмотреться и решить вручную.
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="form-input" id="twinks-filter" placeholder="🔍 Фильтр: показать группы с ником..." style="flex:1;min-width:220px" oninput="renderTwinks()">
+            <button class="btn btn-secondary btn-sm" onclick="loadTwinks()">🔄 Обновить</button>
+          </div>
+        </div>
+
+        <div class="settings-section" style="margin-bottom:16px">
+          <div class="settings-title">📡 Группы по IP <span id="twinks-ip-count" style="color:var(--text-muted);font-weight:400;font-size:14px"></span></div>
+          <div id="twinks-ip-list" style="margin-top:10px"><div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div></div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">📱 Группы по Device ID <span id="twinks-dev-count" style="color:var(--text-muted);font-weight:400;font-size:14px"></span></div>
+          <div id="twinks-dev-list" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <!-- Вкладка: Общий лог действий администраторов -->
+      <div id="panel-logs" style="display:none">
+        <div class="settings-section" style="margin-bottom:16px">
+          <div class="settings-title">📜 Лог действий администраторов</div>
+          <p style="color:var(--text-muted);font-size:12.5px;margin:8px 0 16px;line-height:1.5">
+            Все значимые модерационные действия: баны/разбаны, IP-баны, выдача/снятие VIP, удаление сообщений,
+            рассылки, изменение статусов жалоб и обращений — кто из админов, что и когда сделал.
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="form-input" id="logs-admin"  placeholder="Фильтр по нику админа..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadAdminLogs()">
+            <input class="form-input" id="logs-action" placeholder="Действие (ban, vip_grant, ip_ban...)" style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadAdminLogs()">
+            <input class="form-input" id="logs-target" placeholder="Цель (ник / IP)..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadAdminLogs()">
+            <button class="btn btn-primary btn-sm" onclick="loadAdminLogs()">🔍 Применить</button>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div id="logs-list"><div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -319,13 +383,13 @@ async function adminInit() {
     return;
   }
   document.getElementById('admin-content').style.display = '';
-  loadAdminUsers();
+  loadDashboard();
   loadReportsBadge();
   loadAppealsBadge();
 }
 
 function switchTab(tab) {
-  ['tab-users','tab-reports','tab-appeals','tab-chat','tab-puzzles','tab-broadcast','tab-dms'].forEach(t => {
+  ['tab-dashboard','tab-users','tab-reports','tab-appeals','tab-chat','tab-puzzles','tab-broadcast','tab-dms','tab-twinks','tab-logs'].forEach(t => {
     const btn = document.getElementById(t);
     const panel = document.getElementById('panel-' + t.replace('tab-',''));
     if (t === tab) {
@@ -340,11 +404,77 @@ function switchTab(tab) {
       if (panel) panel.style.display = 'none';
     }
   });
+  if (tab === 'tab-dashboard') loadDashboard();
+  if (tab === 'tab-users') loadAdminUsers();
   if (tab === 'tab-reports') loadReports('new');
   if (tab === 'tab-appeals') loadAppeals('open');
   if (tab === 'tab-chat') loadAdminChat();
   if (tab === 'tab-puzzles') puzzleLoad();
   if (tab === 'tab-dms') loadDmAudit();
+  if (tab === 'tab-twinks') loadTwinks();
+  if (tab === 'tab-logs') loadAdminLogs();
+}
+
+// ─── ДАШБОРД ──────────────────────────────────────────────────
+function dashCard(label, value, color) {
+  const el = document.createElement('div');
+  el.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px';
+  el.innerHTML = '<div style="font-size:22px;font-weight:800;color:' + (color || 'var(--text-primary)') + '">' + value + '</div>' +
+    '<div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">' + escapeHtml(label) + '</div>';
+  return el;
+}
+
+async function loadDashboard() {
+  const cards = document.getElementById('dash-cards');
+  cards.innerHTML = '<div style="text-align:center;padding:40px;grid-column:1/-1"><div class="spinner" style="margin:0 auto"></div></div>';
+  document.getElementById('dash-reg-chart').innerHTML = '';
+  document.getElementById('dash-games-chart').innerHTML = '';
+  try {
+    const d = await apiGet('/admin/dashboard');
+    cards.innerHTML = '';
+    cards.appendChild(dashCard('🟢 Онлайн сейчас', d.online, 'var(--green,#2ecc71)'));
+    cards.appendChild(dashCard('👥 Всего пользователей', d.totals.users));
+    cards.appendChild(dashCard('🆕 Регистраций сегодня', d.totals.newUsersToday));
+    cards.appendChild(dashCard('♟ Всего партий', d.totals.games));
+    cards.appendChild(dashCard('📅 Партий сегодня', d.totals.gamesToday));
+    cards.appendChild(dashCard('🚫 Забанено пользователей', d.totals.bannedUsers, 'var(--red)'));
+    cards.appendChild(dashCard('📡 Забанено IP', d.totals.bannedIPs, 'var(--red)'));
+    cards.appendChild(dashCard('📱 Забанено устройств', d.totals.bannedDevices, 'var(--red)'));
+    cards.appendChild(dashCard('🚩 Новых жалоб', d.totals.openReports, d.totals.openReports ? 'var(--red)' : null));
+    cards.appendChild(dashCard('📩 Открытых обращений', d.totals.openAppeals, d.totals.openAppeals ? 'var(--accent)' : null));
+
+    renderBarChart(document.getElementById('dash-reg-chart'), d.charts.regByDay);
+    renderBarChart(document.getElementById('dash-games-chart'), d.charts.gamesByDay);
+  } catch (e) {
+    cards.innerHTML = '<p style="color:var(--red);grid-column:1/-1">Ошибка: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+// Простой столбчатый график на голом DOM/CSS, без внешних библиотек.
+function renderBarChart(container, rows) {
+  if (!rows || !rows.length) { container.innerHTML = '<p style="color:var(--text-muted)">Нет данных за этот период</p>'; return; }
+  const max = Math.max(1, ...rows.map(r => parseInt(r.cnt)));
+  container.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;align-items:flex-end;gap:6px;height:140px';
+  rows.forEach(r => {
+    const cnt = parseInt(r.cnt);
+    const col = document.createElement('div');
+    col.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0';
+    const val = document.createElement('div');
+    val.style.cssText = 'font-size:11px;color:var(--text-muted);margin-bottom:2px';
+    val.textContent = cnt;
+    const bar = document.createElement('div');
+    bar.style.cssText = 'width:100%;max-width:28px;background:var(--accent);border-radius:4px 4px 0 0;height:' + Math.max(3, Math.round(cnt / max * 100)) + '%';
+    bar.title = r.day + ': ' + cnt;
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:4px;white-space:nowrap;transform:rotate(-40deg);transform-origin:top center';
+    const dt = new Date(r.day);
+    lbl.textContent = dt.toLocaleDateString('ru', { day: '2-digit', month: '2-digit' });
+    col.appendChild(val); col.appendChild(bar); col.appendChild(lbl);
+    wrap.appendChild(col);
+  });
+  container.appendChild(wrap);
 }
 
 // ─── ЗАДАЧИ ───────────────────────────────────────────────────
@@ -531,6 +661,9 @@ function renderUserList(users, container) {
         btns.appendChild(gv);
       }
     }
+    const twBtn = document.createElement('button'); twBtn.className='btn btn-ghost btn-sm'; twBtn.title='Показать твинков (по IP/устройству)'; twBtn.textContent='🕵';
+    twBtn.onclick = () => { switchTab('tab-twinks'); document.getElementById('twinks-filter').value = u.username; };
+    btns.appendChild(twBtn);
     if (u.username === currentUser.username) {
       const s = document.createElement('span'); s.style.cssText='color:var(--text-muted);font-size:12px'; s.textContent='это вы'; btns.appendChild(s);
     } else if (u.banned) {
@@ -1037,6 +1170,159 @@ async function loadDmAudit() {
       row.innerHTML = '<b style="color:var(--accent)">' + escapeHtml(a.admin) + '</b> ' + escapeHtml(actionLabel) +
         ' <span style="color:var(--text-muted)">пользователя</span> <b>' + escapeHtml(a.target) + '</b>' +
         ' <span style="margin-left:auto;color:var(--text-muted)">' + new Date(a.createdAt).toLocaleString('ru') + '</span>';
+      list.appendChild(row);
+    });
+  } catch (e) {
+    list.innerHTML = '<p style="color:var(--red)">Ошибка: ' + escapeHtml(e.message) + '</p>';
+  }
+}
+
+// ─── ТВИНКИ / МУЛЬТИАККАУНТЫ (группировка по общему IP / device id) ──
+let twinksData = { ipGroups: [], deviceGroups: [] };
+
+async function loadTwinks() {
+  document.getElementById('twinks-ip-list').innerHTML  = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>';
+  document.getElementById('twinks-dev-list').innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>';
+  try {
+    twinksData = await apiGet('/admin/multiaccounts');
+    renderTwinks();
+  } catch (e) {
+    document.getElementById('twinks-ip-list').innerHTML  = '<p style="color:var(--red)">Ошибка: ' + escapeHtml(e.message) + '</p>';
+    document.getElementById('twinks-dev-list').innerHTML = '';
+  }
+}
+
+function renderTwinks() {
+  const q = (document.getElementById('twinks-filter').value || '').trim().toLowerCase();
+  const filterGroups = groups => q
+    ? groups.filter(g => g.users.some(u => u.username.toLowerCase().includes(q)))
+    : groups;
+
+  const ipGroups  = filterGroups(twinksData.ipGroups || []);
+  const devGroups = filterGroups(twinksData.deviceGroups || []);
+
+  document.getElementById('twinks-ip-count').textContent  = '(' + ipGroups.length + ')';
+  document.getElementById('twinks-dev-count').textContent = '(' + devGroups.length + ')';
+
+  renderTwinkGroupList(ipGroups,  document.getElementById('twinks-ip-list'),  'ip');
+  renderTwinkGroupList(devGroups, document.getElementById('twinks-dev-list'), 'device');
+}
+
+function renderTwinkGroupList(groups, container, kind) {
+  if (!groups.length) {
+    container.innerHTML = '<p style="color:var(--text-muted);padding:12px 0">Групп не найдено</p>';
+    return;
+  }
+  container.innerHTML = '';
+  groups.forEach(g => container.appendChild(renderTwinkGroup(g, kind)));
+}
+
+function renderTwinkGroup(g, kind) {
+  const card = document.createElement('div');
+  card.style.cssText = 'background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:10px';
+
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px';
+  const label = document.createElement('div');
+  label.style.cssText = 'font-family:monospace;font-size:12.5px;color:var(--text-secondary)';
+  label.textContent = (kind === 'ip' ? '📡 ' : '📱 ') + (kind === 'ip' ? g.ip : g.deviceId) + ' · ' + g.users.length + ' аккаунтов';
+  head.appendChild(label);
+
+  const activeCount = g.users.filter(u => !u.banned && u.role !== 'admin').length;
+  if (activeCount > 1) {
+    const banAllBtn = document.createElement('button');
+    banAllBtn.className = 'btn btn-danger btn-sm';
+    banAllBtn.textContent = '🚫 Забанить всех (' + activeCount + ')';
+    banAllBtn.onclick = () => banTwinkGroup(g, banAllBtn);
+    head.appendChild(banAllBtn);
+  }
+  card.appendChild(head);
+
+  const list = document.createElement('div');
+  list.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+  g.users.forEach(u => list.appendChild(renderTwinkUserRow(u)));
+  card.appendChild(list);
+  return card;
+}
+
+function renderTwinkUserRow(u) {
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;padding:4px 0';
+
+  const nm = document.createElement('a');
+  nm.href = '/profile/' + u.username; nm.target = '_blank'; nm.rel = 'noopener';
+  nm.style.cssText = 'font-weight:600;color:var(--text-primary);text-decoration:none';
+  nm.textContent = u.username;
+  row.appendChild(nm);
+
+  if (u.role === 'admin') {
+    const b = document.createElement('span'); b.style.cssText = 'color:var(--accent);font-size:11px;font-weight:700'; b.textContent = 'ADMIN'; row.appendChild(b);
+  }
+  if (u.banned) {
+    const b = document.createElement('span'); b.style.cssText = 'color:var(--red);font-size:11px';
+    b.textContent = 'БАН' + (u.banReason ? (': ' + u.banReason) : ''); row.appendChild(b);
+  }
+
+  const meta = document.createElement('span');
+  meta.style.cssText = 'color:var(--text-muted);font-size:12px';
+  meta.textContent = '★' + u.rating + ' · рег. ' + new Date(u.createdAt).toLocaleDateString('ru');
+  row.appendChild(meta);
+
+  if (u.role !== 'admin' && !u.banned) {
+    const banBtn = document.createElement('button');
+    banBtn.className = 'btn btn-ghost btn-sm';
+    banBtn.style.marginLeft = 'auto';
+    banBtn.textContent = '🚫 Бан';
+    banBtn.onclick = async () => {
+      const r = prompt('Причина бана для ' + u.username + ':', 'Мультиаккаунт');
+      if (!r) return;
+      banBtn.disabled = true;
+      try { await apiPost('/admin/ban', { username: u.username, reason: r }); toast(u.username + ' забанен', 'success'); loadTwinks(); }
+      catch(e) { toast('Ошибка: ' + e.message, 'error'); banBtn.disabled = false; }
+    };
+    row.appendChild(banBtn);
+  }
+  return row;
+}
+
+async function banTwinkGroup(g, btn) {
+  const targets = g.users.filter(u => !u.banned && u.role !== 'admin');
+  if (!targets.length) return;
+  if (!confirm('Забанить ' + targets.length + ' аккаунт(ов) в этой группе? Действие можно откатить через «Разбан» в списке пользователей.')) return;
+  btn.disabled = true;
+  let ok = 0, fail = 0;
+  for (const u of targets) {
+    try { await apiPost('/admin/ban', { username: u.username, reason: 'Мультиаккаунт (групповой бан из вкладки «Твинки»)' }); ok++; }
+    catch { fail++; }
+  }
+  toast('Забанено: ' + ok + (fail ? (', ошибок: ' + fail) : ''), fail ? 'error' : 'success');
+  loadTwinks();
+}
+
+// ─── ЛОГ ДЕЙСТВИЙ АДМИНИСТРАТОРОВ ──────────────────────────────
+async function loadAdminLogs() {
+  const list = document.getElementById('logs-list');
+  list.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>';
+  const admin  = document.getElementById('logs-admin').value.trim();
+  const action = document.getElementById('logs-action').value.trim();
+  const target = document.getElementById('logs-target').value.trim();
+  const params = new URLSearchParams();
+  if (admin)  params.set('admin', admin);
+  if (action) params.set('action', action);
+  if (target) params.set('target', target);
+  try {
+    const entries = await apiGet('/admin/logs' + (params.toString() ? '?' + params.toString() : ''));
+    if (!entries.length) { list.innerHTML = '<p style="color:var(--text-muted);padding:20px">Записей не найдено</p>'; return; }
+    list.innerHTML = '';
+    entries.forEach(e => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--text-secondary);padding:8px 0;border-bottom:1px solid var(--border)';
+      let detailsStr = '';
+      if (e.details) { try { detailsStr = ' <span style="color:var(--text-muted)">' + escapeHtml(JSON.stringify(e.details)) + '</span>'; } catch {} }
+      row.innerHTML = '<b style="color:var(--accent)">' + escapeHtml(e.admin) + '</b> ' +
+        '<span style="color:var(--text-primary)">' + escapeHtml(e.action) + '</span>' +
+        (e.target ? (' → <b>' + escapeHtml(e.target) + '</b>') : '') + detailsStr +
+        '<span style="margin-left:auto;color:var(--text-muted);white-space:nowrap">' + new Date(e.createdAt).toLocaleString('ru') + '</span>';
       list.appendChild(row);
     });
   } catch (e) {
