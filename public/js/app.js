@@ -178,7 +178,6 @@ document.addEventListener('click', (e) => { if (!e.target.closest('#ch-user-wrap
 async function handleRegister(e) {
   e.preventDefault();
   const username = document.getElementById('reg-username').value.trim();
-  const email    = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
   const errEl    = document.getElementById('reg-error');
   errEl.textContent = '';
@@ -187,78 +186,14 @@ async function handleRegister(e) {
   const _hp = (document.getElementById('reg-hp') || {}).value || '';
 
   try {
-    await apiPost('/register', { username, email, password, _hp });
-    // Регистрация принята — показываем форму ввода кода
-    showEmailVerifyStep(username, email);
-  } catch (err) {
-    errEl.textContent = err.message;
-  }
-}
-
-function showEmailVerifyStep(username, email) {
-  // Прячем основную форму регистрации, показываем форму кода
-  const modal = document.getElementById('modal-register');
-  const body = modal.querySelector('.modal-body') || modal.querySelector('form') || modal;
-
-  // Сохраняем оригинальный HTML для возврата
-  modal._origHTML = modal.innerHTML;
-
-  modal.innerHTML = `
-    <div class="modal-header" style="padding:24px 24px 0">
-      <h2 style="margin:0;font-size:20px">📧 Подтвердите email</h2>
-    </div>
-    <div style="padding:24px">
-      <p style="color:var(--text-muted);margin:0 0 20px">Мы отправили 6-значный код на <b>${escapeHtml(email)}</b>.<br>Введите его ниже — код действует 15 минут.<br><span style="font-size:12px;color:var(--text-muted)">Не видите письмо? Проверьте папку <b>Спам / Нежелательные</b>.</span></p>
-      <input id="verify-code" type="text" inputmode="numeric" maxlength="6" placeholder="_ _ _ _ _ _"
-        style="width:100%;font-size:28px;letter-spacing:12px;text-align:center;padding:14px;border:2px solid var(--border);border-radius:8px;background:var(--bg-secondary);color:var(--text);box-sizing:border-box">
-      <div id="verify-error" style="color:#e74c3c;margin-top:10px;min-height:20px;font-size:13px"></div>
-      <button onclick="handleVerifyEmail()" class="btn btn-primary" style="width:100%;margin-top:16px;padding:12px">Подтвердить</button>
-      <button onclick="cancelVerify()" class="btn btn-ghost" style="width:100%;margin-top:8px;font-size:13px">← Назад</button>
-    </div>
-  `;
-
-  // Авто-фокус и авто-сабмит при 6 цифрах
-  setTimeout(() => {
-    const inp = document.getElementById('verify-code');
-    if (inp) {
-      inp.focus();
-      inp.addEventListener('input', () => {
-        if (inp.value.replace(/\D/g,'').length === 6) handleVerifyEmail();
-      });
-    }
-  }, 100);
-}
-
-async function handleVerifyEmail() {
-  const codeEl = document.getElementById('verify-code');
-  const errEl  = document.getElementById('verify-error');
-  if (!codeEl || !errEl) return;
-  const code = codeEl.value.replace(/\D/g,'');
-  if (code.length !== 6) { errEl.textContent = 'Введите 6-значный код'; return; }
-  errEl.textContent = '';
-
-  try {
-    const data = await apiPost('/verify-email', { code });
+    const data = await apiPost('/register', { username, password, _hp });
     currentUser = data.user; // сервер уже установил HttpOnly cookie ch_token
-    // Восстанавливаем модал и закрываем
-    const modal = document.getElementById('modal-register');
-    if (modal._origHTML) modal.innerHTML = modal._origHTML;
     closeModal('modal-register');
     updateAuthUI(); connectSocket();
     toast('Добро пожаловать, ' + currentUser.username + '! 👋', 'success');
     showPage('lobby');
   } catch (err) {
-    if (errEl) errEl.textContent = err.message;
-  }
-}
-
-function cancelVerify() {
-  const modal = document.getElementById('modal-register');
-  if (modal._origHTML) {
-    modal.innerHTML = modal._origHTML;
-    // Переподключаем обработчики после восстановления HTML
-    const form = modal.querySelector('form');
-    if (form) form.addEventListener('submit', handleRegister);
+    errEl.textContent = err.message;
   }
 }
 
@@ -301,8 +236,7 @@ async function handleLogin(e) {
 
 // ─── 2FA при входе ───────────────────────────────────────────
 // Пароль уже проверен сервером; здесь только код с почты.
-// Паттерн (сохранить innerHTML → подменить → восстановить) — как в
-// showEmailVerifyStep/cancelVerify для регистрации.
+// Паттерн: сохранить innerHTML модалки → подменить на форму кода → восстановить.
 function showLoginTwoFactorStep(message) {
   const modal = document.getElementById('modal-login');
   if (!modal) return;

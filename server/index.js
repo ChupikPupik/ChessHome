@@ -61,7 +61,6 @@ async function withTransaction(fn) {
 // ── Email верификация ─────────────────────────────────────────
 const { Resend } = require('resend');
 
-const pendingRegistrations = new Map();
 const pendingPasswordChanges = new Map();
 const pendingDeletions = new Map();
 // 2FA: код входа, отправленный на почту, ждёт подтверждения перед выдачей jwt.
@@ -73,9 +72,6 @@ const twoFactorLastSent = new Map(); // username_low -> timestamp
 
 setInterval(() => {
   const now = Date.now();
-  for (const [code, reg] of pendingRegistrations.entries()) {
-    if (now > reg.expiresAt) pendingRegistrations.delete(code);
-  }
   for (const [code, d] of pendingPasswordChanges.entries()) {
     if (now > d.expiresAt) pendingPasswordChanges.delete(code);
   }
@@ -86,38 +82,6 @@ setInterval(() => {
     if (now > d.expiresAt) pendingLogins.delete(code);
   }
 }, 10 * 60 * 1000);
-
-async function sendVerificationEmail(email, code) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error('RESEND_API_KEY is missing');
-  const url = 'https://api.resend.com/emails';
-  const payload = {
-    from: 'Chess Home <noreply@chesshome.pro>',
-    to: email,
-    subject: 'Подтверждение регистрации — Chess Home',
-    html: `
-      <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:32px;background:#1a1a2e;color:#e0e0e0;border-radius:12px">
-        <h2 style="color:#7c9cbf;margin-top:0">♟️ Chess Home</h2>
-        <p>Ваш код подтверждения:</p>
-        <div style="font-size:36px;font-weight:900;letter-spacing:10px;color:#fff;background:#0f0f1e;padding:20px;border-radius:8px;text-align:center">${code}</div>
-        <p style="color:#888;font-size:13px;margin-top:24px">Код действует 15 минут. Если вы не регистрировались — проигнорируйте письмо.</p>
-      </div>
-    `
-  };
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-  if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error(`Resend API error ${resp.status}: ${errText}`);
-  }
-  return resp.json();
-}
 
 async function sendPasswordChangeEmail(email, code) {
   const resend = new Resend(process.env.RESEND_API_KEY);
@@ -173,52 +137,6 @@ async function sendDeleteAccountEmail(email, username, code) {
     `
   });
   if (error) throw new Error(error.message);
-}
-
-// ── Блокировка временных / одноразовых email-доменов ─────────
-const DISPOSABLE_EMAIL_DOMAINS = new Set([
-  'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
-  'guerrillamail.biz','guerrillamail.de','guerrillamail.info',
-  'tempmail.com','temp-mail.org','temp-mail.io','tempmail.net',
-  'throwam.com','throwam.net','throwam.org',
-  'yopmail.com','yopmail.fr','yopmail.net',
-  'sharklasers.com','guerrillamailblock.com','grr.la','guerrillamail.info',
-  'spam4.me','trashmail.com','trashmail.at','trashmail.io','trashmail.me',
-  'trashmail.net','trashmail.org','dispostable.com','mailnull.com',
-  'mailnull.com','spamgourmet.com','spamgourmet.net','spamgourmet.org',
-  'fakeinbox.com','mailnesia.com','maildrop.cc','mailnull.com',
-  'discard.email','spamfree24.org','spamfree24.de','spamfree24.eu',
-  '10minutemail.com','10minutemail.net','10minutemail.org',
-  'minutemail.com','minutemail.de','minutemail.net',
-  'tempr.email','discard.email','mailtemp.net',
-  'mytemp.email','fakemailgenerator.com','getairmail.com',
-  'mohmal.com','spambox.us','spambox.info','mailforspam.com',
-  'mailexpire.com','filzmail.com','throwam.com','sneakemail.com',
-  'spamherelots.com','spamhereplease.com','spam.la','spamoff.de',
-  'anonaddy.com','simplelogin.io','mfsa.ru','mailsac.com',
-  'owlymail.com','inboxbear.com','tempinbox.com','spamfree.eu',
-  'trbvm.com','trbvn.com','trashmail.io','trbvo.com',
-  'email-temp.com','emailtemporaire.com','emailtemporanea.com',
-  'spamgrap.com','spaml.com','spammotel.com','spaml.de',
-  'tempemail.com','tempemailaddress.com','spamevader.com',
-  'crazymailing.com','throwaway.email','throwam.com',
-  'moakt.com','moakt.cc','moakt.ws','maildrop.cc',
-  'inboxkitten.com','jetable.fr.nf','jetable.net','jetable.org',
-  'nospamfor.us','no-spam.ws','spamgrap.com',
-  'mailbucket.org','mailnew.com','fakeinbox.com',
-  'tempail.com','emailondeck.com','spamthisplease.com',
-  'throwam.com','boxforspam.com','tempemail.net',
-  'spam.abuse.ch','spaml.com','supergreatmail.com',
-  'deadaddress.com','spamevader.com','spamgrap.com',
-  'spamgourmet.net','spamless.com','spamoff.de',
-]);
-
-function isDisposableEmail(email) {
-  const domain = email.split('@')[1]?.toLowerCase();
-  if (!domain) return false;
-  if (DISPOSABLE_EMAIL_DOMAINS.has(domain)) return true;
-  const DISPOSABLE_KEYWORDS = ['tempmail','throwaway','mailinator','guerrilla','yopmail','trashmail','spammail','fakeinbox','10minute','disposable'];
-  return DISPOSABLE_KEYWORDS.some(kw => domain.includes(kw));
 }
 
 // ── Фильтр матерных ников ─────────────────────────────────────
@@ -1244,11 +1162,11 @@ app.post('/api/register',
   ipBanMiddleware,                                                                       // 2. Проверяем черный список IP
   async (req, res) => {                                                                  
     const ip = getIP(req);
-    const { username, password, email, _hp } = req.body;
+    const { username, password, _hp } = req.body;
     const deviceId = req.deviceId; // из HttpOnly-cookie, а не от клиента — нельзя подделать/сменить через JS
 
     if (_hp && String(_hp).trim() !== '') {
-      return res.json({ ok: true, message: 'Код подтверждения отправлен.' });
+      return res.json({ ok: true, message: 'Аккаунт создан.' });
     }
     if (deviceId && bannedDevices.has(deviceId))
       return res.status(403).json({ error: 'Ваше устройство заблокировано.' });
@@ -1261,10 +1179,6 @@ app.post('/api/register',
     }
 
     if (!username || !password)           return res.status(400).json({ error: 'Заполните все поля' });
-    if (!email || !email.trim())          return res.status(400).json({ error: 'Email обязателен' });
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()))
-                                          return res.status(400).json({ error: 'Некорректный email' });
-    if (isDisposableEmail(email.trim()))  return res.status(400).json({ error: 'Временные и одноразовые почты не принимаются. Используйте постоянный email (Gmail, Yandex, Mail.ru и т.п.).' });
     if (username.length < 3)              return res.status(400).json({ error: 'Ник минимум 3 символа' });
     if (username.length > 20)             return res.status(400).json({ error: 'Ник максимум 20 символов' });
     if (password.length < 6)             return res.status(400).json({ error: 'Пароль минимум 6 символов' });
@@ -1278,10 +1192,6 @@ app.post('/api/register',
 
       const deletedCheck = await db('SELECT username_low FROM deleted_usernames WHERE username_low = $1', [username.toLowerCase()]);
       if (deletedCheck.rows.length > 0) return res.status(400).json({ error: 'Этот ник недоступен для регистрации' });
-
-      const emailLow = email.trim().toLowerCase();
-      const emailCheck = await db('SELECT id FROM users WHERE email = $1', [emailLow]);
-      if (emailCheck.rows.length > 0) return res.status(400).json({ error: 'Этот email уже используется' });
 
       const allUsers = await db('SELECT username FROM users');
       const normNew = normForSimilarity(username);
@@ -1302,61 +1212,29 @@ app.post('/api/register',
           return res.status(429).json({ error: 'С этого устройства уже зарегистрирован аккаунт. Создание нескольких аккаунтов с одного устройства запрещено.' });
       }
 
-      const code = String(Math.floor(100000 + Math.random() * 900000));
       const hash = await bcrypt.hash(password, 10);
       const userData = {
-        id: uuidv4(), username, email: emailLow, passwordHash: hash,
+        id: uuidv4(), username, email: null, passwordHash: hash,
         createdAt: Date.now(), createdFromIP: ip, createdDeviceId: deviceId || null,
         rating: 1200, gamesPlayed: 0, wins: 0, losses: 0, draws: 0,
         avatar: null, role: 'user', banned: false,
       };
 
-      for (const [k, v] of pendingRegistrations.entries()) {
-        if (v.userData.email === emailLow || v.userData.username.toLowerCase() === username.toLowerCase())
-          pendingRegistrations.delete(k);
-      }
-      pendingRegistrations.set(code, { userData, expiresAt: Date.now() + 15 * 60 * 1000 });
+      // Аккаунт создаётся сразу, без email-подтверждения. Защиту от
+      // мультиаккаунтинга обеспечивают проверки выше: бан IP/устройства,
+      // VPN/прокси-фильтр, лимит аккаунтов на IP и на устройство,
+      // а также проверка на похожие ники.
+      await saveUser(userData);
 
-      await Promise.race([
-        sendVerificationEmail(emailLow, code),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
-      ]);
-      res.json({ ok: true, message: 'Код подтверждения отправлен на ' + emailLow });
+      const token = jwt.sign({ userId: userData.id, username: userData.username }, JWT_SECRET, { expiresIn: '7d' });
+      // Токен больше не возвращается в теле ответа — только в HttpOnly cookie,
+      // недоступной для чтения из JS (защита от кражи токена через XSS).
+      res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
+      res.json({ user: sanitizeUser(userData) });
     } catch (err) {
       console.error('[Register]', err.message);
-      return res.status(500).json({ error: 'Не удалось отправить письмо: ' + err.message });
+      return res.status(500).json({ error: 'Не удалось создать аккаунт: ' + err.message });
     }
-  }
-);
-
-app.post('/api/verify-email',
-  rateLimit(limiterAuth, 'Слишком много попыток. Подождите минуту.'),
-  async (req, res) => {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: 'Введите код' });
-
-    const pending = pendingRegistrations.get(String(code));
-    if (!pending) return res.status(400).json({ error: 'Неверный или истёкший код' });
-    if (Date.now() > pending.expiresAt) {
-      pendingRegistrations.delete(String(code));
-      return res.status(400).json({ error: 'Код истёк. Зарегистрируйтесь снова.' });
-    }
-
-    const { userData } = pending;
-    const existing = await getUser(userData.username.toLowerCase());
-    if (existing) {
-      pendingRegistrations.delete(String(code));
-      return res.status(400).json({ error: 'Это имя уже занято. Попробуйте другое.' });
-    }
-
-    await saveUser(userData);
-    pendingRegistrations.delete(String(code));
-
-    const token = jwt.sign({ userId: userData.id, username: userData.username }, JWT_SECRET, { expiresIn: '7d' });
-    // Токен больше не возвращается в теле ответа — только в HttpOnly cookie,
-    // недоступной для чтения из JS (защита от кражи токена через XSS).
-    res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
-    res.json({ user: sanitizeUser(userData) });
   }
 );
 
