@@ -517,6 +517,16 @@ const chessBoard = (() => {
     render();
   }
 
+  // Русские подписи причин ничьей — используются и в мгновенном локальном
+  // окне результата (checkGameStatus), и в подтверждённом сервером
+  // результате (onGameEnded), чтобы текст совпадал в обоих случаях.
+  const DRAW_REASON_RU = {
+    'stalemate':             'Пат',
+    'fifty-move':            'Правило 50 ходов',
+    'insufficient-material': 'Недостаточно материала для мата',
+    'threefold-repetition':  'Троекратное повторение позиции',
+  };
+
   function checkGameStatus() {
     const status = ChessEngine.getStatus(state);
     if (status.status === 'checkmate') {
@@ -529,9 +539,29 @@ const chessBoard = (() => {
         stopClock();
       }, 100);
     } else if (status.status === 'stalemate') {
-      setTimeout(() => { showGameResult('Пат', 'Ничья'); stopClock(); }, 100);
+      setTimeout(() => {
+        showGameResult('Ничья', DRAW_REASON_RU.stalemate);
+        // БАГ (исправлено): раньше здесь только показывали окно и глушили
+        // свои часы, но не сообщали серверу — партия оставалась «живой»
+        // в activeGames, серверные часы продолжали тикать, а ходить было
+        // невозможно (позиция патовая). Теперь, как и при мате, шлём
+        // game_over — сервер сам перепроверяет пат и завершает партию.
+        if (gameMode === 'online' && socket) {
+          socket.emit('game_over', { gameId, result: 'draw', reason: 'stalemate' });
+        }
+        stopClock();
+      }, 100);
     } else if (status.status === 'draw') {
-      setTimeout(() => { showGameResult('Ничья', status.reason); stopClock(); }, 100);
+      setTimeout(() => {
+        showGameResult('Ничья', DRAW_REASON_RU[status.reason] || status.reason);
+        // То же самое для 50 ходов / недостатка материала / троекратного
+        // повторения позиций — раньше ни один из этих исходов не сообщался
+        // серверу, партия никогда официально не завершалась.
+        if (gameMode === 'online' && socket) {
+          socket.emit('game_over', { gameId, result: 'draw', reason: status.reason });
+        }
+        stopClock();
+      }, 100);
     }
   }
 
@@ -870,7 +900,7 @@ const chessBoard = (() => {
         checkmate: 'Мат',
         timeout:   'Время вышло',
         agreement: 'По соглашению',
-        stalemate: 'Пат'
+        ...DRAW_REASON_RU,
       };
       reasonText = reasons[data.reason] || data.reason || '';
     }
@@ -890,6 +920,49 @@ const chessBoard = (() => {
   }
 
   // ─── INIT GAME ─────────────────────────────────────────────
+  function resyncFromServer(data) {
+    // БАГ (исправлено, см. index.js:make_move): сервер раньше мог тихо
+    // отбросить ход (например, если по факту сейчас не ваш ход — из-за
+    // потерянного из-за короткого обрыва связи предыдущего сообщения),
+    // а клиент к этому моменту уже ПРИМЕНИЛ ход локально оптимистично
+    // (см. executeMove выше) — доска показывала ход, которого на сервере
+    // никогда не было, партия "зависала". Теперь сервер в таких случаях
+    // шлёт 'move_rejected' с полной актуальной историей ходов и временем,
+    // и мы полностью пересобираем локальную позицию с нуля по этим
+    // данным — откатывая всё, чего сервер не подтвердил.
+    if (gameMode !== 'online') return;
+    const wasViewingLive = viewingMove === -1;
+    state = ChessEngine.parseFEN(ChessEngine.START_FEN);
+    historyStates = [ChessEngine.deepClone(state)];
+    lastMove = null;
+    selectedSq = null;
+    legalMovesCache = [];
+    clearPremove();
+
+    for (const move of (data.moves || [])) {
+      try {
+        const newState = ChessEngine.applyMove(state, move);
+        if (newState) {
+          state = newState;
+          historyStates.push(ChessEngine.deepClone(state));
+          lastMove = move;
+        }
+      } catch (e) { console.warn('resync applyMove error', e); break; }
+    }
+    if (wasViewingLive) viewingMove = -1;
+
+    if (data.whiteTime !== undefined && data.blackTime !== undefined) {
+      whiteTime = data.whiteTime;
+      blackTime = data.blackTime;
+    }
+    activeColor = state.turn;
+    clockTickAt = Date.now();
+    updateClockDisplay();
+
+    render();
+    checkGameStatus();
+  }
+
   function startGame(data) {
     state = ChessEngine.parseFEN(ChessEngine.START_FEN);
     historyStates = [ChessEngine.deepClone(state)];
@@ -1125,6 +1198,7 @@ const chessBoard = (() => {
     resign,
     offerDraw,
     applyOpponentMove,
+    resyncFromServer,
     syncClockFromServer,
     clearPremove,
     clearAnnotations,

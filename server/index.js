@@ -1578,7 +1578,15 @@ app.get('/api/leaderboard', async (req, res) => {
   res.json(r.rows.map(row => ({ ...sanitizeUser(rowToUser(row)), online: onlineUsers.has(row.username) })));
 });
 
-app.get('/api/online',       (req, res) => res.json({ count: Math.max(onlineUsers.size, io.engine?.clientsCount || 0) }));
+// Раньше здесь было Math.max(onlineUsers.size, io.engine?.clientsCount || 0).
+// onlineUsers — Set из юзернеймов (уже без дублей), а io.engine.clientsCount —
+// это СЫРОЕ число открытых транспортных соединений на движке socket.io,
+// включая кратковременно "зависшие" старые соединения при быстрых
+// перезагрузках страницы (новый сокет уже подключился, а событие
+// disconnect старого ещё не долетело). Из-за Math.max счётчик онлайна
+// на секунды раздувался при частом F5, хотя реальных уникальных
+// пользователей больше не становилось. onlineUsers.size — точное число.
+app.get('/api/online',       (req, res) => res.json({ count: onlineUsers.size }));
 app.all('/api/ping',         (req, res) => res.status(200).end());
 app.get('/api/online/users', (req, res) => {
   const list = [...onlineUsers].map(username => {
@@ -6010,7 +6018,55 @@ const serverChess = (() => {
   function isCheckmate(board) { return isInCheck(board.squares, board.turn) && !hasAnyLegalMove(board, board.turn); }
   function isStalemate(board) { return !isInCheck(board.squares, board.turn) && !hasAnyLegalMove(board, board.turn); }
 
-  return { startBoard, isLegalMove, applyMove, cloneBoard, rebuildBoard, findMove, isCheckmate, isStalemate, hasAnyLegalMove };
+  // ── Ничьи по правилам (50 ходов / недостаток материала / троекратное
+  // повторение) — раньше сервер их вообще не проверял, потому что клиент
+  // никогда и не заявлял о них (см. баги 2/3 в board.js). Теперь сервер
+  // умеет перепроверить любую такую заявку по реальной истории ходов,
+  // так же как уже делает для мата/пата — иначе клиент мог бы просто
+  // соврать "ничья по повторению" в любой момент партии.
+  function isInsufficientMaterial(squares) {
+    const pieces = squares.filter(Boolean);
+    if (pieces.length === 2) return true; // K-K
+    if (pieces.length === 3) {
+      const minor = pieces.find(p => p[0] === 'B' || p[0] === 'N');
+      if (minor) return true; // K+B-K or K+N-K
+    }
+    return false;
+  }
+  // Отпечаток позиции для правила повторения: расстановка + очередь хода +
+  // права рокировки + клетка взятия на проходе (без счётчиков ходов).
+  function positionKey(board) {
+    return board.squares.map(p => p ? p[0] + p[1] : '-').join('') + '|' + board.turn + '|'
+      + (board.castling.wK?'1':'0') + (board.castling.wQ?'1':'0') + (board.castling.bK?'1':'0') + (board.castling.bQ?'1':'0')
+      + '|' + board.epSquare;
+  }
+  // Реплеим партию с начала, считая: (а) сколько раз встречалась текущая
+  // позиция — для троекратного повторения, (б) полуходов с последнего
+  // взятия/хода пешки — для правила 50 ходов.
+  function replayForDrawRules(moves) {
+    let board = startBoard();
+    const counts = new Map();
+    counts.set(positionKey(board), 1);
+    let halfmove = 0;
+    for (const move of (moves || [])) {
+      const pseudo = pseudoLegalMoves(board, move.from);
+      const found = pseudo.find(m => m.to === move.to);
+      if (!found) break;
+      const piece = board.squares[move.from];
+      const isCapture = !!board.squares[move.to] || found.ep;
+      const isPawn = piece && piece[0] === 'P';
+      if (found.promotion !== undefined || move.promotion) found.promotion = move.promotion || 'Q';
+      board = applyMove(board, found);
+      halfmove = (isCapture || isPawn) ? 0 : halfmove + 1;
+      const key = positionKey(board);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    return { board, repetitions: counts.get(positionKey(board)) || 1, halfmove };
+  }
+  function isThreefoldRepetition(moves) { return replayForDrawRules(moves).repetitions >= 3; }
+  function isFiftyMoveRule(moves) { return replayForDrawRules(moves).halfmove >= 100; }
+
+  return { startBoard, isLegalMove, applyMove, cloneBoard, rebuildBoard, findMove, isCheckmate, isStalemate, hasAnyLegalMove, isInsufficientMaterial, isThreefoldRepetition, isFiftyMoveRule };
 })();
 
 const limiterSocketConnect = new RateLimiter(60_000, 200);
@@ -6050,11 +6106,30 @@ io.on('connection', (socket) => {
     const token = handshakeCookies.ch_token;
     const p = token ? verifyToken(token) : null;
     if (!p) return socket.emit('auth_error', 'Неверный токен');
-    const user = await getUser(p.username.toLowerCase());
-    if (user?.banned) { socket.emit('auth_error', 'Аккаунт заблокирован: ' + (user.banReason || 'нарушение правил')); socket.disconnect(); return; }
     if (bannedIPs.has(socketIP)) { socket.emit('auth_error', 'Ваш IP заблокирован'); socket.disconnect(); return; }
-    // Было: перебор всей карты sessions в поиске старой сессии этого юзера (O(n)).
-    // Стало: прямой доступ по индексу usernameToSocketId (O(1)).
+
+    // БАГ (исправлено): раньше между verifyToken() и этим блоком стоял
+    // "await getUser(...)" — а он обращается к кэшу/БД, то есть реально
+    // отдаёт управление event loop'у. Если у юзера открыто несколько
+    // вкладок (у каждой — свой socket от app.js И свой отдельный socket
+    // от header.js для DM) и он быстро перезагружает страницу, несколько
+    // auth-событий одного и того же юзера начинают выполняться
+    // параллельно, и их await'ы могли завершиться в ЛЮБОМ порядке. Из-за
+    // этого сокет, который должен был быть найден как "старый" и вытолкнут
+    // (oldSocket.disconnect), иногда проскакивал мимо этой проверки —
+    // потому что на момент его собственного запроса prevOldId ещё
+    // указывал на кого-то другого, кто сам уже был снят с учёта. Такой
+    // "потерянный" сокет оставался реально подключённым (просто не как
+    // текущая сессия юзера) до тех пор, пока не отваливался сам по
+    // ping-таймауту socket.io (~20-30 сек) — отсюда и временный, сам
+    // проходящий разнобой в счётчике онлайна.
+    // Фикс: всю регистрацию сессии (поиск+вытеснение старого сокета,
+    // запись в sessions/usernameToSocketId/onlineUsers) делаем СРАЗУ,
+    // одним синхронным куском без await между чтением токена и записью —
+    // гонки конкурирующих auth-вызовов для одного юзера больше нет.
+    // Проверку бана делаем уже ПОСЛЕ регистрации: если юзер забанен —
+    // просто отключаем этот (уже корректно зарегистрированный) сокет,
+    // и штатный disconnect-обработчик сам всё почистит.
     const prevOldId = usernameToSocketId.get(p.username.toLowerCase());
     if (prevOldId && prevOldId !== socket.id) {
       const oldSocket = io.sockets.sockets.get(prevOldId);
@@ -6065,6 +6140,10 @@ io.on('connection', (socket) => {
     usernameToSocketId.set(p.username.toLowerCase(), socket.id);
     onlineUsers.add(p.username);
     socket.username = p.username;
+
+    const user = await getUser(p.username.toLowerCase());
+    if (user?.banned) { socket.emit('auth_error', 'Аккаунт заблокирован: ' + (user.banReason || 'нарушение правил')); socket.disconnect(); return; }
+
     socket.emit('auth_ok', { username: p.username });
     io.emit('online_count', onlineUsers.size);
     // Автоматически возвращаем игрока в очередь поиска соперника после
@@ -6235,16 +6314,40 @@ io.on('connection', (socket) => {
   });
 
   socket.on('make_move', ({ gameId, move }) => {
-    const game = activeGames.get(gameId); if (!game) return;
+    const game = activeGames.get(gameId);
+    if (!game) { socket.emit('error', 'Партия не найдена (возможно, уже завершилась)'); return; }
     if (typeof move !== 'object' || typeof move.from !== 'number' || typeof move.to !== 'number') return;
     if (move.from < 0 || move.from > 63 || move.to < 0 || move.to > 63) return;
+    if (game.white !== socket.username && game.black !== socket.username) return;
     const pc = game.white === socket.username ? 'white' : 'black';
-    if (game.turn !== pc) return;
+    // БАГ (исправлено): раньше здесь был просто "return" без единого
+    // уведомления клиенту. Но клиент к этому моменту уже применил ход
+    // ЛОКАЛЬНО, оптимистично, ещё до ответа сервера (см. board.js:
+    // executeMove) — значит игрок видел, что сходил, а сервер это молча
+    // отбрасывал. Причина рассинхронизации turn — обычно короткий обрыв
+    // связи, из-за которого предыдущий ход/подтверждение потерялись.
+    // Теперь в такой ситуации шлём 'move_rejected' с полной актуальной
+    // историей ходов и временем — клиент по этому событию откатывает
+    // локальную доску и пересобирает её по реальному состоянию партии
+    // (см. app.js: socket.on('move_rejected', ...) и board.js:resyncFromServer).
+    if (game.turn !== pc) {
+      socket.emit('move_rejected', {
+        gameId, reason: 'not-your-turn',
+        moves: game.moves, whiteTime: game.whiteTime, blackTime: game.blackTime, lastMoveAt: game.lastMoveAt,
+      });
+      return;
+    }
     if (game._board) {
       const moveObj = { from: move.from, to: move.to, promotion: move.promotion || null };
       if (!serverChess.isLegalMove(game._board, moveObj)) {
         const rebuilt = serverChess.rebuildBoard(game.moves);
-        if (!serverChess.isLegalMove(rebuilt, moveObj)) { socket.emit('error', 'Незаконный ход'); return; }
+        if (!serverChess.isLegalMove(rebuilt, moveObj)) {
+          socket.emit('move_rejected', {
+            gameId, reason: 'illegal-move',
+            moves: game.moves, whiteTime: game.whiteTime, blackTime: game.blackTime, lastMoveAt: game.lastMoveAt,
+          });
+          return;
+        }
         game._board = rebuilt;
         console.warn(`[make_move] Ресинхронизация доски для игры ${gameId} (игрок: ${socket.username})`);
       }
@@ -6322,6 +6425,27 @@ io.on('connection', (socket) => {
       }
     }
 
+    // ── Ничьи по правилам (50 ходов / недостаток материала / троекратное
+    // повторение позиции) — тоже перепроверяем по истории ходов, а не
+    // просто верим клиенту. Раньше клиент такие заявки вообще не слал
+    // (см. исправление в board.js), из-за чего партия никогда не
+    // завершалась сама — время шло, а ходить было некуда.
+    if (reason === 'threefold-repetition' || reason === 'fifty-move' || reason === 'insufficient-material') {
+      if (norm !== 'draw') { socket.emit('error', 'Некорректный результат ничьей'); return; }
+      if (reason === 'threefold-repetition' && !serverChess.isThreefoldRepetition(game.moves)) {
+        socket.emit('error', 'Повторение позиции не подтверждено сервером'); return;
+      }
+      if (reason === 'fifty-move' && !serverChess.isFiftyMoveRule(game.moves)) {
+        socket.emit('error', 'Правило 50 ходов не подтверждено сервером'); return;
+      }
+      if (reason === 'insufficient-material') {
+        const board = game._board || serverChess.rebuildBoard(game.moves);
+        if (!serverChess.isInsufficientMaterial(board.squares)) {
+          socket.emit('error', 'Недостаток материала не подтверждён сервером'); return;
+        }
+      }
+    }
+
     // Удаляем сразу — чтобы второй клиент не мог вызвать game_over дважды на ту же игру
     if (accuracy) game.accuracy = accuracy;
     await endGameAuthoritative(gameId, game, norm, reason);
@@ -6380,6 +6504,63 @@ io.on('connection', (socket) => {
 
   socket.on('leave_club_room', (clubId) => { socket.leave('club_' + clubId); });
 
+// ── Фильтр глобального чата ─────────────────────────────────────
+// Та же логика, что уже используется на клиенте (app.js:containsBadWords).
+// БАГ (исправлено): раньше здесь был отдельный, свой, куда более грубый
+// фильтр — плоский .includes() без учёта границ слова. Из-за этого
+// "рубля" (и любое другое слово, просто ЗАКАНЧИВАющееся на "бля") ловилось
+// как мат — а последствие было не просто "сообщение не отправлено", а
+// chatHardBan(): ПОЖИЗНЕННЫЙ бан аккаунта и устройства с удалением
+// истории сообщений. Заодно убрал токсичные-но-не-матерные слова
+// ("дебил","идиот","мразь","тварь","урод","чмошник") — это не мат, их
+// уже убрали из клиентского списка по этой же причине (см. app.js).
+const MAT_WORDS_CHAT = [
+  'блять','блядь','бля','пиздец','пизда','пизду','пизды',
+  'сука','сучка','хуй','хуе','хер',
+  'ебать','ебал','ебан','ебаный','ебло','еблан','ебуч','заеб','выеб',
+  'нахуй','нахер','похуй','похер',
+  'гандон','долбоеб','долбоёб','далбаеб','далбоеб','далбоёб','мудак',
+  'шлюха','шлюх','шалава','проститутка',
+  'соси','сосать','отсоси','сраный','обосранный','пздц',
+  'fuck','fucking','bitch','asshole','dick','shit',
+];
+// Спам/казино/ссылки — тут по-прежнему ищем максимально агрессивно (в
+// одну сплошную строку без пробелов). Заодно почистил два "мёртвых"
+// слова из старого списка — "договорноймatch" и "легкиеdeньги" — там
+// была опечатка вперемешку кириллицы с латиницей, из-за которой они
+// физически не могли ни с чем совпасть.
+const SPAM_WORDS_CHAT = [
+  'казино','casino','ставки','ставка','bet','букмекер',
+  '1xbet','melbet','parimatch','fonbet','aviator',
+  'выигрыш','джекпот','бонус','промокод','депозит','фриспины','free spin',
+  'прогноз','договорной матч','легкие деньги',
+];
+function normalizeChatWord(text) {
+  return text.toLowerCase().replace(/ё/g, 'е').replace(/[@]/g, 'a').replace(/[0]/g, 'o')
+    .replace(/[3]/g, 'e').replace(/[1!]/g, 'i').replace(/9/g, 'я').replace(/6/g, 'б').replace(/4/g, 'ч');
+}
+function normalizeChatCollapsed(text) {
+  return normalizeChatWord(text).replace(/\s+/g, '').replace(/[^a-zа-я0-9]/gi, '');
+}
+function chatMessageHasBadWords(text) {
+  const collapsed = normalizeChatCollapsed(text);
+  if (SPAM_WORDS_CHAT.some(w => collapsed.includes(normalizeChatCollapsed(w)))) return true;
+  // Короткие корни (3 буквы и меньше, типа "бля","хер") ловим ТОЛЬКО как
+  // начало слова — иначе поймаем "рубля","сабля","херсон" и подобные ни
+  // при чём не виноватые слова. Более длинные однозначные корни ищем
+  // где угодно внутри слова — это по-прежнему ловит приставочные формы.
+  const tokens = normalizeChatWord(text).replace(/[^a-zа-я0-9\s]/gi, '').split(/\s+/).filter(Boolean);
+  return MAT_WORDS_CHAT.some(rawWord => {
+    const word = normalizeChatWord(rawWord).replace(/[^a-zа-я0-9]/gi, '');
+    if (!word) return false;
+    // "хер" отдельно — только точное совпадение слова целиком, иначе
+    // ловит "Херсон", "херувим" и подобные ни при чём не виноватые слова.
+    if (word === 'хер') return tokens.includes(word);
+    if (word.length <= 3) return tokens.some(t => t.startsWith(word));
+    return tokens.some(t => t.includes(word));
+  });
+}
+
   socket.on('global_chat', async ({ message }) => {
     if (!socket.username) return;
     const text = (message || '').trim().slice(0, 300); if (!text) return;
@@ -6415,9 +6596,7 @@ io.on('connection', (socket) => {
     const LINK_TRIGGERS = ['http','https','www','tme','discordgg','vkcom','instagramcom','tiktokcom'];
     if (LINK_TRIGGERS.some(t => textLow.includes(t))) { await chatHardBan('Реклама/ссылки в чате'); return; }
 
-    const BAD_CHAT_WORDS = ['блять','блядь','бля','пиздец','пизда','пизду','пизды','сука','сучка','хуй','хуе','хер','ебать','ебал','ебан','ебаный','ебло','еблан','ебуч','заеб','выеб','нахуй','нахер','похуй','похер','гандон','долбоеб','долбоёб','далбаеб','далбоеб','далбоёб','дебил','идиот','мразь','тварь','урод','мудак','чмо','чмошник','шлюха','шлюх','шалава','проститутка','соси','сосать','отсоси','сраный','обосранный','пздц','fuck','fucking','bitch','asshole','dick','shit','казино','casino','ставки','ставка','bet','букмекер','1xbet','melbet','parimatch','fonbet','aviator','выигрыш','джекпот','бонус','промокод','депозит','фриспины','freespin','прогноз','договорноймatch','легкиеdeньги'];
-    function normChat(t) { return t.toLowerCase().replace(/ё/g,'е').replace(/[@]/g,'a').replace(/[0]/g,'o').replace(/[3]/g,'e').replace(/[1!]/g,'i').replace(/9/g,'я').replace(/6/g,'б').replace(/4/g,'ч').replace(/\s+/g,'').replace(/[^a-zа-я]/gi,''); }
-    if (BAD_CHAT_WORDS.some(w => normChat(text).includes(normChat(w)))) { await chatHardBan('Нарушение правил чата (запрещённые слова)'); return; }
+    if (chatMessageHasBadWords(text)) { await chatHardBan('Нарушение правил чата (запрещённые слова)'); return; }
 
     if (socket._lastChatMsg === text) {
       socket._dupCount = (socket._dupCount || 0) + 1;

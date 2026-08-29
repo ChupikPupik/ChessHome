@@ -23,37 +23,44 @@ function toggleLoginPasswordVisibility(btn) {
 const STREAMERS = ['VLAD', 'Solo', 'aaa', 'GGbers'];
 
 // ─── ФИЛЬТР ЧАТА ───────────────────────────────────────────
-const BAD_WORDS = [
-  // мат / токсик (рус)
+// Мат / реальные ругательства. Убрал сюда генерические оскорбления
+// ("дебил","идиот","тварь","урод","мразь","чмо","аутист","даун",
+// "жиробас") — это токсичность, а не мат, они были причиной того что
+// фильтр казался слишком строгим. Настоящие ругательства остаются
+// под запретом.
+const MAT_WORDS = [
   'блять','блядь','бля','пиздец','пизда','пизду','пизды',
   'сука','сучка','хуй','хуе','хер',
   'ебать','ебал','ебан','ебаный','ебло','еблан','ебуч','заеб','выеб',
   'нахуй','нахер','похуй','похер',
-  'гандон','долбоеб','долбоёб','далбаеб','далбоеб','далбоёб',
-  'дебил','идиот','мразь','тварь','урод','мудак','чмо','чмошник',
+  'гандон','долбоеб','долбоёб','далбаеб','далбоеб','далбоёб','мудак',
   'шлюха','шлюх','шалава','проститутка',
-  'соси','сосать','отсоси', 'сраный', 'обосранный', 'пздц', 'жиробас',
-  'порн', 'влагалище', 'секс', 'сэкс', 'аутист', 'даун', 'дрочка', 'пидор',
-
-  // мат / токсик (англ)
+  'соси','сосать','отсоси','сраный','обосранный','пздц',
+  'порн','влагалище','секс','сэкс','дрочка','пидор',
+  // англ
   'fuck','fucking','bitch','asshole','dick','shit',
+];
 
-  // казино / ставки / скам
+// Спам / казино / ставки / реклама — тут по-прежнему ищем максимально
+// агрессивно (в одну сплошную строку без пробелов), чтобы ловить обход
+// фильтра вставкой пробелов и точек: "к а з и н о", "т . м е" и т.п.
+// Ложных срабатываний на обычные слова тут не бывает (это не мат-корни).
+const SPAM_WORDS = [
   'казино','casino','ставки','ставка','bet','букмекер',
   '1xbet','melbet','parimatch','fonbet',
   'aviator','crash',
   'выигрыш','джекпот','бонус','бонусы','промокод','депозит',
   'фриспины','free spin',
   'прогноз','договорной матч',
-
-  // спам / реклама / ссылки
   'http://','https://','www.',
   't.me','telegram','discord','discord.gg',
   'vk.com','instagram.com','tiktok.com',
   'легкие деньги', 'http','https','www','tme','discordgg'
 ];
 
-function normalize(text) {
+// Замены букв/цифр для обхода фильтра (leetspeak) — без удаления
+// пробелов, чтобы можно было отдельно проверять по словам.
+function normalizeWord(text) {
   return text
     .toLowerCase()
     .replace(/ё/g, 'е')
@@ -63,14 +70,41 @@ function normalize(text) {
     .replace(/[1!]/g, 'i')
     .replace(/9/g, 'я')
     .replace(/6/g, 'б')
-    .replace(/4/g, 'ч')
-    .replace(/\s+/g, '') 
+    .replace(/4/g, 'ч');
+}
+
+// Старая агрессивная нормализация (для спам/казино-проверки): убираем
+// вообще все пробелы и небуквенные символы, чтобы ловить обход через
+// расстановку пробелов между буквами.
+function normalize(text) {
+  return normalizeWord(text)
+    .replace(/\s+/g, '')
     .replace(/[^a-zа-я0-9]/gi, '');
 }
 
 function containsBadWords(text) {
-  const normalized = normalize(text);
-  return BAD_WORDS.some(word => normalized.includes(normalize(word)));
+  // 1) Спам/казино/ссылки — как и раньше, где угодно в склеенной строке.
+  const collapsed = normalize(text);
+  if (SPAM_WORDS.some(word => collapsed.includes(normalize(word)))) return true;
+
+  // 2) Мат — проверяем по отдельным словам, а не по случайной подстроке
+  //    посреди текста. Короткие корни (3 буквы и меньше, типа "бля",
+  //    "хер") ловим ТОЛЬКО как начало слова — иначе словим "рубля",
+  //    "сабля", "кораблях" и подобные ни при чём не виноватые слова,
+  //    которые просто ЗАКАНЧИВАются на такое сочетание букв. Более
+  //    длинные и однозначные корни ("блять","пиздец","ебаный"...)
+  //    по-прежнему ищем где угодно внутри слова — это по-прежнему
+  //    ловит приставочные формы вроде "разъебали".
+  const tokens = normalizeWord(text).replace(/[^a-zа-я0-9\s]/gi, '').split(/\s+/).filter(Boolean);
+  return MAT_WORDS.some(rawWord => {
+    const word = normalizeWord(rawWord).replace(/[^a-zа-я0-9]/gi, '');
+    if (!word) return false;
+    // "хер" отдельно — только точное совпадение слова целиком, иначе
+    // ловит "Херсон", "херувим" и подобные ни при чём не виноватые слова.
+    if (word === 'хер') return tokens.includes(word);
+    if (word.length <= 3) return tokens.some(t => t.startsWith(word));
+    return tokens.some(t => t.includes(word));
+  });
 }
 
 // ─── ROUTER ───────────────────────────────────────────────────
@@ -349,8 +383,20 @@ function connectSocket() {
   socket.on('challenges_update', challenges => renderChallengeList(challenges));
   socket.on('game_start', data => {
     if (data.moves && data.moves.length > 0) {
-      // Реджойн после перезагрузки — предлагаем вернуться
-      showRejoinBanner(data);
+      // Реджойн после обрыва связи/перезагрузки. Раньше в ЛЮБОМ случае
+      // показывался баннер "вернуться в партию?" — из-за этого простой
+      // F5 посреди своей же игры выглядел как переход в "просмотрщик":
+      // страница игры уже открыта (URL /game/<id>), а сама партия ещё не
+      // запущена, пока не нажмёшь на баннер. Если мы и так уже находимся
+      // на странице именно этой партии — возвращаем в игру сразу, без
+      // лишнего клика. Баннер оставляем только на случай, если игрок
+      // ушёл на другую страницу (лобби и т.п.) и его нужно спросить.
+      if (location.pathname === '/game/' + data.gameId) {
+        _rejoinData = data;
+        doRejoin();
+      } else {
+        showRejoinBanner(data);
+      }
     } else if (data.tournamentId) {
       // Турнирная партия — сразу запускаем игру
       document.getElementById('pending-t-banner')?.remove();
@@ -368,6 +414,22 @@ function connectSocket() {
   });
   socket.on('opponent_move', (data) => chessBoard.applyOpponentMove(data.move, data.whiteTime, data.blackTime));
   socket.on('move_confirmed', (data) => chessBoard.syncClockFromServer(data.whiteTime, data.blackTime));
+  socket.on('move_rejected', (data) => {
+    // БАГ (исправлено): сервер раньше молча игнорировал ход, если, с его
+    // точки зрения, сейчас не ваш ход или он незаконный (см. index.js:
+    // make_move) — а доска у вас уже показывала этот ход как сделанный
+    // (см. board.js:executeMove — ход применяется локально сразу, не
+    // дожидаясь подтверждения). В итоге позиция окончательно расходилась
+    // с сервером, и партия просто зависала: сходить нельзя, время идёт.
+    // Теперь по такому сигналу откатываем доску к реальному, подтверждённому
+    // сервером состоянию партии.
+    const reasons = {
+      'not-your-turn': 'Ход не принят: рассинхронизация с сервером',
+      'illegal-move':  'Ход не принят: незаконный ход',
+    };
+    toast(reasons[data.reason] || 'Ход не принят сервером', 'error');
+    chessBoard.resyncFromServer(data);
+  });
   socket.on('incoming_challenge', ({ from, socketId, rated }) => showIncomingChallenge(from, socketId, rated));
   socket.on('challenge_declined', by => toast(by + ' отклонил вызов', 'info'));
   socket.on('game_ended', data => {
@@ -602,7 +664,8 @@ function renderChallengeList(challenges) {
       btn.className = 'btn btn-primary btn-sm';
       btn.textContent = 'Играть';
       btn.addEventListener('click', () => {
-        if (!socket?.connected) { toast('Нет соединения', 'error'); return; }
+        // См. фикс в postChallenge() — socket.connected не блокируем, Socket.IO
+        // сам доставит emit после доли секунды переподключения.
         socket.emit('accept_challenge', c.id);
       });
       item.appendChild(btn);
@@ -630,13 +693,18 @@ function selectRated(rated) {
 function postChallenge() {
   if (!currentUser) { openModal('modal-login'); return; }
   if (!socket) { toast('Нет соединения. Войдите заново.', 'error'); return; }
-  if (!socket.connected) { toast('Нет соединения с сервером', 'error'); return; }
+  // БАГ (исправлено): та же история, что раньше была в чате (см. sendChatMsg/
+  // sendGlobalChatMsg) — проверка socket.connected иногда ловила долю секунды
+  // штатного переподключения socket.io (например, смена вышки/wifi) и писала
+  // "нет соединения", хотя связь была рабочая. Socket.IO сам буферизует emit
+  // на такой короткий обрыв и отправит его сразу после переподключения —
+  // поэтому просто отправляем, не блокируя по .connected.
   socket.emit('post_challenge', { timeControl: selectedTC, color: selectedColor, rated: selectedRated });
   toast(selectedRated ? 'Вызов выставлен в зал!' : 'Товарищеский вызов выставлен в зал!', 'success');
 }
 
 function cancelChallenge() {
-  if (!socket?.connected) return;
+  if (!socket) return;
   socket.emit('cancel_challenge');
   toast('Вызов отменён', 'info');
 }
@@ -863,7 +931,7 @@ function showUserProfileModal(user) {
 function challengeUserFromProfile(username) {
   document.getElementById('modal-user-profile')?.classList.remove('open');
   if (!currentUser) { openModal('modal-login'); return; }
-  if (!socket?.connected) { toast('Нет соединения', 'error'); return; }
+  if (!socket) { toast('Нет соединения. Войдите заново.', 'error'); return; }
   const rated = !confirm('Сделать партию товарищеской (без изменения рейтинга)?\n\nОК — товарищеская, Отмена — рейтинговая.');
   socket.emit('challenge_user', { username, rated });
   toast(`Вызов отправлен ${username}!`, 'success');
@@ -1061,13 +1129,19 @@ function sendChatMsg() {
   const input = document.getElementById('chat-input');
   let msg = input?.value.trim();
 
-  if (!msg || !chessBoard.gameId || !socket?.connected) return;
+  if (!msg || !chessBoard.gameId) return;
+  if (!socket) { toast('Нет соединения. Войдите заново.', 'error'); return; }
 
   if (containsBadWords(msg)) {
     toast('Сообщение содержит запрещённые слова', 'error');
     return;
   }
 
+  // Socket.IO сам буферизует emit во время короткого переподключения и
+  // отправит сообщение, как только связь восстановится — поэтому здесь
+  // больше НЕ проверяем socket.connected. Раньше из-за этой проверки чат
+  // иногда писал "нет соединения" даже при доле секунды обрыва (смена
+  // сети, сворачивание вкладки и т.п.), хотя интернет был в порядке.
   socket.emit('game_chat', { gameId: chessBoard.gameId, message: msg });
   appendChatMsg(currentUser.username, msg, true);
 
@@ -1380,13 +1454,18 @@ function sendGlobalChatMsg() {
 
   if (!msg) return;
   if (!currentUser) { toast('Войдите чтобы писать в чат', 'info'); return; }
-  if (!socket?.connected) { toast('Нет соединения', 'error'); return; }
+  if (!socket) { toast('Нет соединения. Войдите заново.', 'error'); return; }
 
   if (containsBadWords(msg)) {
     toast('Сообщение содержит запрещённые слова', 'error');
     return;
   }
 
+  // Как и в игровом чате — не блокируем отправку по socket.connected:
+  // Socket.IO сам поставит сообщение в очередь на долю секунды обрыва
+  // связи и отправит его сразу после переподключения. Раньше именно
+  // эта проверка иногда показывала "нет соединения" при фактически
+  // рабочем интернете.
   socket.emit('global_chat', { message: msg });
   input.value = '';
   input.focus();

@@ -342,8 +342,9 @@ const ChessEngine = (() => {
     if (moves.length === 0) {
       return inCheck ? { status: 'checkmate', winner: opposite(state.turn) } : { status: 'stalemate' };
     }
-    if (state.halfmove >= 100) return { status: 'draw', reason: '50-move rule' };
-    if (isInsufficientMaterial(state)) return { status: 'draw', reason: 'Insufficient material' };
+    if (state.halfmove >= 100) return { status: 'draw', reason: 'fifty-move' };
+    if (isInsufficientMaterial(state)) return { status: 'draw', reason: 'insufficient-material' };
+    if (isThreefoldRepetition(state)) return { status: 'draw', reason: 'threefold-repetition' };
     return { status: inCheck ? 'check' : 'playing', inCheck };
   }
 
@@ -355,6 +356,29 @@ const ChessEngine = (() => {
       if (minor) return true; // KBK or KNK
     }
     return false;
+  }
+
+  // Отпечаток позиции для правила троекратного повторения: расстановка
+  // фигур + очередь хода + права рокировки + клетка взятия на проходе —
+  // без счётчиков полуходов/ходов (см. первые 4 поля FEN), они на
+  // повторение позиции не влияют.
+  function positionKey(fen) {
+    return fen.split(' ').slice(0, 4).join(' ');
+  }
+
+  function isThreefoldRepetition(state) {
+    const currentKey = positionKey(toFEN(state));
+    let count = 0;
+    // Стартовая позиция партии не попадает в history (там только позиции
+    // ПОСЛЕ каждого хода) — если через цепочку ходов вернулись именно
+    // к ней, её тоже нужно засчитать как одно из повторений.
+    if (positionKey(START_FEN) === currentKey) count++;
+    if (state.history) {
+      for (const h of state.history) {
+        if (h.fen && positionKey(h.fen) === currentKey) count++;
+      }
+    }
+    return count >= 3;
   }
 
   // ─── SAN НОТАЦИЯ ─────────────────────────────────────────────
@@ -451,6 +475,8 @@ const ChessEngine = (() => {
     allLegalMoves,
     applyMove,
     getStatus,
+    isInsufficientMaterial,
+    isThreefoldRepetition,
     toSAN,
     toPGN,
     squareToIndex,
