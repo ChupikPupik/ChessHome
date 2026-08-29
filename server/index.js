@@ -806,6 +806,25 @@ const pendingChallenges = [];
 const activeGames       = new Map();
 const tournamentGames   = new Map();
 
+// ── ПУЛ ДОМАШНИХ WORKER'ОВ (ваши ПК) ────────────────────────────
+// Каждый воркер — обычное исходящее socket.io-подключение с вашего ПК
+// (не нужно открывать порты/иметь белый IP), аутентифицируется секретом
+// из .env. Поддерживается СРАЗУ НЕСКОЛЬКО воркеров одновременно —
+// у каждого подключения свой socket.id, так что просто запускайте
+// скрипт на нескольких машинах с одним и тем же WORKER_SECRET.
+// Каждый воркер сообщает, сколько потоков он готов использовать
+// (настраивается в .env самого воркера, см. worker-client/.env.example).
+// Работоспособность сайта никогда не зависит от воркеров: если все
+// выключены, анализ просто идёт локально в браузере посетителя, как
+// было раньше (см. analyze_request ниже и фолбэк в stockfish-ui.js).
+const workers = new Map();      // socket.id -> { socket, threads, busy, lastSeen }
+const analyzeJobs = new Map();  // jobId -> { requesterSocketId, workerSocketId }
+
+function pickIdleWorker() {
+  for (const w of workers.values()) { if (!w.busy) return w; }
+  return null;
+}
+
 // ── IP-БАН middleware ─────────────────────────────────────────
 function ipBanMiddleware(req, res, next) {
   const ip = getIP(req);
@@ -2901,6 +2920,9 @@ app.get('/api/admin/dashboard', authMiddleware, async (req, res) => {
 
       res.json({
         online: onlineUsers.size,
+        workers: [...workers.values()].map(w => ({
+          threads: w.threads, busy: w.busy, lastSeen: w.lastSeen,
+        })),
         totals: {
           users: parseInt(totalUsers.rows[0].count),
           bannedUsers: parseInt(bannedUsersCnt.rows[0].count),
@@ -6088,6 +6110,85 @@ io.on('connection', (socket) => {
   }
 
   if (!limiterSocketConnect.check(socketIP).allowed) { socket.disconnect(true); return; }
+
+  // ── ДОМАШНИЙ WORKER: аутентификация по секретному токену ──────
+  // Если задан WORKER_SECRET в .env — принимаем воркер-подключения.
+  // Если не задан вообще — фича просто выключена, ничего не ломается.
+  socket.on('worker_auth', (payload) => {
+    const secret = typeof payload === 'string' ? payload : payload?.secret;
+    if (!process.env.WORKER_SECRET || secret !== process.env.WORKER_SECRET) {
+      socket.emit('worker_auth_error', 'Неверный секрет');
+      socket.disconnect(true);
+      return;
+    }
+    const threads = (typeof payload === 'object' && Number.isInteger(payload?.threads))
+      ? Math.max(1, Math.min(payload.threads, 64)) : 1;
+    workers.set(socket.id, { socket, threads, busy: false, lastSeen: Date.now() });
+    socket.isWorker = true;
+    socket.emit('worker_auth_ok');
+    console.log(`[Worker] Подключился (${threads} поток(а/ов)). Всего воркеров онлайн: ${workers.size}`);
+  });
+  socket.on('worker_heartbeat', () => {
+    const w = workers.get(socket.id);
+    if (w) w.lastSeen = Date.now();
+  });
+  // Воркер прислал промежуточную строку анализа ("info depth ...") —
+  // пересылаем её как есть тому браузеру, который заказал анализ.
+  // Формат строки — родной UCI-вывод Stockfish, парсер на клиенте
+  // (stockfish-ui.js) уже умеет такие строки читать — не важно,
+  // пришли они от локального движка в браузере или от воркера.
+  socket.on('worker_job_progress', ({ jobId, line }) => {
+    const job = analyzeJobs.get(jobId);
+    if (!job) return;
+    const requester = io.sockets.sockets.get(job.requesterSocketId);
+    if (requester) requester.emit('analyze_line', line);
+  });
+  socket.on('worker_job_done', ({ jobId, line }) => {
+    const job = analyzeJobs.get(jobId);
+    if (!job) return;
+    const requester = io.sockets.sockets.get(job.requesterSocketId);
+    if (requester) requester.emit('analyze_line', line);
+    const w = workers.get(job.workerSocketId);
+    if (w) w.busy = false;
+    analyzeJobs.delete(jobId);
+  });
+
+  // ── Запрос анализа от обычного посетителя (страница «Анализ») ──
+  socket.on('analyze_request', ({ fen, depth }) => {
+    if (typeof fen !== 'string' || fen.length > 100) return;
+    const safeDepth = Number.isInteger(depth) ? Math.max(1, Math.min(depth, 30)) : 18;
+    const w = pickIdleWorker();
+    if (!w) { socket.emit('analyze_unavailable'); return; } // клиент сам уйдёт на локальный анализ в браузере
+    const jobId = uuidv4();
+    w.busy = true;
+    analyzeJobs.set(jobId, { requesterSocketId: socket.id, workerSocketId: w.socket.id });
+    w.socket.emit('worker_job', { jobId, fen, depth: safeDepth });
+  });
+  socket.on('analyze_cancel', () => {
+    for (const [jobId, job] of analyzeJobs.entries()) {
+      if (job.requesterSocketId === socket.id) {
+        const w = workers.get(job.workerSocketId);
+        if (w) { w.socket.emit('worker_job_cancel', { jobId }); w.busy = false; }
+        analyzeJobs.delete(jobId);
+      }
+    }
+  });
+  socket.on('disconnect', () => {
+    if (socket.isWorker && workers.has(socket.id)) {
+      workers.delete(socket.id);
+      // Если у этого воркера была незавершённая задача — сообщаем
+      // заказчику, чтобы он не завис в ожидании, а ушёл на локальный
+      // анализ в браузере.
+      for (const [jobId, job] of analyzeJobs.entries()) {
+        if (job.workerSocketId === socket.id) {
+          const requester = io.sockets.sockets.get(job.requesterSocketId);
+          if (requester) requester.emit('analyze_unavailable');
+          analyzeJobs.delete(jobId);
+        }
+      }
+      console.log(`[Worker] Отключился. Воркеров онлайн: ${workers.size}`);
+    }
+  });
 
   const origOn = socket.on.bind(socket);
   socket.on = function(event, handler) {

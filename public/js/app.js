@@ -431,6 +431,18 @@ function connectSocket() {
     chessBoard.resyncFromServer(data);
   });
   socket.on('incoming_challenge', ({ from, socketId, rated }) => showIncomingChallenge(from, socketId, rated));
+  // ── Анализ через домашний воркер (см. worker-client/) ──────────
+  // Сервер прислал сырую UCI-строку от настоящего Stockfish на вашем
+  // ПК — просто отдаём её тому же парсеру, что обрабатывает и локальный
+  // движок в браузере (см. stockfish-ui.js:handleMessage).
+  socket.on('analyze_line', (line) => {
+    if (typeof StockfishAnalyzer !== 'undefined') StockfishAnalyzer.handleRemoteMessage(line);
+  });
+  // Воркеров нет свободных (или единственный отвалился прямо во время
+  // анализа) — молча уходим на локальный анализ в браузере.
+  socket.on('analyze_unavailable', () => {
+    if (typeof StockfishAnalyzer !== 'undefined') StockfishAnalyzer.handleRemoteUnavailable();
+  });
   socket.on('challenge_declined', by => toast(by + ' отклонил вызов', 'info'));
   socket.on('game_ended', data => {
     const wasInTournament = _currentGameData && _currentGameData.tournamentId;

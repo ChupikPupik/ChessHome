@@ -7,6 +7,13 @@ const StockfishAnalyzer = (() => {
   let isReady = false;
   let analyzing = false;
   let currentCallback = null;
+  // Домашний воркер (см. worker-client/) — сильнее и не грузит браузер
+  // посетителя. Пробуем его первым; если недоступен/все заняты — сервер
+  // сразу ответит analyze_unavailable, и просто продолжаем локально,
+  // как раньше. Ни один из путей не обязателен для работы другого.
+  let usingRemote = false;
+  let remoteFallbackTimer = null;
+  let pendingRemote = null; // { fen, depth } — что запросили удалённо, на случай фолбэка
 
   function init() {
     try {
@@ -120,19 +127,68 @@ const StockfishAnalyzer = (() => {
   }
 
   function analyze(fen, depth = 18) {
-    if (!sf) {
-      init();
-      setTimeout(() => analyze(fen, depth), 500);
+    // Сначала пробуем домашний воркер — если сокет подключён, шлём запрос
+    // и ждём подтверждения. Если за 1.5с сервер не откликнулся (или сразу
+    // прислал analyze_unavailable — воркеров нет/все заняты), уходим на
+    // локальный анализ в браузере, как было раньше.
+    if (typeof socket !== 'undefined' && socket && socket.connected) {
+      usingRemote = true;
+      pendingRemote = { fen, depth };
+      analyzing = true;
+      setEngineStatus('thinking');
+      socket.emit('analyze_request', { fen, depth });
+      clearTimeout(remoteFallbackTimer);
+      remoteFallbackTimer = setTimeout(() => {
+        if (usingRemote && pendingRemote) { usingRemote = false; analyzeLocal(fen, depth); }
+      }, 1500);
       return;
     }
-    if (!isReady) { setTimeout(() => analyze(fen, depth), 200); return; }
+    analyzeLocal(fen, depth);
+  }
+
+  function analyzeLocal(fen, depth) {
+    if (!sf) {
+      init();
+      setTimeout(() => analyzeLocal(fen, depth), 500);
+      return;
+    }
+    if (!isReady) { setTimeout(() => analyzeLocal(fen, depth), 200); return; }
     analyzing = true;
     setEngineStatus('thinking');
     sf.postMessage('position fen ' + fen);
     sf.postMessage(`go depth ${depth}`);
   }
 
+  // Прилетела строка от домашнего воркера (сырой UCI-вывод настоящего
+  // Stockfish) — это ровно тот же формат, что и у локального движка в
+  // браузере, поэтому просто прогоняем через тот же handleMessage().
+  function handleRemoteMessage(line) {
+    clearTimeout(remoteFallbackTimer);
+    pendingRemote = null;
+    handleMessage(line);
+  }
+
+  // Сервер сообщил, что воркеров нет/все заняты (сразу, или воркер
+  // отвалился прямо во время анализа) — падаем на локальный движок.
+  function handleRemoteUnavailable() {
+    clearTimeout(remoteFallbackTimer);
+    if (usingRemote && pendingRemote) {
+      const { fen, depth } = pendingRemote;
+      usingRemote = false;
+      pendingRemote = null;
+      analyzeLocal(fen, depth);
+    }
+  }
+
   function stop() {
+    if (usingRemote) {
+      if (typeof socket !== 'undefined' && socket) socket.emit('analyze_cancel');
+      usingRemote = false;
+      pendingRemote = null;
+      clearTimeout(remoteFallbackTimer);
+      analyzing = false;
+      return;
+    }
     if (sf && analyzing) { sf.postMessage('stop'); }
   }
 
@@ -153,7 +209,7 @@ const StockfishAnalyzer = (() => {
     return from + '-' + to + (promo ? '=' + promo : '');
   }
 
-  return { init, analyze, stop, isReady: () => isReady };
+  return { init, analyze, stop, isReady: () => isReady, handleRemoteMessage, handleRemoteUnavailable };
 })();
 
 // Global function to request analysis
