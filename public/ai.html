@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChessHome AI</title>
+<style>
+  :root {
+    --bg: #0a0c11;
+    --bg-card: #14171f;
+    --bg-card-2: #191d27;
+    --border: #262b38;
+    --accent: #e2b23e;
+    --accent-2: #f2cf6b;
+    --accent-dark: #a87d1c;
+    --text-primary: #f0f2f6;
+    --text-secondary: #a9b0c0;
+    --text-muted: #6b7383;
+    --user-bubble: #2b3348;
+    --ai-bubble: #1a1e28;
+    --green: #3ecf6e;
+    --red: #e05a5a;
+    --radius: 16px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(circle at 15% -10%, rgba(226,178,62,0.10) 0%, transparent 45%),
+      radial-gradient(circle at 85% 0%, rgba(80,110,255,0.08) 0%, transparent 40%),
+      var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font);
+    min-height: 100vh;
+    padding-top: 56px; /* место под фиксированный хедер сайта (#ch-header) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page-wrap {
+    width: 100%;
+    max-width: 660px;
+    padding: 36px 16px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .header-block { text-align: center; margin-bottom: 24px; }
+  .header-block .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .header-block .badge .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .header-block h1 {
+    margin: 0;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+  }
+  .header-block h1 .piece { display: inline-block; margin-right: 6px; animation: float 3s ease-in-out infinite; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .header-block h1 span.hl {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .header-block p { margin: 10px 0 0; color: var(--text-muted); font-size: 14.5px; }
+
+  .chat-shell {
+    width: 100%;
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .chat-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .chat-topbar .who { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14.5px; }
+  .chat-topbar .who .ava {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .chat-topbar .status { font-size: 11.5px; color: var(--text-muted); font-weight: 400; }
+  .chat-topbar .clear-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .chat-topbar .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .chat-log {
+    padding: 20px 18px 8px;
+    height: 430px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .chat-log::-webkit-scrollbar { width: 6px; }
+  .chat-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .msg-row { display: flex; gap: 10px; align-items: flex-end; }
+  .msg-row.user { flex-direction: row-reverse; }
+  .avatar {
+    width: 28px; height: 28px; flex-shrink: 0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+  }
+  .msg-row.user .avatar { background: var(--user-bubble); }
+  .msg-col { display: flex; flex-direction: column; gap: 8px; max-width: 76%; }
+  .msg-row.user .msg-col { align-items: flex-end; }
+  .bubble {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    line-height: 1.48;
+    white-space: pre-wrap;
+    animation: pop-in 0.2s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  }
+  .msg-row.ai .bubble {
+    background: var(--ai-bubble);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+  .msg-row.user .bubble {
+    background: linear-gradient(135deg, #34405c, #2b3348);
+    border-bottom-right-radius: 4px;
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(5px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .msg-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #241a04;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s;
+    font-family: var(--font);
+  }
+  .msg-action:hover { opacity: 0.92; }
+  .msg-action:active { transform: scale(0.96); }
+
+  .typing-dots { display: flex; gap: 4px; padding: 5px 3px; }
+  .typing-dots span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted);
+    animation: bounce 1.1s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .suggestion-chip {
+    background: #1e222d;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, transform 0.1s;
+    white-space: nowrap;
+    font-family: var(--font);
+  }
+  .suggestion-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+  .suggestion-chip:active { transform: scale(0.96); }
+
+  .input-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,0,0,0.15);
+  }
+  .input-bar input {
+    flex: 1;
+    background: #1a1e27;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--text-primary);
+    font-size: 14.5px;
+    outline: none;
+    font-family: var(--font);
+  }
+  .input-bar input:focus { border-color: var(--accent); }
+  .input-bar input:disabled { opacity: 0.5; cursor: not-allowed; }
+  .input-bar button {
+    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    border: none;
+    border-radius: 12px;
+    padding: 0 20px;
+    color: #201603;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .input-bar button:hover { opacity: 0.92; }
+  .input-bar button:active { opacity: 0.75; }
+  .input-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Оверлей блокировки для неавторизованных ── */
+  .auth-gate {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,12,17,0.86);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 30px;
+    z-index: 5;
+  }
+  .auth-gate.show { display: flex; }
+  .auth-gate .lock-icon { font-size: 38px; margin-bottom: 10px; }
+  .auth-gate h3 { margin: 0 0 6px; font-size: 18px; }
+  .auth-gate p { margin: 0 0 18px; color: var(--text-muted); font-size: 13.5px; max-width: 320px; }
+  .auth-gate .btns { display: flex; gap: 10px; }
+  .auth-gate .btn-login, .auth-gate .btn-register {
+    border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 700;
+    cursor: pointer; border: none; font-family: var(--font);
+  }
+  .auth-gate .btn-login { background: #1e222d; border: 1px solid var(--border); color: var(--text-primary); }
+  .auth-gate .btn-register { background: linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color: #201603; }
+
+  .footnote {
+    max-width: 660px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    margin-top: 18px;
+    line-height: 1.6;
+    padding: 0 16px;
+  }
+  .footnote a { color: var(--accent); text-decoration: none; }
+
+  /* ── Компактная модалка входа/регистрации ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(5,6,9,0.7);
+    display: none; align-items: center; justify-content: center; z-index: 2000;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .auth-modal {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 18px; width: 100%; max-width: 340px;
+    padding: 26px 24px 22px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  .auth-modal h2 { margin: 0 0 4px; font-size: 20px; text-align: center; }
+  .auth-modal .sub { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+  .auth-modal input {
+    width: 100%; background: #1a1e27; border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px; color: var(--text-primary);
+    font-size: 14px; margin-bottom: 10px; outline: none; font-family: var(--font);
+  }
+  .auth-modal input:focus { border-color: var(--accent); }
+  .auth-modal .hp-field { position: absolute; left: -9999px; opacity: 0; }
+  .auth-modal .err { color: var(--red); font-size: 12.5px; min-height: 16px; margin-bottom: 8px; }
+  .auth-modal .submit-btn {
+    width: 100%; background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    border: none; border-radius: 10px; padding: 11px; color: #201603;
+    font-weight: 700; font-size: 14.5px; cursor: pointer; margin-top: 4px;
+  }
+  .auth-modal .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-modal .switch-mode {
+    text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-muted);
+  }
+  .auth-modal .switch-mode a { color: var(--accent); text-decoration: none; cursor: pointer; }
+  .auth-modal .close-x {
+    float: right; background: none; border: none; color: var(--text-muted);
+    font-size: 18px; cursor: pointer; margin: -8px -6px 0 0;
+  }
+  .auth-modal .code-input {
+    text-align: center; font-size: 24px; letter-spacing: 10px; padding: 12px;
+  }
+
+  @media (max-width: 480px) {
+    .chat-log { height: 380px; }
+    .header-block h1 { font-size: 27px; }
+    .msg-col { max-width: 86%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="page-wrap">
+    <div class="header-block">
+      <div class="badge"><span class="dot"></span> ChessHome AI online</div>
+      <h1><span class="piece">♞</span>Chess<span class="hl">Home</span> AI</h1>
+      <p>Задай вопрос про сайт — отвечу, если знаю</p>
+    </div>
+
+    <div class="chat-shell">
+      <div class="chat-topbar">
+        <div class="who"><span class="ava">♞</span> ChessHome AI <span class="status" id="chat-status">BETA</span></div>
+        <button class="clear-btn" id="clear-chat-btn" title="Очистить историю">🗑 Очистить</button>
+      </div>
+
+      <div class="chat-log" id="chat-log"></div>
+      <div class="suggestions" id="suggestions"></div>
+      <div class="input-bar">
+        <input type="text" id="chat-input" placeholder="Напиши что-нибудь..." autocomplete="off" disabled>
+        <button id="send-btn" disabled>Отправить</button>
+      </div>
+
+      <div class="auth-gate" id="auth-gate">
+        <div class="lock-icon">🔒</div>
+        <h3>Только для зарегистрированных</h3>
+        <p>Войдите или зарегистрируйтесь, чтобы пообщаться с ChessHome AI — это займёт 10 секунд.</p>
+        <div class="btns">
+          <button class="btn-login" onclick="openAuthModal('login')">Войти</button>
+          <button class="btn-register" onclick="openAuthModal('register')">Регистрация</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footnote">
+      ChessHome AI BETA <br>
+      <a href="/">← Вернуться на ChessHome</a>
+    </div>
+  </div>
+
+  <!-- Компактная модалка входа/регистрации/2FA -->
+  <div class="modal-overlay" id="auth-modal-overlay">
+    <div class="auth-modal" id="auth-modal-content"></div>
+  </div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/header.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+//  ChessHome AI — имитация «умного» бота на заготовленных ответах.
+//  Никакого реального ИИ тут нет: просто сопоставление ключевых
+//  слов из вопроса со списком известных тем и случайный выбор
+//  одного из нескольких готовых ответов на эту тему.
+// ══════════════════════════════════════════════════════════════
+
+const API = '/api';
+
+async function apiPost(path, body) {
+  const res = await fetch(API + path, {
+    method: 'POST', credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  let data = {};
+  try { data = await res.json(); } catch {}
+  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  return data;
+}
+async function apiGet(path) {
+  const res = await fetch(API + path, { credentials: 'same-origin' });
+  if (!res.ok) return null;
+  try { return await res.json(); } catch { return null; }
+}
+
+// ─── Нормализация текста (как и в фильтре чата на сайте) ───────
+function normalizeText(text) {
+  return text
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[^a-zа-я0-9\s]/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// ─── База «знаний»: ключевые слова → ответы (+ опционально кнопка) ─
+// action.href — обычная ссылка; action.onClick — вызов JS-функции по имени.
+const INTENTS = [
+  { keywords: ['привет', 'здравств', 'хай', 'приветик', 'здарова', 'добрый день', 'доброе утро', 'добрый вечер', 'ку'],
+    answers: ['Привет! 👋 Рад видеть тебя на ChessHome!', 'Привет-привет! Готов поболтать о шахматах?', 'Здравствуй! Как настроение перед партией?', 'Привет! Как дела? :)'] },
+
+  { keywords: ['как дела', 'как ты', 'как жизнь', 'как настроение'],
+    answers: ['Отлично, кайфую тут на сайте среди шахмат ♟️ А у тебя как?', 'Всё супер, гоняю пешки туда-сюда весь день 😄', 'Живу лучше всех — на шахматном сайте и без забот!'] },
+
+  { keywords: ['кто ты', 'что ты', 'как тебя зовут', 'ты бот', 'ты нейросеть', 'ты ии', 'ты искусственный интеллект', 'ты чатгпт', 'ты gpt'],
+    answers: ['Я — ChessHome AI, местная шахматная душа сайта 🤖♟️ Пока что я не совсем ИИ, нахожусь в BETA версии, но мой ленивый создатель скоро поработает надо мной :)', 'Я маленький помощник ChessHome (BETA-версия).'] },
+
+  { keywords: ['регистрац', 'создать аккаунт', 'как начать играть', 'как зарегистр'],
+    answers: ['Всё просто — жми кнопку ниже, придумай ник и пароль, и через 10 секунд ты внутри! ♟️'],
+  },
+
+  { keywords: ['забыл пароль', 'не могу войти', 'восстановить пароль', 'сброс пароля'],
+    answers: ['Если не получается войти — напиши в поддержку, там разберутся с восстановлением доступа.'],
+    action: { label: 'Написать в поддержку →', href: '/appeal' } },
+
+  { keywords: ['как играть', 'правила шахмат', 'правила игры'],
+    answers: ['Обычные шахматные правила — ставь мат раньше соперника! Спроси про конкретное правило (рокировка, взятие на проходе, пат) — отвечу подробнее.'] },
+
+  { keywords: ['рокировк'],
+    answers: ['Рокировка — король и ладья одновременно меняются местами. Можно, только если ни король, ни эта ладья ещё не ходили, между ними пусто, и король не проходит через битое поле.'] },
+
+  { keywords: ['взятие на проходе', 'en passant'],
+    answers: ['Взятие на проходе: если пешка соперника только что пошла на 2 клетки и встала рядом с твоей — можешь взять её, как будто она сходила на 1 клетку. Только сразу следующим ходом, иначе право сгорает.'] },
+
+  { keywords: ['пат'],
+    answers: ['Пат — это ничья: у игрока нет ни одного законного хода, а его король при этом не под шахом.'] },
+
+  { keywords: ['рейтинг', 'elo', 'эло'],
+    answers: ['Рейтинг растёт за победы над сильными соперниками и падает за поражения — классика Эло.', 'Чем сильнее соперник, тем больше очков рейтинга получишь за победу над ним.'] },
+
+  { keywords: ['турнир', 'соревнован'],
+    answers: ['Турниры ждут в соответствующем разделе — присоединяйся и лови адреналин!'],
+    action: { label: 'К турнирам →', href: '/tournaments' } },
+
+  { keywords: ['задач', 'пазл', 'puzzle'],
+    answers: ['Шахматные задачи отлично прокачивают тактику — там же копится отдельный рейтинг по задачам.'],
+    action: { label: 'Решать задачи →', href: '/puzzles' } },
+
+  { keywords: ['storm', 'шторм'],
+    answers: ['Puzzle Storm — реши как можно больше задач на время. Азартно и хорошо разогревает перед партиями!'],
+    action: { label: 'Попробовать Storm →', href: '/storm' } },
+
+  { keywords: ['анализ', 'stockfish', 'разбор парти'],
+    answers: ['На странице анализа партию разбирает Stockfish — можно смотреть оценку позиции ход за ходом.'],
+    action: { label: 'Открыть анализ →', href: '/analysis' } },
+
+  { keywords: ['редактор', 'своя позиция', 'составить позицию'],
+    answers: ['В редакторе можно расставить любую позицию вручную и сразу отправить её на анализ.'],
+    action: { label: 'Открыть редактор →', href: '/editor' } },
+
+  { keywords: ['клуб'],
+    answers: ['Клубы — это шахматные сообщества внутри сайта. Загляни, может уже есть клуб по интересам!'],
+    action: { label: 'Клубы →', href: '/clubs' } },
+
+  { keywords: ['блог'],
+    answers: ['В блогах игроки делятся мыслями, партиями и разборами. Можно и свой завести.'],
+    action: { label: 'Блоги →', href: '/blog' } },
+
+  { keywords: ['новост'],
+    answers: ['Все обновления сайта и события — в разделе новостей.'],
+    action: { label: 'Новости →', href: '/news' } },
+
+  { keywords: ['форум'],
+    answers: ['На форуме обсуждают дебюты, турниры и вообще всё на свете. Заходи пообщаться.'],
+    action: { label: 'Форум →', href: '/forum' } },
+
+  { keywords: ['контроль времени', 'блиц', 'рапид', 'буллит', 'bullet'],
+    answers: ['Буллит — совсем без времени на раздумья, блиц — пара минут на партию, рапид — подольше, можно спокойно подумать. Выбирай под настроение в лобби.'] },
+
+  { keywords: ['сдаться', 'сдача', 'ничья', 'предложить ничью'],
+    answers: ['Сдаться или предложить ничью можно прямо во время партии — кнопки есть под доской.'] },
+
+  { keywords: ['читер', 'читерств', 'жалоба на игрока', 'пожаловаться', 'подозрение в читерстве', 'бот играет'],
+    answers: ['Если подозреваешь читерство — отправь жалобу на игрока, админы проверят партии.'],
+    action: { label: 'Пожаловаться →', href: '/report' } },
+
+  { keywords: ['баг', 'ошибка', 'не работает', 'сломал', 'поддержк', 'связаться', 'администрац'],
+    answers: ['Если что-то сломалось — напиши в поддержку, разберёмся!'],
+    action: { label: 'Написать в поддержку →', href: '/report' } },
+
+  { keywords: ['донат', 'поддержать проект', 'задонатить'],
+    answers: ['Если хочешь поддержать проект — есть отдельная страничка доната. Приятно, но совсем не обязательно ❤️'],
+    action: { label: 'Поддержать →', href: 'https://pay.cloudtips.ru/p/b0c3a0aa' } },
+
+  { keywords: ['статистик сайта', 'сколько игроков', 'сколько партий'],
+    answers: ['Живая статистика сайта — в отдельном разделе, там всё в цифрах.'],
+    action: { label: 'Статистика →', href: '/stats' } },
+
+  { keywords: ['сколько лет сайту', 'возраст сайта', 'когда создан сайт'],
+    answers: ['Возраст сайта считается прямо на отдельной страничке — секунда в секунду.'],
+    action: { label: 'Возраст сайта →', href: '/age' } },
+
+  { keywords: ['дневник разработ', 'что нового у разработчик'],
+    answers: ['Разработчик ведёт дневник — что делает и что планирует дальше.'],
+    action: { label: 'Дневник разработки →', href: '/dev-diary' } },
+
+  { keywords: ['мобильное приложение', 'есть ли приложение', 'скачать приложение'],
+    answers: ['Отдельного приложения нет, зато сайт отлично работает в мобильном браузере — можно даже добавить на главный экран.'] },
+
+  { keywords: ['кто сделал', 'кто разработчик', 'кто создал сайт', 'автор сайта'],
+    answers: ['Сайт делает один увлечённый разработчик-энтузиаст. Загляни в дневник разработки — там подробности.'],
+    action: { label: 'Дневник разработки →', href: '/dev-diary' } },
+
+  { keywords: ['какой дебют', 'лучший дебют', 'что играть белыми', 'что играть чёрными'],
+    answers: ['Универсального ответа нет — но для начала классика вроде Итальянской или Испанской партии за белых и Сицилианской или Французской за чёрных отлично заходит.'] },
+
+  { keywords: ['любимая фигура', 'какая фигура лучше', 'любимый дебют'],
+    answers: ['Если бы у меня были предпочтения — болел бы за коня, он тут самый хитрый попрыгунчик ♞', 'Ферзь, конечно! Хотя конь тоже красавчик.'] },
+
+  { keywords: ['анекдот', 'шутк', 'пошути', 'рассмеши'],
+    answers: ['Почему шахматист не может уснуть? Потому что всё время думает о следующем ходе! 😄', 'Есть два типа шахматистов: те, кто считает варианты на 10 ходов вперёд, и те, кто зевает ферзя на пятом.'] },
+
+  { keywords: ['ты тупой', 'ты глупый', 'дурак', 'бесполезный'],
+    answers: ['Может быть! Зато я не зеваю ферзя 😄', 'Согласен, ума не палата — зато настроение хорошее.'] },
+
+  { keywords: ['спасибо', 'спс', 'благодар'],
+    answers: ['Всегда пожалуйста! 😊', 'Обращайся!', 'Рад был помочь ♟️'] },
+
+  { keywords: ['пока', 'до свидания', 'увидимся', 'бб'],
+    answers: ['До встречи на доске! ♟️', 'Пока-пока, удачных партий!'] },
+];
+
+const FALLBACK_ANSWERS = [
+  'Сейчас я не отвечаю на вопросы, а просто кайфую на этом сайте. Думаю, вы тоже 😌',
+  'Хм, это не совсем по моей части — я тут больше отдыхаю и наблюдаю за партиями. Сыграй лучше партийку!',
+  'На такие вопросы я пока не отвечаю — предпочитаю просто наслаждаться шахматами тут. Присоединяйся!',
+  'Ой, это выше моих скромных возможностей. Зато я отлично умею кайфовать на ChessHome — присоединяйся!',
+];
+
+const SUGGESTED_QUESTIONS = [
+  'Привет!', 'Как зарегистрироваться?', 'Как считается рейтинг?',
+  'Есть турниры?', 'Расскажи анекдот', 'Кто ты?', 'Что такое пат?',
+];
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function findAnswer(userText) {
+  const norm = normalizeText(userText);
+  if (!norm) return { text: pickRandom(FALLBACK_ANSWERS) };
+  for (const intent of INTENTS) {
+    if (intent.keywords.some(kw => norm.includes(kw))) {
+      return { text: pickRandom(intent.answers), action: intent.action || null };
+    }
+  }
+  return { text: pickRandom(FALLBACK_ANSWERS) };
+}
+
+// ─── Состояние авторизации ──────────────────────────────────────
+let currentUser = null;
+
+// ─── История чата в localStorage (отдельно на каждого юзера) ────
+function historyKey() {
+  return currentUser ? `chesshome_ai_history_${currentUser.username.toLowerCase()}` : null;
+}
+function saveHistory(msgs) {
+  const key = historyKey();
+  if (!key) return;
+  try { localStorage.setItem(key, JSON.stringify(msgs.slice(-100))); } catch {}
+}
+function loadHistory() {
+  const key = historyKey();
+  if (!key) return null;
+  try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+}
+let messages = []; // { who: 'user'|'ai', text, action }
+
+// ─── Рендер чата ────────────────────────────────────────────────
+const chatLog = document.getElementById('chat-log');
+const inputEl = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const suggestionsEl = document.getElementById('suggestions');
+const authGateEl = document.getElementById('auth-gate');
+
+function scrollToBottom() { chatLog.scrollTop = chatLog.scrollHeight; }
+
+function renderActionEl(action) {
+  if (!action) return null;
+  if (action.href) {
+    const a = document.createElement('a');
+    a.className = 'msg-action';
+    a.href = action.href;
+    a.textContent = action.label;
+    if (/^https?:\/\//.test(action.href)) { a.target = '_blank'; a.rel = 'noopener'; }
+    return a;
+  }
+  if (action.onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'msg-action';
+    btn.type = 'button';
+    btn.textContent = action.label;
+    btn.setAttribute('onclick', action.onClick);
+    return btn;
+  }
+  return null;
+}
+
+function renderMessage(msg) {
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + msg.who;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = msg.who === 'ai' ? '♞' : '🙂';
+  const col = document.createElement('div');
+  col.className = 'msg-col';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = msg.text;
+  col.appendChild(bubble);
+  const actionEl = renderActionEl(msg.action);
+  if (actionEl) col.appendChild(actionEl);
+  row.appendChild(avatar);
+  row.appendChild(col);
+  chatLog.appendChild(row);
+  scrollToBottom();
+}
+
+function renderAllMessages() {
+  chatLog.innerHTML = '';
+  messages.forEach(renderMessage);
+}
+
+function addTypingIndicator() {
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  row.innerHTML = '<div class="avatar">♞</div><div class="msg-col"><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>';
+  chatLog.appendChild(row);
+  scrollToBottom();
+  return row;
+}
+
+let busy = false;
+
+function sendMessage(text) {
+  if (!currentUser) { authGateEl.classList.add('show'); return; }
+  const trimmed = text.trim();
+  if (!trimmed || busy) return;
+  busy = true;
+  inputEl.value = '';
+
+  const userMsg = { who: 'user', text: trimmed, action: null };
+  messages.push(userMsg);
+  renderMessage(userMsg);
+  saveHistory(messages);
+
+  const typingRow = addTypingIndicator();
+  const delay = 600 + Math.random() * 1000;
+  setTimeout(() => {
+    typingRow.remove();
+    const { text: answerText, action } = findAnswer(trimmed);
+    const aiMsg = { who: 'ai', text: answerText, action };
+    messages.push(aiMsg);
+    renderMessage(aiMsg);
+    saveHistory(messages);
+    busy = false;
+  }, delay);
+}
+
+sendBtn.addEventListener('click', () => sendMessage(inputEl.value));
+inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(inputEl.value); });
+
+function renderSuggestions() {
+  suggestionsEl.innerHTML = '';
+  SUGGESTED_QUESTIONS.forEach(q => {
+    const chip = document.createElement('button');
+    chip.className = 'suggestion-chip';
+    chip.type = 'button';
+    chip.textContent = q;
+    chip.addEventListener('click', () => sendMessage(q));
+    suggestionsEl.appendChild(chip);
+  });
+}
+renderSuggestions();
+
+document.getElementById('clear-chat-btn').addEventListener('click', () => {
+  if (!confirm('Очистить историю переписки?')) return;
+  messages = [];
+  const greeting = { who: 'ai', text: 'Привет! Я ChessHome AI 🤖♟️ Спроси меня о сайте, или жми на подсказки ниже.', action: null };
+  messages.push(greeting);
+  renderAllMessages();
+  saveHistory(messages);
+});
+
+// ─── Гейт авторизации ────────────────────────────────────────────
+function unlockChat() {
+  authGateEl.classList.remove('show');
+  inputEl.disabled = false;
+  sendBtn.disabled = false;
+  const restored = loadHistory();
+  if (restored && restored.length) {
+    messages = restored;
+  } else {
+    messages = [{ who: 'ai', text: 'Привет! Я ChessHome AI 🤖♟️ Спроси меня о сайте, или жми на подсказки ниже.', action: null }];
+  }
+  renderAllMessages();
+}
+function lockChat() {
+  authGateEl.classList.add('show');
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+  messages = [{ who: 'ai', text: 'Привет! Я ChessHome AI 🤖♟️ Войди, чтобы пообщаться со мной по-настоящему.', action: null }];
+  renderAllMessages();
+}
+function onAuthStateResolved(user) {
+  currentUser = user || null;
+  if (currentUser) unlockChat(); else lockChat();
+}
+
+// ─── Компактная модалка входа / регистрации / 2FA ───────────────
+let authMode = 'login'; // 'login' | 'register' | '2fa'
+let authBusy = false;
+
+function openAuthModal(mode) {
+  authMode = mode;
+  renderAuthModal();
+  document.getElementById('auth-modal-overlay').classList.add('open');
+}
+function closeAuthModal() {
+  document.getElementById('auth-modal-overlay').classList.remove('open');
+}
+
+function renderAuthModal() {
+  const el = document.getElementById('auth-modal-content');
+  if (authMode === 'login') {
+    el.innerHTML = `
+      <button class="close-x" onclick="closeAuthModal()">✕</button>
+      <h2>Вход</h2>
+      <div class="sub">Рады снова тебя видеть</div>
+      <input id="am-username" placeholder="Никнейм" autocomplete="username">
+      <input id="am-password" type="password" placeholder="Пароль" autocomplete="current-password">
+      <div class="err" id="am-err"></div>
+      <button class="submit-btn" id="am-submit" onclick="submitAuthForm()">Войти</button>
+      <div class="switch-mode">Нет аккаунта? <a onclick="openAuthModal('register')">Зарегистрироваться</a></div>
+    `;
+  } else if (authMode === 'register') {
+    el.innerHTML = `
+      <button class="close-x" onclick="closeAuthModal()">✕</button>
+      <h2>Регистрация</h2>
+      <div class="sub">10 секунд — и ты внутри</div>
+      <input id="am-username" placeholder="Никнейм (3-20 символов)" autocomplete="username">
+      <input id="am-password" type="password" placeholder="Пароль (мин. 6 символов)" autocomplete="new-password">
+      <input class="hp-field" id="am-hp" tabindex="-1" autocomplete="off">
+      <div class="err" id="am-err"></div>
+      <button class="submit-btn" id="am-submit" onclick="submitAuthForm()">Создать аккаунт</button>
+      <div class="switch-mode">Уже есть аккаунт? <a onclick="openAuthModal('login')">Войти</a></div>
+    `;
+  } else if (authMode === '2fa') {
+    el.innerHTML = `
+      <button class="close-x" onclick="closeAuthModal()">✕</button>
+      <h2>Код подтверждения</h2>
+      <div class="sub">Мы отправили код вам на почту</div>
+      <input id="am-code" class="code-input" inputmode="numeric" maxlength="6" placeholder="______">
+      <div class="err" id="am-err"></div>
+      <button class="submit-btn" id="am-submit" onclick="submitAuthForm()">Подтвердить</button>
+      <div class="switch-mode"><a onclick="openAuthModal('login')">← Назад ко входу</a></div>
+    `;
+    setTimeout(() => {
+      const codeInp = document.getElementById('am-code');
+      codeInp?.focus();
+      codeInp?.addEventListener('input', () => {
+        if (codeInp.value.replace(/\D/g, '').length === 6) submitAuthForm();
+      });
+    }, 50);
+  }
+}
+
+async function submitAuthForm() {
+  if (authBusy) return;
+  const errEl = document.getElementById('am-err');
+  const btn = document.getElementById('am-submit');
+  errEl.textContent = '';
+  authBusy = true;
+  btn.disabled = true;
+
+  try {
+    if (authMode === 'login') {
+      const username = document.getElementById('am-username').value.trim();
+      const password = document.getElementById('am-password').value;
+      if (!username || !password) throw new Error('Заполните все поля');
+      const data = await apiPost('/login', { username, password });
+      if (data.twoFactorRequired) { authMode = '2fa'; renderAuthModal(); authBusy = false; btn.disabled = false; return; }
+      finishAuth(data.user);
+    } else if (authMode === 'register') {
+      const username = document.getElementById('am-username').value.trim();
+      const password = document.getElementById('am-password').value;
+      const _hp = document.getElementById('am-hp').value || '';
+      if (!username || !password) throw new Error('Заполните все поля');
+      const data = await apiPost('/register', { username, password, _hp });
+      finishAuth(data.user);
+    } else if (authMode === '2fa') {
+      const code = document.getElementById('am-code').value.replace(/\D/g, '');
+      if (code.length !== 6) throw new Error('Введите 6-значный код');
+      const data = await apiPost('/login/verify-2fa', { code });
+      finishAuth(data.user);
+    }
+  } catch (err) {
+    errEl.textContent = err.message || 'Ошибка';
+  } finally {
+    authBusy = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+function finishAuth(user) {
+  closeAuthModal();
+  if (window.CH) CH.setCurrentUser(user);
+  else onAuthStateResolved(user);
+}
+
+// ─── Инициализация: подключаем шапку сайта (header.js) и проверяем логин ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.CH) {
+    const origSetCurrentUser = CH.setCurrentUser.bind(CH);
+    CH.setCurrentUser = function (user) {
+      origSetCurrentUser(user);
+      onAuthStateResolved(user);
+    };
+    CH.openAuthModal = (mode) => openAuthModal(mode); // подменяем на нашу модалку
+    CH.initHeader();
+    // На случай если сессии нет — CH.initHeader сам вызовет setCurrentUser(null)
+    // не всегда явно, подстрахуемся собственным запросом.
+    setTimeout(() => { if (currentUser === null) apiGet('/me').then(u => onAuthStateResolved(u)); }, 400);
+  } else {
+    apiGet('/me').then(u => onAuthStateResolved(u));
+  }
+});
+</script>
+</body>
+</html>

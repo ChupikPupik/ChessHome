@@ -1057,6 +1057,8 @@ app.get('/following/:username', (req, res) => res.sendFile(path.join(__dirname, 
 app.get('/dev-diary', (req, res) => res.sendFile(path.join(__dirname, '../public/dev-diary.html')));
 app.get('/donate',   (req, res) => res.sendFile(path.join(__dirname, '../public/donate.html')));
 app.get('/durka',    (req, res) => res.sendFile(path.join(__dirname, '../public/durka.html')));
+app.get('/ai', (req, res) => res.sendFile(path.join(__dirname, '../public/ai.html')));
+
 
 // ── ЮKassa Донаты ─────────────────────────────────────────────
 const YUKASSA_SHOP_ID      = process.env.YUKASSA_SHOP_ID;
