@@ -5,31 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChessHome AI</title>
 <style>
+  /* ── ChessHome AI — минималистичная чёрно-бирюзовая тема ───────── */
   :root {
-    --bg: #0a0c11;
-    --bg-card: #14171f;
-    --bg-card-2: #191d27;
-    --border: #262b38;
-    --accent: #e2b23e;
-    --accent-2: #f2cf6b;
-    --accent-dark: #a87d1c;
-    --text-primary: #f0f2f6;
-    --text-secondary: #a9b0c0;
-    --text-muted: #6b7383;
-    --user-bubble: #2b3348;
-    --ai-bubble: #1a1e28;
-    --green: #3ecf6e;
-    --red: #e05a5a;
-    --radius: 16px;
+    --bg: #060809;
+    --bg-elev: #0b0f10;
+    --border: rgba(255,255,255,0.07);
+    --border-soft: rgba(255,255,255,0.04);
+    --teal: #2dd4bf;
+    --teal-bright: #6ee7d8;
+    --teal-dim: #0f766e;
+    --text-primary: #eef4f3;
+    --text-secondary: #93a6a3;
+    --text-muted: #576260;
+    --user-bubble: rgba(45,212,191,0.10);
+    --ai-bubble: rgba(255,255,255,0.035);
+    --green: #34d399;
+    --red: #ef6161;
+    --radius: 20px;
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
+
+  /* Мягкое переливающееся бирюзовое свечение на чёрном фоне */
   body {
-    background:
-      radial-gradient(circle at 15% -10%, rgba(226,178,62,0.10) 0%, transparent 45%),
-      radial-gradient(circle at 85% 0%, rgba(80,110,255,0.08) 0%, transparent 40%),
-      var(--bg);
+    background: var(--bg);
     color: var(--text-primary);
     font-family: var(--font);
     min-height: 100vh;
@@ -37,228 +37,284 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -10%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(45,212,191,0.20) 0%, transparent 42%),
+      radial-gradient(circle at 82% 8%, rgba(34,211,238,0.14) 0%, transparent 38%),
+      radial-gradient(circle at 50% 95%, rgba(52,211,153,0.13) 0%, transparent 45%);
+    background-size: 140% 140%;
+    animation: shimmer 16s ease-in-out infinite alternate, hue-shift 22s linear infinite;
+    filter: blur(30px);
+  }
+  @keyframes shimmer {
+    0%   { background-position: 0% 0%, 100% 0%, 50% 100%; opacity: 0.75; }
+    50%  { background-position: 15% 10%, 85% 15%, 45% 90%; opacity: 1; }
+    100% { background-position: 5% 20%, 95% 5%, 55% 95%; opacity: 0.85; }
+  }
+  @keyframes hue-shift {
+    0%   { filter: blur(30px) hue-rotate(0deg); }
+    50%  { filter: blur(30px) hue-rotate(45deg); }
+    100% { filter: blur(30px) hue-rotate(0deg); }
   }
 
   .page-wrap {
     width: 100%;
-    max-width: 660px;
-    padding: 36px 16px 60px;
+    max-width: 620px;
+    padding: 44px 16px 60px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+    z-index: 1;
   }
 
-  .header-block { text-align: center; margin-bottom: 24px; }
+  .header-block { text-align: center; margin-bottom: 30px; }
   .header-block .badge {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 6px 16px;
-    font-size: 12.5px;
     color: var(--text-secondary);
-    margin-bottom: 16px;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    margin-bottom: 18px;
   }
   .header-block .badge .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-    animation: pulse-dot 2s infinite;
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 10px var(--teal);
+    animation: pulse-dot 2.2s infinite;
   }
-  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
   .header-block h1 {
     margin: 0;
-    font-size: 36px;
-    font-weight: 800;
+    font-size: 34px;
+    font-weight: 700;
     letter-spacing: -0.6px;
   }
-  .header-block h1 .piece { display: inline-block; margin-right: 6px; animation: float 3s ease-in-out infinite; }
-  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+  .header-block h1 .piece { display: none; } /* минимализм — убираем декоративную фигуру из заголовка */
+  /* Переливающийся логотип — конический градиент с плавной сменой оттенков */
+  .logo-mark {
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    margin: 0 auto 18px;
+    position: relative;
+    background: conic-gradient(from 0deg, #2dd4bf, #22d3ee, #34d399, #6ee7d8, #2dd4bf);
+    animation: logo-hue 9s ease-in-out infinite, logo-float 4s ease-in-out infinite;
+    box-shadow: 0 0 30px rgba(45,212,191,0.45), 0 0 60px rgba(34,211,238,0.2);
+  }
+  .logo-mark::after {
+    content: '';
+    position: absolute; inset: 2px;
+    border-radius: 14px;
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.35), transparent 55%), var(--bg-elev);
+    opacity: 0.14;
+  }
+  @keyframes logo-hue { 0%,100% { filter: hue-rotate(0deg) saturate(1.15); } 50% { filter: hue-rotate(50deg) saturate(1.35); } }
+  @keyframes logo-float { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-4px) rotate(2deg); } }
   .header-block h1 span.hl {
-    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    background: linear-gradient(135deg, var(--teal-bright), var(--teal-dim));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
-  .header-block p { margin: 10px 0 0; color: var(--text-muted); font-size: 14.5px; }
+  .header-block p { margin: 10px 0 0; color: var(--text-muted); font-size: 14px; font-weight: 400; }
 
+  /* ── Карточка чата: плоская, почти без теней, тонкая обводка ── */
   .chat-shell {
     width: 100%;
-    background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-2) 100%);
+    background: var(--bg-elev);
     border: 1px solid var(--border);
-    border-radius: 22px;
-    box-shadow: 0 24px 70px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+    border-radius: 24px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     position: relative;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.5);
   }
 
   .chat-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(255,255,255,0.015);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-soft);
   }
-  .chat-topbar .who { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14.5px; }
+  .chat-topbar .who { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; }
+  /* Тот же переливающийся значок, что и большое лого — только маленький */
   .chat-topbar .who .ava {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
-    display: flex; align-items: center; justify-content: center; font-size: 16px;
+    width: 24px; height: 24px; border-radius: 8px;
+    background: conic-gradient(from 0deg, #2dd4bf, #22d3ee, #34d399, #6ee7d8, #2dd4bf);
+    box-shadow: 0 0 14px rgba(45,212,191,0.5);
+    animation: logo-hue 9s ease-in-out infinite, breathe 2.6s ease-in-out infinite;
+    font-size: 0; /* прячем эмодзи-иконку из разметки, оставляем только орб */
   }
-  .chat-topbar .status { font-size: 11.5px; color: var(--text-muted); font-weight: 400; }
+  @keyframes breathe {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.1); }
+  }
+  .chat-topbar .status { font-size: 11px; color: var(--text-muted); font-weight: 400; letter-spacing: 0.3px; }
   .chat-topbar .clear-btn {
-    background: none; border: 1px solid var(--border); color: var(--text-muted);
-    border-radius: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 6px 12px; font-size: 12px; font-family: var(--font); cursor: pointer;
+    border-radius: 999px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
   }
-  .chat-topbar .clear-btn:hover { border-color: var(--red); color: var(--red); }
+  .chat-topbar .clear-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .chat-topbar .clear-btn:hover { color: var(--red); border-color: rgba(239,97,97,0.4); background: rgba(239,97,97,0.06); }
 
   .chat-log {
-    padding: 20px 18px 8px;
+    padding: 22px 20px 8px;
     height: 430px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
-  .chat-log::-webkit-scrollbar { width: 6px; }
-  .chat-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .chat-log::-webkit-scrollbar { width: 4px; }
+  .chat-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .msg-row { display: flex; gap: 10px; align-items: flex-end; }
-  .msg-row.user { flex-direction: row-reverse; }
-  .avatar {
-    width: 28px; height: 28px; flex-shrink: 0;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
-    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
-  }
-  .msg-row.user .avatar { background: var(--user-bubble); }
-  .msg-col { display: flex; flex-direction: column; gap: 8px; max-width: 76%; }
+  /* Минимализм: убираем аватарки у каждой реплики, оставляем только пузыри */
+  .msg-row { display: flex; }
+  .msg-row.user { justify-content: flex-end; }
+  .msg-row.ai { justify-content: flex-start; }
+  .msg-row .avatar { display: none; }
+  .msg-col { display: flex; flex-direction: column; gap: 8px; max-width: 78%; }
   .msg-row.user .msg-col { align-items: flex-end; }
   .bubble {
-    padding: 10px 14px;
+    padding: 11px 15px;
     border-radius: var(--radius);
     font-size: 14.5px;
-    line-height: 1.48;
+    line-height: 1.5;
     white-space: pre-wrap;
-    animation: pop-in 0.2s ease;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    animation: pop-in 0.25s ease;
   }
   .msg-row.ai .bubble {
     background: var(--ai-bubble);
-    border: 1px solid var(--border);
-    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    border-bottom-left-radius: 6px;
   }
   .msg-row.user .bubble {
-    background: linear-gradient(135deg, #34405c, #2b3348);
-    border-bottom-right-radius: 4px;
+    background: var(--user-bubble);
+    border: 1px solid rgba(45,212,191,0.18);
+    color: var(--text-primary);
+    border-bottom-right-radius: 6px;
   }
   @keyframes pop-in {
-    from { opacity: 0; transform: translateY(5px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 
   .msg-action {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: #241a04;
-    font-weight: 700;
+    background: transparent;
+    color: var(--teal-bright);
+    font-weight: 600;
     font-size: 13px;
-    padding: 8px 14px;
-    border-radius: 10px;
+    padding: 7px 0;
+    border-radius: 0;
     text-decoration: none;
     border: none;
+    border-bottom: 1px solid rgba(110,231,216,0.35);
     cursor: pointer;
-    transition: transform 0.12s, opacity 0.12s;
+    transition: opacity 0.12s, border-color 0.12s;
     font-family: var(--font);
+    width: fit-content;
   }
-  .msg-action:hover { opacity: 0.92; }
-  .msg-action:active { transform: scale(0.96); }
+  .msg-action:hover { opacity: 0.8; border-color: var(--teal-bright); }
+  .msg-action:active { opacity: 0.6; }
 
-  .typing-dots { display: flex; gap: 4px; padding: 5px 3px; }
+  /* Индикатор «думает» — дышащий орб вместо трёх точек */
+  .typing-dots {
+    display: flex; align-items: center; gap: 5px; padding: 6px 2px;
+  }
   .typing-dots span {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--text-muted);
-    animation: bounce 1.1s infinite ease-in-out;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--teal);
+    animation: bounce 1.2s infinite ease-in-out;
   }
   .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
   .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes bounce {
-    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-    30% { transform: translateY(-4px); opacity: 1; }
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-3px); opacity: 1; }
   }
 
   .suggestions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 12px 18px;
-    border-top: 1px solid var(--border);
+    padding: 14px 20px;
+    border-top: 1px solid var(--border-soft);
   }
   .suggestion-chip {
-    background: #1e222d;
+    background: transparent;
     border: 1px solid var(--border);
     color: var(--text-secondary);
     border-radius: 999px;
     padding: 7px 14px;
-    font-size: 13px;
+    font-size: 12.5px;
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, transform 0.1s;
+    transition: border-color 0.15s, color 0.15s;
     white-space: nowrap;
     font-family: var(--font);
   }
-  .suggestion-chip:hover { border-color: var(--accent); color: var(--text-primary); }
-  .suggestion-chip:active { transform: scale(0.96); }
+  .suggestion-chip:hover { border-color: var(--teal); color: var(--text-primary); }
+  .suggestion-chip:active { opacity: 0.7; }
 
   .input-bar {
     display: flex;
     gap: 10px;
-    padding: 14px 16px;
-    border-top: 1px solid var(--border);
-    background: rgba(0,0,0,0.15);
+    padding: 16px 18px;
+    border-top: 1px solid var(--border-soft);
   }
   .input-bar input {
     flex: 1;
-    background: #1a1e27;
+    background: rgba(255,255,255,0.03);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
+    border-radius: 999px;
+    padding: 12px 18px;
     color: var(--text-primary);
     font-size: 14.5px;
     outline: none;
     font-family: var(--font);
+    transition: border-color 0.15s;
   }
-  .input-bar input:focus { border-color: var(--accent); }
-  .input-bar input:disabled { opacity: 0.5; cursor: not-allowed; }
+  .input-bar input:focus { border-color: var(--teal); }
+  .input-bar input:disabled { opacity: 0.4; cursor: not-allowed; }
   .input-bar button {
-    background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
+    background: var(--teal);
     border: none;
-    border-radius: 12px;
-    padding: 0 20px;
-    color: #201603;
+    border-radius: 999px;
+    padding: 0 22px;
+    color: #04211d;
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: opacity 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 0 rgba(45,212,191,0);
   }
-  .input-bar button:hover { opacity: 0.92; }
-  .input-bar button:active { opacity: 0.75; }
-  .input-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .input-bar button:hover { box-shadow: 0 0 18px rgba(45,212,191,0.4); }
+  .input-bar button:active { opacity: 0.8; }
+  .input-bar button:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
 
   /* ── Оверлей блокировки для неавторизованных ── */
   .auth-gate {
     position: absolute;
     inset: 0;
-    background: rgba(10,12,17,0.86);
-    backdrop-filter: blur(3px);
+    background: rgba(6,8,9,0.9);
+    backdrop-filter: blur(6px);
     display: none;
     align-items: center;
     justify-content: center;
@@ -268,73 +324,98 @@
     z-index: 5;
   }
   .auth-gate.show { display: flex; }
-  .auth-gate .lock-icon { font-size: 38px; margin-bottom: 10px; }
-  .auth-gate h3 { margin: 0 0 6px; font-size: 18px; }
-  .auth-gate p { margin: 0 0 18px; color: var(--text-muted); font-size: 13.5px; max-width: 320px; }
+  .auth-gate .lock-icon {
+    width: 46px; height: 46px; border-radius: 14px; margin-bottom: 14px;
+    background: conic-gradient(from 0deg, #2dd4bf, #22d3ee, #34d399, #6ee7d8, #2dd4bf);
+    animation: logo-hue 9s ease-in-out infinite;
+    box-shadow: 0 0 26px rgba(45,212,191,0.5);
+    font-size: 0;
+  }
+  .auth-gate h3 { margin: 0 0 6px; font-size: 17px; font-weight: 600; }
+  .auth-gate p { margin: 0 0 20px; color: var(--text-muted); font-size: 13.5px; max-width: 300px; line-height: 1.5; }
   .auth-gate .btns { display: flex; gap: 10px; }
   .auth-gate .btn-login, .auth-gate .btn-register {
-    border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 700;
-    cursor: pointer; border: none; font-family: var(--font);
+    border-radius: 999px; padding: 10px 22px; font-size: 13.5px; font-weight: 600;
+    cursor: pointer; border: none; font-family: var(--font); transition: opacity 0.15s;
   }
-  .auth-gate .btn-login { background: #1e222d; border: 1px solid var(--border); color: var(--text-primary); }
-  .auth-gate .btn-register { background: linear-gradient(135deg, var(--accent-2), var(--accent-dark)); color: #201603; }
+  .auth-gate .btn-login { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+  .auth-gate .btn-login:hover { border-color: var(--teal); }
+  .auth-gate .btn-register { background: var(--teal); color: #04211d; }
+  .auth-gate .btn-register:hover { opacity: 0.88; }
 
   .footnote {
-    max-width: 660px;
+    max-width: 620px;
     text-align: center;
     color: var(--text-muted);
-    font-size: 12.5px;
-    margin-top: 18px;
-    line-height: 1.6;
+    font-size: 12px;
+    margin-top: 20px;
+    line-height: 1.7;
     padding: 0 16px;
+    position: relative;
+    z-index: 1;
   }
-  .footnote a { color: var(--accent); text-decoration: none; }
+  .footnote a { color: var(--teal); text-decoration: none; }
+  .footnote a:hover { color: var(--teal-bright); }
 
   /* ── Компактная модалка входа/регистрации ── */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(5,6,9,0.7);
+    position: fixed; inset: 0; background: rgba(3,4,5,0.75);
     display: none; align-items: center; justify-content: center; z-index: 2000;
-    padding: 16px;
+    padding: 16px; backdrop-filter: blur(4px);
   }
   .modal-overlay.open { display: flex; }
   .auth-modal {
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: 18px; width: 100%; max-width: 340px;
-    padding: 26px 24px 22px;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: 22px; width: 100%; max-width: 340px;
+    padding: 28px 26px 24px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.6);
   }
-  .auth-modal h2 { margin: 0 0 4px; font-size: 20px; text-align: center; }
-  .auth-modal .sub { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 18px; }
+  .auth-modal h2 { margin: 0 0 4px; font-size: 19px; font-weight: 700; text-align: center; }
+  .auth-modal .sub { text-align: center; color: var(--text-muted); font-size: 12.5px; margin-bottom: 20px; }
   .auth-modal input {
-    width: 100%; background: #1a1e27; border: 1px solid var(--border);
-    border-radius: 10px; padding: 11px 13px; color: var(--text-primary);
+    width: 100%; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 14px; color: var(--text-primary);
     font-size: 14px; margin-bottom: 10px; outline: none; font-family: var(--font);
+    transition: border-color 0.15s;
   }
-  .auth-modal input:focus { border-color: var(--accent); }
+  .auth-modal input:focus { border-color: var(--teal); }
   .auth-modal .hp-field { position: absolute; left: -9999px; opacity: 0; }
-  .auth-modal .err { color: var(--red); font-size: 12.5px; min-height: 16px; margin-bottom: 8px; }
+  .auth-modal .am-check {
+    display: flex; align-items: flex-start; gap: 9px;
+    font-size: 12.5px; color: var(--text-secondary); cursor: pointer;
+    margin-bottom: 12px; line-height: 1.45; text-align: left;
+  }
+  .auth-modal .am-check input[type="checkbox"] {
+    margin: 2px 0 0; flex-shrink: 0; width: 15px; height: 15px;
+    accent-color: var(--teal); cursor: pointer;
+  }
+  .auth-modal .am-check a { color: var(--teal); text-decoration: none; }
+  .auth-modal .am-check a:hover { color: var(--teal-bright); }
+  .auth-modal .err { color: var(--red); font-size: 12px; min-height: 16px; margin-bottom: 8px; }
   .auth-modal .submit-btn {
-    width: 100%; background: linear-gradient(135deg, var(--accent-2), var(--accent-dark));
-    border: none; border-radius: 10px; padding: 11px; color: #201603;
-    font-weight: 700; font-size: 14.5px; cursor: pointer; margin-top: 4px;
+    width: 100%; background: var(--teal);
+    border: none; border-radius: 999px; padding: 12px; color: #04211d;
+    font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 4px;
+    transition: opacity 0.15s;
   }
-  .auth-modal .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .auth-modal .submit-btn:hover { opacity: 0.88; }
+  .auth-modal .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .auth-modal .switch-mode {
-    text-align: center; margin-top: 14px; font-size: 13px; color: var(--text-muted);
+    text-align: center; margin-top: 16px; font-size: 12.5px; color: var(--text-muted);
   }
-  .auth-modal .switch-mode a { color: var(--accent); text-decoration: none; cursor: pointer; }
+  .auth-modal .switch-mode a { color: var(--teal); text-decoration: none; cursor: pointer; }
   .auth-modal .close-x {
     float: right; background: none; border: none; color: var(--text-muted);
-    font-size: 18px; cursor: pointer; margin: -8px -6px 0 0;
+    font-size: 17px; cursor: pointer; margin: -6px -4px 0 0;
   }
   .auth-modal .code-input {
-    text-align: center; font-size: 24px; letter-spacing: 10px; padding: 12px;
+    text-align: center; font-size: 22px; letter-spacing: 9px; padding: 12px; border-radius: 12px;
   }
 
   @media (max-width: 480px) {
     .chat-log { height: 380px; }
-    .header-block h1 { font-size: 27px; }
-    .msg-col { max-width: 86%; }
+    .header-block h1 { font-size: 26px; }
+    .msg-col { max-width: 88%; }
   }
 </style>
 </head>
@@ -342,6 +423,7 @@
 
   <div class="page-wrap">
     <div class="header-block">
+      <div class="logo-mark"></div>
       <div class="badge"><span class="dot"></span> ChessHome AI online</div>
       <h1><span class="piece">♞</span>Chess<span class="hl">Home</span> AI</h1>
       <p>Задай вопрос про сайт — отвечу, если знаю</p>
@@ -350,7 +432,10 @@
     <div class="chat-shell">
       <div class="chat-topbar">
         <div class="who"><span class="ava">♞</span> ChessHome AI <span class="status" id="chat-status">BETA</span></div>
-        <button class="clear-btn" id="clear-chat-btn" title="Очистить историю">🗑 Очистить</button>
+        <button class="clear-btn" id="clear-chat-btn" title="Очистить историю">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+          <span>Очистить</span>
+        </button>
       </div>
 
       <div class="chat-log" id="chat-log"></div>
@@ -742,6 +827,16 @@ function openAuthModal(mode) {
   renderAuthModal();
   document.getElementById('auth-modal-overlay').classList.add('open');
 }
+// Точная копия updateRegisterButtonState() с главной страницы — кнопка
+// «Создать аккаунт» разблокируется, только когда отмечены оба чекбокса.
+function updateAmRegisterButtonState() {
+  const terms = document.getElementById('am-agree-terms');
+  const fair = document.getElementById('am-agree-fair');
+  const btn = document.getElementById('am-submit');
+  if (!btn) return;
+  const allChecked = !!(terms && terms.checked && fair && fair.checked);
+  btn.disabled = !allChecked;
+}
 function closeAuthModal() {
   document.getElementById('auth-modal-overlay').classList.remove('open');
 }
@@ -762,13 +857,21 @@ function renderAuthModal() {
   } else if (authMode === 'register') {
     el.innerHTML = `
       <button class="close-x" onclick="closeAuthModal()">✕</button>
-      <h2>Регистрация</h2>
+      <h2>♟ Регистрация</h2>
       <div class="sub">10 секунд — и ты внутри</div>
-      <input id="am-username" placeholder="Никнейм (3-20 символов)" autocomplete="username">
-      <input id="am-password" type="password" placeholder="Пароль (мин. 6 символов)" autocomplete="new-password">
+      <input id="am-username" placeholder="Ваш ник (мин. 3 символа)" autocomplete="username">
+      <input id="am-password" type="password" placeholder="Мин. 6 символов" autocomplete="new-password">
       <input class="hp-field" id="am-hp" tabindex="-1" autocomplete="off">
+      <label class="am-check">
+        <input type="checkbox" id="am-agree-terms" onchange="updateAmRegisterButtonState()">
+        <span>Я согласен с <a href="/privacy" target="_blank">политикой конфиденциальности</a> и <a href="/terms" target="_blank">пользовательским соглашением</a> сайта</span>
+      </label>
+      <label class="am-check">
+        <input type="checkbox" id="am-agree-fair" onchange="updateAmRegisterButtonState()">
+        <span>Я не буду создавать несколько аккаунтов и читерить (использовать посторонние подсказки/движки во время партий)</span>
+      </label>
       <div class="err" id="am-err"></div>
-      <button class="submit-btn" id="am-submit" onclick="submitAuthForm()">Создать аккаунт</button>
+      <button class="submit-btn" id="am-submit" onclick="submitAuthForm()" disabled>Создать аккаунт</button>
       <div class="switch-mode">Уже есть аккаунт? <a onclick="openAuthModal('login')">Войти</a></div>
     `;
   } else if (authMode === '2fa') {
@@ -811,7 +914,10 @@ async function submitAuthForm() {
       const username = document.getElementById('am-username').value.trim();
       const password = document.getElementById('am-password').value;
       const _hp = document.getElementById('am-hp').value || '';
+      const agreeTerms = document.getElementById('am-agree-terms')?.checked;
+      const agreeFair = document.getElementById('am-agree-fair')?.checked;
       if (!username || !password) throw new Error('Заполните все поля');
+      if (!agreeTerms || !agreeFair) throw new Error('Отметьте оба чекбокса ниже');
       const data = await apiPost('/register', { username, password, _hp });
       finishAuth(data.user);
     } else if (authMode === '2fa') {
