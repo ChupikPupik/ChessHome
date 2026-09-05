@@ -404,7 +404,7 @@ function connectSocket() {
       toast(`⚔️ Турнирная партия! Вы ${data.color === 'white' ? 'белые ♙' : 'чёрные ♟'}`, 'success');
       startGameUI(data);
       // После старта — показываем кнопку возврата в турнир
-      setTimeout(() => showTournamentReturnBanner(data.tournamentId, data.tournamentName), 300);
+      setTimeout(() => showTournamentReturnBanner(data.tournamentId, data.tournamentName, data.isInterclub), 300);
     } else {
       // Обычная игра — сразу
       const kind = data.rated === false ? ' (товарищеская)' : '';
@@ -448,13 +448,14 @@ function connectSocket() {
     const wasInTournament = _currentGameData && _currentGameData.tournamentId;
     const tId = wasInTournament ? _currentGameData.tournamentId : null;
     const tName = wasInTournament ? _currentGameData.tournamentName : null;
+    const tIsInterclub = wasInTournament ? _currentGameData.isInterclub : null;
     _currentGameData = null;
     _pendingTournamentGame = null;
     document.getElementById('pending-t-banner')?.remove();
     chessBoard.onGameEnded(data);
     // После турнирной партии — показываем кнопку возврата
     if (tId) {
-      setTimeout(() => showTournamentReturnBanner(tId, tName), 800);
+      setTimeout(() => showTournamentReturnBanner(tId, tName, tIsInterclub), 800);
     }
   });
   socket.on('draw_offered', ({ from }) => {
@@ -1046,11 +1047,11 @@ function goToTournamentGame() {
   if (!data || !data.tournamentId) return;
   document.getElementById('pending-t-banner')?.remove();
   // Переходим на страницу турнира — там socket получит game_start и запустит отсчёт
-  window.location.href = '/tournament/' + data.tournamentId;
+  window.location.href = (data.isInterclub ? '/tournament/interclub/' : '/tournament/') + data.tournamentId;
 }
 
 // ── БАННЕР ВОЗВРАТА В ТУРНИР ─────────────────────────────────
-function showTournamentReturnBanner(tournamentId, tournamentName) {
+function showTournamentReturnBanner(tournamentId, tournamentName, isInterclub) {
   document.getElementById('t-ret-banner')?.remove();
   const b = document.createElement('div');
   b.id = 't-ret-banner';
@@ -1064,13 +1065,14 @@ function showTournamentReturnBanner(tournamentId, tournamentName) {
     animation:'ptbUp 0.4s cubic-bezier(0.34,1.56,0.64,1)'
   });
   const label = tournamentName ? escapeHtml(tournamentName) : 'турнир';
+  const tUrl = (isInterclub ? '/tournament/interclub/' : '/tournament/') + tournamentId;
   b.innerHTML = `
     <div style="font-size:24px">🏆</div>
     <div style="flex:1">
       <div style="font-weight:700;font-size:14px;color:var(--accent)">Вы в турнире</div>
       <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${label}</div>
     </div>
-    <button onclick="window.location.href='/tournament/${tournamentId}'"
+    <button onclick="window.location.href='${tUrl}'"
       style="background:linear-gradient(135deg,var(--accent),var(--accent-dark));
       color:#000;border:none;border-radius:8px;padding:8px 14px;
       font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap">← В турнир</button>
@@ -2771,7 +2773,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
               startGameUI(gameData);
               if (gameData.tournamentId) {
-                setTimeout(() => showTournamentReturnBanner(gameData.tournamentId, gameData.tournamentName), 300);
+                setTimeout(() => showTournamentReturnBanner(gameData.tournamentId, gameData.tournamentName, gameData.isInterclub), 300);
               }
             }
           } else {

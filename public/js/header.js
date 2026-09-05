@@ -21,6 +21,7 @@
       items: [
         { id: 'lobby',       label: 'Играть',   icon: '⚔️',  href: '/lobby' },
         { id: 'tournaments', label: 'Турниры',  icon: '🏆',  href: '/tournaments', spa: false },
+        { id: 'club-tournaments', label: 'Межклубные турниры', icon: '🏰', href: '/interclub-tournaments.html', spa: false },
       ]
     },
     {

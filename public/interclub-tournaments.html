@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Межклубные турниры — Chess Home</title>
+<meta name="description" content="Межклубные турниры Chess Home — клубы сходятся в общей битве">
+<link rel="stylesheet" href="/css/main.css">
+<link rel="icon" type="image/png" href="../img/logo/favicon.png">
+<style>
+  body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); }
+
+  .ict-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  .ict-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: color 0.15s, background 0.15s;
+  }
+  .ict-back-link:hover { color: var(--accent); background: rgba(201,168,76,0.08); }
+
+  /* ── HERO ── */
+  .ict-hero {
+    position: relative;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #1a1c26 0%, #1e2030 40%, #1a1e2c 100%);
+    border: 1px solid var(--border-light);
+    overflow: hidden;
+    padding: 32px 36px;
+    margin-bottom: 24px;
+  }
+  .ict-hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .ict-hero-bg-text {
+    position: absolute;
+    right: 24px; bottom: -26px;
+    font-size: 140px;
+    opacity: 0.04;
+    pointer-events: none;
+    user-select: none;
+  }
+  .ict-hero-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+  }
+  .ict-hero-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .ict-hero-info { flex: 1; min-width: 0; }
+  .ict-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .ict-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.25;
+  }
+  .ict-sub {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 620px;
+  }
+
+  /* ── TABS ── */
+  .ict-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .ict-tab {
+    padding: 10px 18px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: -1px;
+  }
+  .ict-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .ict-tab:hover:not(.active) { color: var(--text-primary); }
+
+  /* ── GRID / CARDS ── */
+  .ict-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 18px;
+  }
+  .ict-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .ict-card:hover { border-color: var(--border-light); }
+
+  .ict-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .ict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 11px;
+    border-radius: 20px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+  }
+  .ict-badge.active   { background: rgba(76,175,114,0.15); color: var(--green); border: 1px solid rgba(76,175,114,0.3); }
+  .ict-badge.upcoming { background: rgba(201,168,76,0.12); color: var(--accent); border: 1px solid rgba(201,168,76,0.3); }
+  .ict-badge.finished { background: rgba(90,94,120,0.15); color: var(--text-muted); border: 1px solid var(--border); }
+  .ict-status-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .ict-badge.active .ict-status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: ictPulse 1.5s infinite; }
+  .ict-badge.upcoming .ict-status-dot { background: var(--accent); }
+  .ict-badge.finished .ict-status-dot { background: var(--text-muted); }
+  @keyframes ictPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+
+  .ict-card-admin-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .ict-icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .ict-icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ict-icon-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  .ict-card-name {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-decoration: none;
+    line-height: 1.3;
+  }
+  .ict-card-name:hover { color: var(--accent); }
+
+  .ict-card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .ict-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .ict-meta-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .ict-meta-item b { color: var(--text-secondary); font-weight: 600; }
+
+  .ict-teams-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ict-team-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    max-width: 160px;
+  }
+  .ict-team-chip span.tname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ict-team-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .ict-team-chip.mine { border-color: var(--accent); color: var(--accent); background: rgba(201,168,76,0.08); }
+  .ict-team-more { font-size: 11.5px; color: var(--text-muted); padding: 3px 4px; }
+
+  .ict-standings {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .ict-standings-title { font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-size: 10.5px; margin-bottom: 6px; }
+  .ict-standings-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .ict-standings-rank { width: 16px; color: var(--text-muted); font-weight: 700; flex-shrink: 0; }
+  .ict-standings-name { flex: 1; color: var(--text-primary); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ict-standings-score { color: var(--accent); font-weight: 800; flex-shrink: 0; }
+  .ict-standings-more { color: var(--text-muted); font-size: 11px; margin-top: 4px; }
+
+  .ict-my-team-banner {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 12.5px;
+    color: var(--accent);
+  }
+
+  .ict-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+
+  .btn {
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #000;
+    box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(201,168,76,0.45); }
+  .btn-secondary { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--border-light); color: var(--text-primary); }
+  .btn-danger { background: rgba(224,85,85,0.12); color: var(--red); border: 1px solid rgba(224,85,85,0.3); }
+  .btn-danger:hover { background: rgba(224,85,85,0.2); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+  .btn.full { width: 100%; justify-content: center; }
+
+  .ict-empty {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--text-muted);
+  }
+  .ict-empty-icon { font-size: 46px; margin-bottom: 14px; }
+
+  /* ── MODAL (shared) ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.08);
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.25s;
+  }
+  .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .modal-title { font-family: var(--font-display); font-size: 21px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 50%;
+    border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+    cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 7px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-input, .form-select, .form-textarea {
+    background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 9px;
+    color: var(--text-primary); font-family: var(--font-body); font-size: 14px;
+    padding: 10px 14px; transition: border-color 0.2s; width: 100%;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--accent); }
+  .form-textarea { resize: vertical; }
+  .form-select { cursor: pointer; }
+  .form-hint { font-size: 11.5px; color: var(--text-muted); }
+
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn-cancel { padding: 10px 20px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 9px; color: var(--text-secondary); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-cancel:hover { border-color: var(--border-light); color: var(--text-primary); }
+  .btn-submit {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    border: none; border-radius: 9px; color: #000; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+  }
+  .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(201,168,76,0.45); }
+  .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── TEAM PICKER ── */
+  .team-search-wrap { position: relative; }
+  .team-search-results {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    max-height: 240px; overflow-y: auto;
+    z-index: 10;
+    display: none;
+  }
+  .team-search-results.show { display: block; }
+  .team-search-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 14px; cursor: pointer; font-size: 13.5px; color: var(--text-primary);
+    transition: background 0.12s;
+  }
+  .team-search-item:hover { background: var(--bg-hover); }
+  .team-search-item .tsi-count { font-size: 11.5px; color: var(--text-muted); }
+  .team-search-empty { padding: 12px 14px; font-size: 12.5px; color: var(--text-muted); }
+
+  .team-counter { font-size: 11.5px; color: var(--text-muted); margin-top: 8px; }
+  .team-counter.limit { color: var(--red); font-weight: 700; }
+
+  .team-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; max-height: 180px; overflow-y: auto; }
+  .team-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 20px; padding: 4px 6px 4px 12px; font-size: 12px; color: var(--accent); font-weight: 600;
+  }
+  .team-chip-remove { cursor: pointer; font-size: 13px; line-height: 1; opacity: 0.75; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .team-chip-remove:hover { opacity: 1; background: rgba(224,85,85,0.2); color: var(--red); }
+
+  /* ── TEAM SELECT (join) MODAL ── */
+  .team-select-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .team-select-option {
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .team-select-option:hover { border-color: var(--border-light); background: var(--bg-hover); }
+  .team-select-option.selected { border-color: var(--accent); background: rgba(201,168,76,0.08); }
+  .team-select-option input { accent-color: var(--accent); width: 17px; height: 17px; flex-shrink: 0; }
+  .team-select-option-name { font-weight: 700; color: var(--text-primary); font-size: 14px; }
+
+  /* ── TOAST ── */
+  #toast-container { position: fixed; bottom: 28px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+  .toast { padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--bg-card); border: 1px solid var(--border); box-shadow: var(--shadow); animation: slideRight 0.3s ease; pointer-events: all; }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.error { border-color: var(--red); color: var(--red); }
+  @keyframes slideRight { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  @media (max-width: 600px) {
+    .ict-hero { padding: 24px 20px; }
+    .ict-hero-top { flex-direction: column; }
+    .ict-title { font-size: 21px; }
+    .ict-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    #btn-open-create { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<script src="/js/header.js"></script>
+
+<div class="ict-page">
+
+  <a href="/tournaments" class="ict-back-link">← Все турниры</a>
+
+  <div class="ict-hero">
+    <div class="ict-hero-bg-text">🏰</div>
+    <div class="ict-hero-top">
+      <div class="ict-hero-icon">🏰</div>
+      <div class="ict-hero-info">
+        <div class="ict-eyebrow">Игра · Межклубные турниры</div>
+        <h1 class="ict-title">Клубы Chess Home сходятся в общей битве</h1>
+        <p class="ict-sub">Несколько клубов заявлены как команды. Играйте за клуб, в котором состоите — участники одной команды друг с другом не встречаются, а очки идут в общий командный зачёт.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-open-create" style="display:none" onclick="openCreateModal()">➕ Создать турнир</button>
+    </div>
+  </div>
+
+  <div class="ict-tabs">
+    <button class="ict-tab active" data-filter="all" onclick="setFilter('all')">Все</button>
+    <button class="ict-tab" data-filter="upcoming" onclick="setFilter('upcoming')">🕐 Скоро</button>
+    <button class="ict-tab" data-filter="active" onclick="setFilter('active')">⚡ Идут</button>
+    <button class="ict-tab" data-filter="finished" onclick="setFilter('finished')">🏁 Завершены</button>
+  </div>
+
+  <div id="ict-list">
+    <div style="text-align:center;padding:80px 0;color:var(--text-muted)">
+      <div style="font-size:48px;margin-bottom:16px">⏳</div>
+      <div>Загружаем турниры...</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CREATE / EDIT TOURNAMENT (admin only) -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title" id="edit-modal-title">🏰 Создать межклубный турнир</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Название *</label>
+        <input type="text" class="form-input" id="edit-name" maxlength="60" placeholder="Кубок клубов Chess Home">
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Описание</label>
+        <textarea class="form-textarea" id="edit-desc" maxlength="1000" style="min-height:70px;" placeholder="Правила, регламент, призы..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Контроль времени</label>
+        <select class="form-select" id="edit-tc">
+          <option value="15s+0">15 сек</option>
+          <option value="1+0">1+0</option><option value="1+1">1+1</option>
+          <option value="2+1">2+1</option><option value="3+0">3+0</option>
+          <option value="3+2" selected>3+2</option><option value="5+0">5+0</option>
+          <option value="5+3">5+3</option><option value="10+0">10+0</option>
+          <option value="10+5">10+5</option><option value="15+10">15+10</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Длительность (мин)</label>
+        <select class="form-select" id="edit-duration">
+          <option value="20">20</option><option value="30" selected>30</option>
+          <option value="45">45</option><option value="60">60</option>
+          <option value="90">90</option><option value="120">120</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Дата начала * (МСК)</label>
+        <input type="datetime-local" class="form-input" id="edit-starts-at">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Мин. рейтинг</label>
+        <input type="number" class="form-input" id="edit-min-rating" min="0" max="3000" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Макс. рейтинг</label>
+        <input type="number" class="form-input" id="edit-max-rating" min="0" max="3000" placeholder="0 = ∞">
+      </div>
+
+      <div class="form-group full">
+        <label class="form-label">Команды-клубы (минимум 2, максимум 175)</label>
+        <div class="team-search-wrap">
+          <input type="text" class="form-input" id="team-search-input" placeholder="Поиск клуба по названию..." oninput="onTeamSearchInput()" onfocus="onTeamSearchInput()">
+          <div class="team-search-results" id="team-search-results"></div>
+        </div>
+        <div class="team-counter" id="team-counter">Выбрано команд: 0 / 175</div>
+        <div class="team-chips" id="team-chips"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
+      <button class="btn-submit" id="btn-edit-submit" onclick="submitTournamentForm()">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TEAM SELECTION (join) -->
+<div class="modal-overlay" id="team-modal">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">🎽 Выберите команду</div>
+      <button class="modal-close" onclick="closeTeamModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;">
+      Играть можно только за клуб, участником которого вы состоите. Выбор команды после первой сыгранной партии изменить нельзя.
+    </p>
+    <div class="team-select-list" id="team-select-list"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeTeamModal()">Отмена</button>
+      <button class="btn-submit" id="btn-team-confirm" onclick="confirmTeamSelection()">✅ Участвовать</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const API = '/api';
+// Токен живёт только в HttpOnly-cookie ch_token — браузер шлёт её сам.
+
+let currentUser = null;
+let socket = null;
+let allTournaments = [];   // полные данные (с participants/teamStandings) для isInterclub=true
+let clubsCache = null;     // все клубы сайта, для поиска команд в форме создания/редактирования
+let currentFilter = 'all';
+
+let editingId = null;      // null = создание, иначе id редактируемого турнира
+let selectedTeams = [];    // [{id, name, memberCount}] — выбранные команды в форме
+
+let joinTournamentId = null;
+let joinSelectedTeamId = null;
+
+async function safeJson(res) {
+  try { return await res.json(); }
+  catch (e) { throw new Error('Сервер вернул некорректный ответ' + (res.status ? ` (${res.status})` : '') + '. Попробуйте ещё раз.'); }
+}
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── MSK TIME HELPERS ──
+// Все даты турниров вводятся и показываются в московском времени (UTC+3, без перехода на летнее/зимнее),
+// независимо от часового пояса браузера пользователя или сервера.
+function msTimestampToMskInputValue(ts) {
+  const d = new Date(ts);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(d);
+  const get = type => parts.find(p => p.type === type).value;
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+}
+function mskInputValueToUtcIso(inputValue) {
+  // inputValue пришёл из <input type="datetime-local"> в виде "YYYY-MM-DDTHH:mm" —
+  // это московское время. Явно добавляем смещение +03:00, чтобы получить корректный
+  // UTC-момент независимо от таймзоны сервера/браузера.
+  return new Date(inputValue + ':00+03:00').toISOString();
+}
+function formatMskDateTime(ts) {
+  return new Date(ts).toLocaleString('ru-RU', {
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+    timeZone: 'Europe/Moscow'
+  }) + ' МСК';
+}
+
+// ── INIT ──
+async function init() {
+  try {
+    const r = await fetch(API + '/me', { credentials: 'same-origin' });
+    if (r.ok) currentUser = await safeJson(r);
+  } catch {}
+
+  if (window.CH) {
+    if (currentUser) CH.setCurrentUser(currentUser);
+    CH.setActivePage('tournaments');
+  }
+
+  // Раньше создавать межклубные турниры мог только сайт-админ — теперь
+  // доступно любому залогиненному пользователю (см. POST /api/tournaments/interclub).
+  if (currentUser) {
+    document.getElementById('btn-open-create').style.display = 'inline-flex';
+  }
+
+  await loadTournaments();
+  connectSocket();
+}
+
+function connectSocket() {
+  try {
+    socket = io();
+    socket.on('tournament_created', () => loadTournaments());
+    socket.on('tournament_updated', () => loadTournaments());
+    socket.on('tournament_deleted', () => loadTournaments());
+  } catch (e) { console.error(e); }
+}
+
+// ── LOAD LIST ──
+async function loadTournaments() {
+  try {
+    const r = await fetch(API + '/tournaments?isInterclub=true');
+    const list = await safeJson(r);
+    if (!r.ok) throw new Error(list.error || 'Не удалось загрузить турниры');
+    // Список без participants/teamStandings — догружаем полные данные каждого
+    // турнира, чтобы показать состав команд, зачёт и статус участия текущего игрока.
+    const full = await Promise.all(list.map(async t => {
+      try {
+        const rr = await fetch(API + '/tournaments/' + t.id);
+        if (rr.ok) return await safeJson(rr);
+      } catch {}
+      return t;
+    }));
+    full.sort((a, b) => a.startsAt - b.startsAt);
+    allTournaments = full;
+    renderList();
+  } catch (e) {
+    console.error(e);
+    document.getElementById('ict-list').innerHTML = `
+      <div class="ict-empty">
+        <div class="ict-empty-icon">⚠️</div>
+        <div>Не удалось загрузить турниры</div>
+      </div>`;
+  }
+}
+
+function setFilter(name) {
+  currentFilter = name;
+  document.querySelectorAll('.ict-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === name));
+  renderList();
+}
+
+// ── RENDER LIST ──
+function renderList() {
+  const el = document.getElementById('ict-list');
+  const filtered = currentFilter === 'all' ? allTournaments : allTournaments.filter(t => t.status === currentFilter);
+
+  if (!filtered.length) {
+    el.innerHTML = `
+      <div class="ict-empty">
+        <div class="ict-empty-icon">🏰</div>
+        <div>${allTournaments.length ? 'Нет турниров в этой категории' : 'Межклубных турниров пока нет'}</div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="ict-grid">${filtered.map(buildCard).join('')}</div>`;
+}
+
+function buildCard(t) {
+  const statusLabel = { active: 'Идёт', upcoming: 'Скоро', finished: 'Завершён' }[t.status] || t.status;
+  const statusIcon  = { active: '⚡', upcoming: '🕐', finished: '🏁' }[t.status];
+
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const parts = (t.participants || []).filter(p => !p.anticheatBanned);
+  const myPart = currentUser ? parts.find(p => p.username === currentUser.username && !p.left) : null;
+  const teams = t.teams || [];
+  const standings = t.teamStandings || [];
+
+  const startsAtStr = t.startsAt ? formatMskDateTime(t.startsAt) : '';
+
+  const myTeam = myPart ? teams.find(tm => tm.id === myPart.teamId) : null;
+  const myTeamBanner = myPart
+    ? `<div class="ict-my-team-banner">🎽 Вы играете за <b>${escHtml(myTeam ? myTeam.name : 'команду')}</b> · очки: ${myPart.score || 0}</div>`
+    : '';
+
+  const shownTeams = teams.slice(0, 6);
+  const teamsHtml = shownTeams.map(tm => `
+    <a href="/clubs/${escHtml(tm.id)}" class="ict-team-chip${myPart && myPart.teamId === tm.id ? ' mine' : ''}" title="${escHtml(tm.name)} · ${tm.memberCount} чел.">
+      <span class="tname">${escHtml(tm.name)}</span>
+    </a>`).join('') + (teams.length > 6 ? `<span class="ict-team-more">+${teams.length - 6} ещё</span>` : '');
+
+  const standingsTop = standings.slice(0, 3);
+  const standingsHtml = standingsTop.length ? `
+    <div class="ict-standings">
+      <div class="ict-standings-title">🏆 Командный зачёт</div>
+      ${standingsTop.map((s, i) => `
+        <div class="ict-standings-row">
+          <span class="ict-standings-rank">${i + 1}</span>
+          <span class="ict-standings-name">${escHtml(s.teamName)}</span>
+          <span class="ict-standings-score">${s.score}</span>
+        </div>`).join('')}
+      ${standings.length > 3 ? `<div class="ict-standings-more">и ещё ${standings.length - 3} команд(ы)</div>` : ''}
+    </div>` : '';
+
+  // ── Кнопка участия/выхода ──
+  let actionBtn = '';
+  if (!currentUser) {
+    actionBtn = `<button class="btn btn-secondary" disabled>Войдите чтобы участвовать</button>`;
+  } else if (t.status === 'finished') {
+    actionBtn = '';
+  } else if (myPart) {
+    actionBtn = `<button class="btn btn-danger" onclick="leaveTournamentCard('${t.id}')">🚪 Покинуть турнир</button>`;
+  } else {
+    actionBtn = `<button class="btn btn-primary" onclick="joinFlow('${t.id}')">⚔️ Участвовать</button>`;
+  }
+
+  return `
+    <div class="ict-card">
+      <div class="ict-card-top">
+        <div class="ict-badge ${t.status}"><span class="ict-status-dot"></span>${statusIcon} ${statusLabel}</div>
+        ${isAdmin ? `
+          <div class="ict-card-admin-actions">
+            <button class="ict-icon-btn" title="Редактировать" onclick="openEditModal('${t.id}')">✏️</button>
+            <button class="ict-icon-btn danger" title="Удалить" onclick="deleteTournamentCard('${t.id}')">🗑</button>
+          </div>` : ''}
+      </div>
+
+      <a href="/tournament/interclub/${t.id}" class="ict-card-name">${escHtml(t.name)}</a>
+      ${t.description ? `<div class="ict-card-desc">${escHtml(t.description)}</div>` : ''}
+
+      <div class="ict-meta">
+        <div class="ict-meta-item">⏱ <b style="font-family:var(--font-mono)">${escHtml(t.timeControl)}</b></div>
+        ${startsAtStr ? `<div class="ict-meta-item">📅 <b>${escHtml(startsAtStr)}</b></div>` : ''}
+        <div class="ict-meta-item">🛡 <b>${teams.length}</b> команд</div>
+        <div class="ict-meta-item">👥 <b>${parts.length}</b> участников</div>
+        ${(t.minRating || (t.maxRating && t.maxRating < 9999)) ? `<div class="ict-meta-item">⭐ <b>${t.minRating||0}–${t.maxRating>=9999?'∞':t.maxRating}</b></div>` : ''}
+      </div>
+
+      <div class="ict-teams-row">${teamsHtml}</div>
+
+      ${standingsHtml}
+      ${myTeamBanner}
+
+      <div class="ict-card-actions">
+        <a href="/tournament/interclub/${t.id}" class="btn btn-secondary">Подробнее →</a>
+        ${actionBtn}
+      </div>
+    </div>`;
+}
+
+// ── JOIN FLOW ──
+async function joinFlow(id) {
+  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  try {
+    const r = await fetch(API + '/tournaments/' + id + '/join', { method: 'POST', credentials: 'same-origin' });
+    const data = await safeJson(r);
+    if (r.ok) {
+      toast('Вы в турнире! 🎉 Ждите начала', 'success');
+      loadTournaments();
+      return;
+    }
+    if (data.needTeamSelection) {
+      if (!data.teams || !data.teams.length) {
+        toast('Вы не состоите ни в одном клубе, который участвует в этом турнире', 'error');
+        return;
+      }
+      openTeamModal(id, data.teams);
+      return;
+    }
+    throw new Error(data.error || 'Ошибка');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function openTeamModal(id, teams) {
+  joinTournamentId = id;
+  joinSelectedTeamId = null;
+  const list = document.getElementById('team-select-list');
+  list.innerHTML = teams.map(tm => `
+    <label class="team-select-option" id="team-opt-${escHtml(tm.id)}" onclick="selectJoinTeam('${escHtml(tm.id)}')">
+      <input type="radio" name="join-team" value="${escHtml(tm.id)}">
+      <span class="team-select-option-name">${escHtml(tm.name)}</span>
+    </label>`).join('');
+  document.getElementById('team-modal').classList.add('open');
+}
+function selectJoinTeam(id) {
+  joinSelectedTeamId = id;
+  document.querySelectorAll('.team-select-option').forEach(o => o.classList.remove('selected'));
+  const opt = document.getElementById('team-opt-' + id);
+  if (opt) { opt.classList.add('selected'); opt.querySelector('input').checked = true; }
+}
+function closeTeamModal() {
+  document.getElementById('team-modal').classList.remove('open');
+  joinTournamentId = null;
+  joinSelectedTeamId = null;
+}
+async function confirmTeamSelection() {
+  if (!joinSelectedTeamId) { toast('Выберите команду', 'error'); return; }
+  const btn = document.getElementById('btn-team-confirm');
+  btn.disabled = true;
+  try {
+    const r = await fetch(API + '/tournaments/' + joinTournamentId + '/join', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teamId: joinSelectedTeamId })
+    });
+    const data = await safeJson(r);
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+    toast('Вы в турнире! 🎉 Ждите начала', 'success');
+    closeTeamModal();
+    loadTournaments();
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function leaveTournamentCard(id) {
+  if (!confirm('Покинуть турнир?')) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + id + '/leave', { method: 'POST', credentials: 'same-origin' });
+    const data = await safeJson(r);
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+    toast('Вы покинули турнир', 'success');
+    loadTournaments();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ── ADMIN: CREATE / EDIT ──
+async function fetchClubsIfNeeded() {
+  if (clubsCache) return clubsCache;
+  try {
+    const r = await fetch(API + '/clubs');
+    clubsCache = await safeJson(r);
+  } catch { clubsCache = []; }
+  return clubsCache;
+}
+
+function openCreateModal() {
+  editingId = null;
+  selectedTeams = [];
+  document.getElementById('edit-modal-title').textContent = '🏰 Создать межклубный турнир';
+  document.getElementById('edit-name').value = '';
+  document.getElementById('edit-desc').value = '';
+  document.getElementById('edit-tc').value = '3+2';
+  document.getElementById('edit-duration').value = '30';
+  document.getElementById('edit-starts-at').value = '';
+  document.getElementById('edit-min-rating').value = '';
+  document.getElementById('edit-max-rating').value = '';
+  document.getElementById('team-search-input').value = '';
+  renderTeamChips();
+  fetchClubsIfNeeded();
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const t = allTournaments.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  selectedTeams = (t.teams || []).map(tm => ({ id: tm.id, name: tm.name, memberCount: tm.memberCount }));
+
+  document.getElementById('edit-modal-title').textContent = '✏️ Редактировать турнир';
+  document.getElementById('edit-name').value = t.name || '';
+  document.getElementById('edit-desc').value = t.description || '';
+  document.getElementById('edit-tc').value = t.timeControl || '3+2';
+  document.getElementById('edit-duration').value = String(t.durationMinutes || 30);
+  document.getElementById('edit-starts-at').value = t.startsAt ? msTimestampToMskInputValue(t.startsAt) : '';
+  document.getElementById('edit-min-rating').value = t.minRating || '';
+  document.getElementById('edit-max-rating').value = (t.maxRating && t.maxRating < 9999) ? t.maxRating : '';
+  document.getElementById('team-search-input').value = '';
+
+  renderTeamChips();
+  fetchClubsIfNeeded();
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  document.getElementById('team-search-results').classList.remove('show');
+}
+
+// ── TEAM PICKER (create/edit form) ──
+async function onTeamSearchInput() {
+  const q = document.getElementById('team-search-input').value.trim().toLowerCase();
+  const clubs = await fetchClubsIfNeeded();
+  const chosenIds = new Set(selectedTeams.map(t => t.id));
+  let matches = clubs.filter(c => !chosenIds.has(c.id));
+  if (q) matches = matches.filter(c => c.name.toLowerCase().includes(q));
+  matches = matches.slice(0, 8);
+
+  const box = document.getElementById('team-search-results');
+  if (!matches.length) {
+    box.innerHTML = `<div class="team-search-empty">${q ? 'Клубы не найдены' : 'Начните вводить название клуба'}</div>`;
+  } else {
+    box.innerHTML = matches.map(c => `
+      <div class="team-search-item" onclick='addTeam(${JSON.stringify({ id: c.id, name: c.name, memberCount: c.memberCount || 0 })})'>
+        <span>${escHtml(c.name)}</span>
+        <span class="tsi-count">${c.memberCount || 0} чел.</span>
+      </div>`).join('');
+  }
+  box.classList.add('show');
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.querySelector('.team-search-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('team-search-results').classList.remove('show');
+  }
+});
+
+function addTeam(club) {
+  if (selectedTeams.length >= 175) { toast('Максимум 175 команд', 'error'); return; }
+  if (selectedTeams.find(t => t.id === club.id)) return;
+  selectedTeams.push(club);
+  document.getElementById('team-search-input').value = '';
+  document.getElementById('team-search-results').classList.remove('show');
+  renderTeamChips();
+}
+function removeTeam(id) {
+  selectedTeams = selectedTeams.filter(t => t.id !== id);
+  renderTeamChips();
+}
+function renderTeamChips() {
+  const box = document.getElementById('team-chips');
+  box.innerHTML = selectedTeams.map(t => `
+    <span class="team-chip">
+      ${escHtml(t.name)}
+      <span class="team-chip-remove" onclick="removeTeam('${escHtml(t.id)}')">✕</span>
+    </span>`).join('');
+  const counter = document.getElementById('team-counter');
+  counter.textContent = `Выбрано команд: ${selectedTeams.length} / 175`;
+  counter.classList.toggle('limit', selectedTeams.length >= 175);
+}
+
+async function submitTournamentForm() {
+  const name = document.getElementById('edit-name').value.trim();
+  const startsAtRaw = document.getElementById('edit-starts-at').value;
+
+  if (!name) { toast('Название обязательно', 'error'); return; }
+  if (!startsAtRaw) { toast('Укажите дату начала', 'error'); return; }
+  const startsAt = mskInputValueToUtcIso(startsAtRaw);
+  if (selectedTeams.length < 2) { toast('Нужно указать минимум 2 команды', 'error'); return; }
+  if (selectedTeams.length > 175) { toast('Максимум 175 команд', 'error'); return; }
+
+  const payload = {
+    name,
+    description: document.getElementById('edit-desc').value.trim(),
+    timeControl: document.getElementById('edit-tc').value,
+    durationMinutes: parseInt(document.getElementById('edit-duration').value),
+    startsAt,
+    minRating: parseInt(document.getElementById('edit-min-rating').value) || 0,
+    maxRating: parseInt(document.getElementById('edit-max-rating').value) || 9999,
+    teamLinks: selectedTeams.map(t => t.id),
+  };
+
+  const btn = document.getElementById('btn-edit-submit');
+  btn.disabled = true;
+  btn.textContent = 'Сохранение...';
+  try {
+    const url = editingId ? (API + '/tournaments/' + editingId + '/edit') : (API + '/tournaments/interclub');
+    const r = await fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await safeJson(r);
+    if (!r.ok) throw new Error(data.error || 'Ошибка сохранения');
+    toast(editingId ? 'Турнир обновлён ✅' : 'Турнир создан 🎉', 'success');
+    closeEditModal();
+    loadTournaments();
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Сохранить';
+  }
+}
+
+async function deleteTournamentCard(id) {
+  if (!confirm('Удалить турнир безвозвратно?')) return;
+  try {
+    const r = await fetch(API + '/tournaments/' + id + '/delete', { method: 'POST', credentials: 'same-origin' });
+    const data = await safeJson(r);
+    if (!r.ok) throw new Error(data.error || 'Ошибка');
+    toast('Турнир удалён', 'success');
+    loadTournaments();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+document.getElementById('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
+document.getElementById('team-modal').addEventListener('click', function (e) { if (e.target === this) closeTeamModal(); });
+
+init();
+</script>
+
+</body>
+</html>

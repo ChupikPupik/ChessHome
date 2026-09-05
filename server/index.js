@@ -400,6 +400,9 @@ async function loadTournaments() {
       participants: row.participants, games: row.games, winner: row.winner,
       // Клубные турниры: привязка к клубу и ограничение только для его участников
       clubId: row.club_id || null, clubOnly: !!row.club_only,
+      // Межклубные турниры: список команд (id клубов), участвующих в турнире.
+      // Создавать такие турниры может только сайт-админ (см. requireAdmin ниже).
+      isInterclub: !!row.is_interclub, teamIds: row.team_ids || [],
     });
   }
 }
@@ -407,17 +410,20 @@ async function saveTournament(t) {
   await db(`
     INSERT INTO tournaments (id, name, description, time_control, duration_minutes,
       starts_at, ends_at, max_participants, min_rating, max_rating,
-      blacklist, created_by, created_at, participants, games, winner, club_id, club_only)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+      blacklist, created_by, created_at, participants, games, winner, club_id, club_only,
+      is_interclub, team_ids)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
     ON CONFLICT (id) DO UPDATE SET
       name=$2, description=$3, time_control=$4, duration_minutes=$5,
       starts_at=$6, ends_at=$7, max_participants=$8, min_rating=$9, max_rating=$10,
-      blacklist=$11, participants=$14, games=$15, winner=$16, club_id=$17, club_only=$18
+      blacklist=$11, participants=$14, games=$15, winner=$16, club_id=$17, club_only=$18,
+      is_interclub=$19, team_ids=$20
   `, [t.id, t.name, t.description || null, t.timeControl, t.durationMinutes,
       t.startsAt, t.endsAt, t.maxParticipants, t.minRating, t.maxRating,
       JSON.stringify(t.blacklist || []), t.createdBy, t.createdAt,
       JSON.stringify(t.participants || []), JSON.stringify(t.games || []), t.winner || null,
-      t.clubId || null, !!t.clubOnly]);
+      t.clubId || null, !!t.clubOnly,
+      !!t.isInterclub, JSON.stringify(t.teamIds || [])]);
 }
 async function deleteTournamentFromDB(id) {
   await db('DELETE FROM tournaments WHERE id = $1', [id]);
@@ -533,11 +539,49 @@ function isClubModerator(club, username) {
 function canManageTournament(user, t) {
   if (!user) return false;
   if (user.role === 'admin') return true;
+  // Межклубные турниры (t.isInterclub) не привязаны к одному клубу (t.clubId === null),
+  // поэтому этот блок для них не срабатывает — управлять ими может ТОЛЬКО сайт-админ.
   if (t.clubId) {
     const club = clubs.find(c => c.id === t.clubId);
     if (club && isClubModerator(club, user.username)) return true;
   }
   return false;
+}
+
+// ── Межклубные турниры ──────────────────────────────────────────
+// Отдельная разновидность турнира: несколько клубов ("команд") заявлены
+// заранее (по ссылкам на их страницы), создать такой турнир может только
+// сайт-админ, участвовать можно только за клуб, в котором реально состоишь,
+// а игроки одной команды никогда не спариваются друг с другом.
+const MAX_INTERCLUB_TEAMS = 175;
+
+// Достаём id клуба из ссылки вида ".../clubs/<id>" или принимаем "голый" id как есть.
+function extractClubIdFromLink(raw) {
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+  const m = s.match(/\/clubs\/([^\/?#]+)/i);
+  if (m) { try { return decodeURIComponent(m[1]).trim(); } catch { return m[1].trim(); } }
+  return s;
+}
+
+// Разбирает присланный список ссылок/id команд, убирает дубли и невалидные значения.
+// Возвращает { teamIds, notFound } — notFound содержит то, что не удалось сопоставить с клубом.
+function resolveInterclubTeams(rawLinks) {
+  const arr = Array.isArray(rawLinks) ? rawLinks : [];
+  const teamIds = [];
+  const notFound = [];
+  const seen = new Set();
+  for (const raw of arr) {
+    const id = extractClubIdFromLink(raw);
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const club = clubs.find(c => c.id === id);
+    if (!club) { notFound.push(String(raw)); continue; }
+    teamIds.push(club.id);
+  }
+  return { teamIds, notFound };
 }
 // Аналог requireAdmin, но также пускает администраторов клуба для турниров их клуба.
 async function requireTournamentManager(req, res, cb) {
@@ -2279,9 +2323,14 @@ app.get('/api/tournaments', async (req, res) => {
       ...t, participantsCount: (t.participants || []).filter(p => !p.anticheatBanned).length,
       status: getTournamentStatus(t, now), participants: undefined, games: undefined, blacklist: undefined,
       createdByIsAdmin: usersCache.get((t.createdBy || '').toLowerCase())?.role === 'admin',
+      teams: getInterclubTeamsInfo(t),
     }));
   if (req.query.status) list = list.filter(t => t.status === req.query.status);
   if (req.query.clubId) list = list.filter(t => t.clubId === req.query.clubId);
+  // ?isInterclub=true — только межклубные турниры (для отдельной страницы),
+  // ?isInterclub=false — только обычные (скрыть межклубные из общего списка турниров).
+  if (req.query.isInterclub === 'true') list = list.filter(t => t.isInterclub);
+  if (req.query.isInterclub === 'false') list = list.filter(t => !t.isInterclub);
   list.sort((a, b) => a.startsAt - b.startsAt);
   res.json(list);
 });
@@ -2296,7 +2345,7 @@ app.get('/api/tournaments/:id', (req, res) => {
   if (authToken_) {
     try { const d = jwt.verify(authToken_, JWT_SECRET); const u = usersCache.get(d.username.toLowerCase()); isAdmin = u?.role === 'admin'; } catch {}
   }
-  res.json({ ...t, participants: sorted, status: getTournamentStatus(t, now), isArchive: t.endsAt < now - 365*24*60*60*1000, blacklist: isAdmin ? (t.blacklist || []) : undefined, createdByIsAdmin: usersCache.get((t.createdBy || '').toLowerCase())?.role === 'admin' });
+  res.json({ ...t, participants: sorted, status: getTournamentStatus(t, now), isArchive: t.endsAt < now - 365*24*60*60*1000, blacklist: isAdmin ? (t.blacklist || []) : undefined, createdByIsAdmin: usersCache.get((t.createdBy || '').toLowerCase())?.role === 'admin', teams: getInterclubTeamsInfo(t), teamStandings: computeTeamStandings(t) });
 });
 
 app.post('/api/tournaments', authMiddleware, async (req, res) => {
@@ -2348,10 +2397,68 @@ app.post('/api/tournaments', authMiddleware, async (req, res) => {
     blacklist: bl, createdBy: user.username, createdAt: now,
     participants: [], games: [], winner: null,
     clubId: finalClubId, clubOnly: finalClubOnly,
+    isInterclub: false, teamIds: [],
   };
   tournaments.push(tournament);
   await saveTournament(tournament);
   io.emit('tournament_created', { id: tournament.id, name: tournament.name, timeControl: tournament.timeControl, startsAt: tournament.startsAt, durationMinutes: tournament.durationMinutes, clubId: tournament.clubId });
+  res.json(tournament);
+});
+
+// ── Создание межклубного турнира — теперь доступно любому пользователю ──
+// (раньше было только сайт-админу). В теле запроса вместо clubId/clubOnly
+// передаётся teamLinks — массив ссылок (или голых id) на клубы-команды,
+// которые будут сражаться в этом турнире. Управление уже созданным турниром
+// (редактирование, удаление) по-прежнему доступно только сайт-админу —
+// см. canManageTournament — это защита от того, что случайный участник
+// сможет менять состав команд или снести чужой турнир.
+app.post('/api/tournaments/interclub', authMiddleware, async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: 'Нет доступа' });
+  const user = await getUser(req.user.username.toLowerCase());
+  if (!user) return res.status(401).json({ error: 'Нет доступа' });
+
+  const isAdmin = user.role === 'admin';
+  const { name, description, timeControl, durationMinutes, startsAt, minRating, maxRating, blacklist, teamLinks } = req.body;
+  if (!name || !timeControl || !durationMinutes || !startsAt) return res.status(400).json({ error: 'Заполните обязательные поля' });
+
+  const { teamIds, notFound } = resolveInterclubTeams(teamLinks);
+  if (teamIds.length < 2) return res.status(400).json({ error: 'Нужно указать ссылки минимум на 2 клуба-команды' });
+  if (teamIds.length > MAX_INTERCLUB_TEAMS) return res.status(400).json({ error: `Максимум ${MAX_INTERCLUB_TEAMS} команд в межклубном турнире` });
+  if (notFound.length) return res.status(400).json({ error: `Не найдены клубы по ссылкам: ${notFound.slice(0, 10).join(', ')}` });
+
+  const startTime = new Date(startsAt).getTime();
+  if (isNaN(startTime)) return res.status(400).json({ error: 'Неверная дата' });
+  const now = Date.now();
+  if (startTime < now - 60000) return res.status(400).json({ error: 'Нельзя создать турнир в прошлом' });
+  const oneYearFromNow = now + 365 * 24 * 60 * 60 * 1000;
+  if (startTime > oneYearFromNow) return res.status(400).json({ error: 'Максимальная дата — через 1 год от сегодня' });
+
+  // Обычным юзерам — не более 3 турниров в день (общий лимит с обычными
+  // турнирами — см. POST /api/tournaments — чтобы нельзя было обойти его,
+  // просто создавая межклубники вместо обычных турниров).
+  if (!isAdmin) {
+    const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+    const todayTs = startOfDay.getTime();
+    const createdToday = tournaments.filter(t => t.createdBy === user.username && t.createdAt >= todayTs).length;
+    if (createdToday >= 3) return res.status(429).json({ error: 'Вы уже создали 3 турнира сегодня. Лимит: 3 в день' });
+  }
+
+  const bl = Array.isArray(blacklist) ? blacklist.map(s => String(s).toLowerCase().trim()).filter(Boolean).slice(0, 100) : [];
+  const tournament = {
+    id: uuidv4(), name: name.trim().slice(0, 60), description: (description || '').trim().slice(0, 1000),
+    timeControl, durationMinutes: parseInt(durationMinutes),
+    startsAt: startTime, endsAt: startTime + parseInt(durationMinutes) * 60000,
+    // У межклубных турниров нет общего лимита участников — он естественно
+    // ограничен суммарным числом членов заявленных команд.
+    maxParticipants: 0, minRating: parseInt(minRating) || 0, maxRating: parseInt(maxRating) || 9999,
+    blacklist: bl, createdBy: user.username, createdAt: now,
+    participants: [], games: [], winner: null,
+    clubId: null, clubOnly: false,
+    isInterclub: true, teamIds,
+  };
+  tournaments.push(tournament);
+  await saveTournament(tournament);
+  io.emit('tournament_created', { id: tournament.id, name: tournament.name, timeControl: tournament.timeControl, startsAt: tournament.startsAt, durationMinutes: tournament.durationMinutes, isInterclub: true });
   res.json(tournament);
 });
 
@@ -2361,6 +2468,23 @@ async function handleEditTournament(req, res) {
     ['name','description','timeControl','durationMinutes','maxParticipants','minRating','maxRating'].forEach(k => { if (req.body[k] !== undefined) t[k] = req.body[k]; });
     if (req.body.startsAt) { t.startsAt = new Date(req.body.startsAt).getTime(); t.endsAt = t.startsAt + t.durationMinutes * 60000; }
     if (Array.isArray(req.body.blacklist)) t.blacklist = req.body.blacklist.map(s => String(s).toLowerCase().trim()).filter(Boolean).slice(0, 100);
+    // Редактирование списка команд межклубного турнира (только для isInterclub турниров,
+    // requireTournamentManager уже гарантирует, что сюда попадёт только сайт-админ).
+    if (t.isInterclub && Array.isArray(req.body.teamLinks)) {
+      const { teamIds, notFound } = resolveInterclubTeams(req.body.teamLinks);
+      if (teamIds.length < 2) return res.status(400).json({ error: 'Нужно указать ссылки минимум на 2 клуба-команды' });
+      if (teamIds.length > MAX_INTERCLUB_TEAMS) return res.status(400).json({ error: `Максимум ${MAX_INTERCLUB_TEAMS} команд в межклубном турнире` });
+      if (notFound.length) return res.status(400).json({ error: `Не найдены клубы по ссылкам: ${notFound.slice(0, 10).join(', ')}` });
+      // Нельзя убрать команду, за которую уже кто-то реально играет в этом турнире.
+      const usedTeamIds = new Set((t.participants || []).filter(p => !p.left && p.teamId).map(p => p.teamId));
+      for (const used of usedTeamIds) {
+        if (!teamIds.includes(used)) {
+          const club = clubs.find(c => c.id === used);
+          return res.status(400).json({ error: `Нельзя убрать команду «${club ? club.name : used}» — за неё уже играют участники` });
+        }
+      }
+      t.teamIds = teamIds;
+    }
     await saveTournament(t);
     io.emit('tournament_updated', { id: t.id, name: t.name, startsAt: t.startsAt });
     res.json(t);
@@ -2406,6 +2530,26 @@ app.post('/api/tournaments/:id/join', authMiddleware, rateLimit(limiterStrict), 
   const existing = t.participants.find(p => p.username === user.username);
   const isActive = getTournamentStatus(t, now) === 'active';
 
+  // ── Межклубный турнир: обязательный выбор команды ─────────────
+  // Играть можно только за клуб, который заявлен в этом турнире И
+  // в котором пользователь реально состоит на момент вступления.
+  let teamId = null;
+  if (t.isInterclub) {
+    const requestedTeamId = req.body && req.body.teamId;
+    if (!requestedTeamId) return res.status(400).json({ error: 'Выберите команду, за которую хотите играть', needTeamSelection: true, teams: (t.teamIds || []).map(id => clubs.find(c => c.id === id)).filter(Boolean).filter(c => (c.members || []).map(m => m.toLowerCase()).includes(user.username.toLowerCase())).map(c => ({ id: c.id, name: c.name })) });
+    if (!(t.teamIds || []).includes(requestedTeamId)) return res.status(400).json({ error: 'Эта команда не участвует в турнире' });
+    const team = clubs.find(c => c.id === requestedTeamId);
+    if (!team) return res.status(404).json({ error: 'Команда (клуб) не найдена' });
+    const inTeam = (team.members || []).map(m => m.toLowerCase()).includes(user.username.toLowerCase());
+    if (!inTeam) return res.status(403).json({ error: `Вы не состоите в клубе «${team.name}»` });
+    // Если игрок уже сыграл партии за одну команду — не даём переметнуться к другой
+    // (иначе можно было бы "сдать" очки не той команде, за которую реально играл).
+    if (existing && existing.teamId && existing.gamesPlayed > 0 && existing.teamId !== requestedTeamId) {
+      return res.status(400).json({ error: 'Вы уже играли в этом турнире за другую команду и не можете сменить её' });
+    }
+    teamId = requestedTeamId;
+  }
+
 if (existing) {
   if (existing.anticheatBanned) return res.status(403).json({ error: 'Вы заблокированы в этом турнире' });
   if (!existing.left) return res.status(400).json({ error: 'Уже участвуете' });
@@ -2414,12 +2558,14 @@ if (existing) {
   existing.currentGameId = null;
   existing.rating = user.rating;
   existing.waiting = isActive;   // Автоматически встаём в очередь, если турнир уже идёт
+  if (t.isInterclub) existing.teamId = teamId;
 } else {
   t.participants.push({
     username: user.username, rating: user.rating, score: 0, streak: 0, flame: false,
     berserkCount: 0, gamesPlayed: 0, wins: 0, losses: 0, draws: 0,
     joinedAt: now, lastGameAt: 0, waiting: isActive, currentGameId: null,
-    left: false, anticheatBanned: false, _acHighAccGames: 0
+    left: false, anticheatBanned: false, _acHighAccGames: 0,
+    teamId: teamId,
   });
 }
 
@@ -4943,6 +5089,14 @@ app.get('/tournaments/*', (req, res) => res.sendFile(path.join(__dirname, '../pu
 app.get('/profile/:username', (req, res) => res.sendFile(path.join(__dirname, '../public/profile.html')));
 app.get('/user/:username',    (req, res) => res.sendFile(path.join(__dirname, '../public/profile.html')));
 app.get('/tournament/:id',    (req, res) => res.sendFile(path.join(__dirname, '../public/tournament.html')));
+// Межклубные турниры — отдельная страница карточки турнира (со своей вёрсткой:
+// командный зачёт, состав команд и т.п.), НЕ путать с /tournament/:id выше —
+// та отдаёт общий шаблон одиночного турнира без командной статистики.
+// Регистрируем ПОСЛЕ /tournament/:id намеренно — не важно, т.к. паттерны разной
+// длины ("/tournament/interclub/xxx" — 2 сегмента, не матчится /tournament/:id).
+app.get('/tournament/interclub/:id', (req, res) => res.sendFile(path.join(__dirname, '../public/interclub-tournament.html')));
+// Чистый URL без .html для списка межклубных турниров (сам список — public/interclub-tournaments.html).
+app.get('/interclub-tournaments', (req, res) => res.sendFile(path.join(__dirname, '../public/interclub-tournaments.html')));
 app.get('/inbox',             (req, res) => res.sendFile(path.join(__dirname, '../public/inbox.html')));
 app.get('/inbox/:partner',    (req, res) => res.sendFile(path.join(__dirname, '../public/inbox.html')));
 app.get('/forum',             (req, res) => res.sendFile(path.join(__dirname, '../public/forum.html')));
@@ -5497,9 +5651,41 @@ function adminSanitizeUser(u) {
   return { ...sanitizeUser(u), email: u.email || null, createdFromIP: u.createdFromIP || null, createdDeviceId: u.createdDeviceId || null, vipUntil: u.vipUntil ?? null };
 }
 
+// Инфо о командах межклубного турнира (id/название/число участников клуба) —
+// нужно фронту для выбора команды и отображения турнирной сетки/составов.
+function getInterclubTeamsInfo(t) {
+  if (!t.isInterclub) return undefined;
+  return (t.teamIds || [])
+    .map(id => clubs.find(c => c.id === id))
+    .filter(Boolean)
+    .map(c => ({ id: c.id, name: c.name, memberCount: c.memberCount || (c.members || []).length }));
+}
+
+// Командный зачёт межклубного турнира: суммируем очки/результаты всех игроков
+// каждой команды среди участников турнира (бан по читерству — не учитываем).
+function computeTeamStandings(t) {
+  if (!t.isInterclub) return undefined;
+  const byTeam = new Map();
+  for (const id of (t.teamIds || [])) {
+    const club = clubs.find(c => c.id === id);
+    byTeam.set(id, { teamId: id, teamName: club ? club.name : id, score: 0, wins: 0, losses: 0, draws: 0, gamesPlayed: 0, players: 0 });
+  }
+  for (const p of (t.participants || [])) {
+    if (p.anticheatBanned || !p.teamId || !byTeam.has(p.teamId)) continue;
+    const s = byTeam.get(p.teamId);
+    s.score += p.score || 0;
+    s.wins += p.wins || 0;
+    s.losses += p.losses || 0;
+    s.draws += p.draws || 0;
+    s.gamesPlayed += p.gamesPlayed || 0;
+    s.players += 1;
+  }
+  return [...byTeam.values()].sort((a, b) => b.score - a.score || b.wins - a.wins);
+}
+
 function sanitizeTournament(t) {
   const sorted = [...(t.participants || [])].filter(p => !p.anticheatBanned).sort((a, b) => b.score - a.score || b.wins - a.wins);
-  return { ...t, participants: sorted, blacklist: undefined, status: getTournamentStatus(t, Date.now()), createdByIsAdmin: usersCache.get((t.createdBy || '').toLowerCase())?.role === 'admin' };
+  return { ...t, participants: sorted, blacklist: undefined, status: getTournamentStatus(t, Date.now()), createdByIsAdmin: usersCache.get((t.createdBy || '').toLowerCase())?.role === 'admin', teams: getInterclubTeamsInfo(t), teamStandings: computeTeamStandings(t) };
 }
 
 function getTournamentStatus(t, now) {
@@ -5647,6 +5833,11 @@ function tryPairTournamentPlayers(tournament) {
     ).length;
   }
 
+  // Межклубный турнир: игроки одной команды (клуба) друг с другом не спариваются.
+  function sameTeam(pa, pb) {
+    return tournament.isInterclub && pa.teamId && pb.teamId && pa.teamId === pb.teamId;
+  }
+
   // Кто был последним соперником игрока
   function lastOpponent(username) {
     for (let k = games.length - 1; k >= 0; k--) {
@@ -5677,6 +5868,7 @@ function tryPairTournamentPlayers(tournament) {
     for (let j = i + 1; j < waiting.length; j++) {
       if (paired.has(waiting[j].username)) continue;
       const pj = waiting[j];
+      if (sameTeam(pi, pj)) continue; // одноклубники не играют друг с другом
       const played = gamesPlayed(pi.username, pj.username);
       const isLastOpp = pj.username === piLastOpp ? 1 : 0;
       // Меньше score — лучше пара
@@ -5720,6 +5912,7 @@ function startTournamentGame(tournament, p1, p2) {
     berserk: { white: false, black: false }, moveCounts: { white: 0, black: 0 },
     _board: serverChess.startBoard(),
     firstMoveDeadline: now + FIRST_MOVE_TIMEOUT,
+    isInterclub: !!tournament.isInterclub,
   };
   activeGames.set(gameId, game);
   tournamentGames.set(gameId, game);
@@ -5728,6 +5921,7 @@ function startTournamentGame(tournament, p1, p2) {
     gameId, color, opponent: opp, opponentRating: oppRating,
     timeControl: tournament.timeControl,
     tournamentId: tournament.id, tournamentName: tournament.name,
+    isInterclub: !!tournament.isInterclub,
     firstMoveDeadline: game.firstMoveDeadline,
   });
   const ws = findSocketByUsername(white);
@@ -6276,7 +6470,7 @@ io.on('connection', (socket) => {
           if (game.turn === 'white') rejoinWhiteTime = Math.max(0, rejoinWhiteTime - elapsedSince);
           else                       rejoinBlackTime = Math.max(0, rejoinBlackTime - elapsedSince);
         }
-        socket.emit('game_start', { gameId: gId, color, opponent, opponentRating: oppRating, timeControl: game.timeControl, moves: game.moves, whiteTime: rejoinWhiteTime, blackTime: rejoinBlackTime, lastMoveAt: game.lastMoveAt, chatMessages: game.chatMessages || [], ...(game.tournamentId ? { tournamentId: game.tournamentId, tournamentName: game.tournamentName, firstMoveDeadline: game.firstMoveDeadline } : {}) });
+        socket.emit('game_start', { gameId: gId, color, opponent, opponentRating: oppRating, timeControl: game.timeControl, moves: game.moves, whiteTime: rejoinWhiteTime, blackTime: rejoinBlackTime, lastMoveAt: game.lastMoveAt, chatMessages: game.chatMessages || [], ...(game.tournamentId ? { tournamentId: game.tournamentId, tournamentName: game.tournamentName, isInterclub: !!game.isInterclub, firstMoveDeadline: game.firstMoveDeadline } : {}) });
         if (!game._board) { game._board = serverChess.rebuildBoard(game.moves); }
         break;
       }
@@ -6326,7 +6520,7 @@ io.on('connection', (socket) => {
       if (game.turn === 'white') rejoinWhiteTime = Math.max(0, rejoinWhiteTime - elapsedSince);
       else                       rejoinBlackTime = Math.max(0, rejoinBlackTime - elapsedSince);
     }
-    socket.emit('game_start', { gameId, color, opponent, opponentRating: oppRating, timeControl: game.timeControl, moves: game.moves, whiteTime: rejoinWhiteTime, blackTime: rejoinBlackTime, lastMoveAt: game.lastMoveAt, chatMessages: game.chatMessages || [], ...(game.tournamentId ? { tournamentId: game.tournamentId, tournamentName: game.tournamentName, firstMoveDeadline: game.firstMoveDeadline } : {}) });
+    socket.emit('game_start', { gameId, color, opponent, opponentRating: oppRating, timeControl: game.timeControl, moves: game.moves, whiteTime: rejoinWhiteTime, blackTime: rejoinBlackTime, lastMoveAt: game.lastMoveAt, chatMessages: game.chatMessages || [], ...(game.tournamentId ? { tournamentId: game.tournamentId, tournamentName: game.tournamentName, isInterclub: !!game.isInterclub, firstMoveDeadline: game.firstMoveDeadline } : {}) });
   });
 
   socket.on('tournament_waiting', ({ tournamentId }) => {
@@ -6758,6 +6952,10 @@ async function main() {
   await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS club_id TEXT`);
   await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS club_only BOOLEAN DEFAULT FALSE`);
   await db(`CREATE INDEX IF NOT EXISTS idx_tournaments_club_id ON tournaments(club_id)`);
+  // Межклубные турниры: is_interclub — флаг, team_ids — JSON-массив id клубов-команд (макс. 175).
+  await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS is_interclub BOOLEAN DEFAULT FALSE`);
+  await db(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS team_ids JSONB DEFAULT '[]'`);
+  await db(`CREATE INDEX IF NOT EXISTS idx_tournaments_is_interclub ON tournaments(is_interclub)`);
   await db(`
     CREATE TABLE IF NOT EXISTS deleted_usernames (
       username_low TEXT PRIMARY KEY,
