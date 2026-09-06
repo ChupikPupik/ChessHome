@@ -1214,7 +1214,7 @@ async function initGlobalChat() {
   setTimeout(initMentionAutocomplete, 100);
 
   try {
-    const msgs = await apiGet('/chat');
+    const msgs = await apiGet('/chat?limit=200');
     el.innerHTML = '';
     msgs.forEach(m => appendGlobalChatMsg(m, false));
     el.scrollTop = el.scrollHeight;
