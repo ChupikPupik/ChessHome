@@ -37,6 +37,7 @@ const {
   BAD_NICK_WORDS,
   normNick,
   nickHasBadWord,
+  PROFILE_EMOJIS,
   normForSimilarity,
   app,
   parseCookieHeader,
@@ -481,7 +482,7 @@ app.post('/api/register',
       // Токен больше не возвращается в теле ответа — только в HttpOnly cookie,
       // недоступной для чтения из JS (защита от кражи токена через XSS).
       res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
-      res.json({ user: sanitizeUser(userData) });
+      res.json({ user: sanitizeUser(userData, true) });
     } catch (err) {
       console.error('[Register]', err.message);
       return res.status(500).json({ error: 'Не удалось создать аккаунт: ' + err.message });
@@ -549,7 +550,7 @@ app.post('/api/login',
 
     const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
-    res.json({ user: sanitizeUser(user) });
+    res.json({ user: sanitizeUser(user, true) });
   } catch (err) {
     console.error('[Login]', err.message);
     res.status(500).json({ error: 'Внутренняя ошибка сервера при входе. Попробуйте ещё раз.' });
@@ -578,7 +579,7 @@ app.post('/api/login/verify-2fa',
 
     const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
-    res.json({ user: sanitizeUser(user) });
+    res.json({ user: sanitizeUser(user, true) });
   }
 );
 
@@ -602,7 +603,7 @@ app.get('/api/me', authMiddleware, async (req, res) => {
   if (!me) return res.status(401).json({ error: 'Не найден' });
   // twoFactorEnabled — это настройка безопасности самого пользователя,
   // не публичный профиль, поэтому её нет в sanitizeUser (используется и для чужих профилей).
-  res.json({ ...sanitizeUser(me), twoFactorEnabled: !!me.twoFactorEnabled });
+  res.json({ ...sanitizeUser(me, true), twoFactorEnabled: !!me.twoFactorEnabled });
 });
 
 
@@ -762,7 +763,7 @@ app.get('/api/users/:username', async (req, res) => {
   if (!user) return res.status(404).json({ error: 'Не найден' });
   const payload = verifyToken(getAuthToken(req));
   const isSelf = payload && payload.username && payload.username.toLowerCase() === user.username.toLowerCase();
-  const data = isSelf ? { ...sanitizeUser(user), email: user.email || null } : sanitizeUser(user);
+  const data = isSelf ? { ...sanitizeUser(user, true), email: user.email || null } : sanitizeUser(user, false);
   res.json({ ...data, online: onlineUsers.has(user.username) });
 });
 
@@ -1000,7 +1001,25 @@ app.get('/api/quests/leaderboard', async (req, res) => {
 
 app.get('/api/challenges', (req, res) => res.json(pendingChallenges.filter(c => Date.now() - c.createdAt < 60000)));
 
-app.get('/api/chat',       (req, res) => res.json(globalChat.slice(-(parseInt(req.query.limit) || 50))));
+app.get('/api/chat', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  const auth = getAuthToken(req);
+  let callerUsername = null;
+  if (auth) { try { callerUsername = jwt.verify(auth, JWT_SECRET).username.toLowerCase(); } catch {} }
+  let isAdmin = false;
+  if (callerUsername) {
+    const caller = await getUser(callerUsername);
+    isAdmin = caller?.role === 'admin';
+  }
+  // Сообщения теневого бана видит только сам автор и админы — для всех
+  // остальных они как будто никогда не отправлялись (см. socket-хендлер
+  // global_chat в sockets.js).
+  const visible = globalChat.filter(m => {
+    if (!m.shadowHidden) return true;
+    return isAdmin || (callerUsername && callerUsername === m.username.toLowerCase());
+  });
+  res.json(visible.slice(-limit));
+});
 
 
 // ── Admin API ─────────────────────────────────────────────────
@@ -1069,6 +1088,49 @@ app.post('/api/admin/unban', authMiddleware, async (req, res) => {
     } catch (e) {
       console.error('[Unban]', e);
       res.status(500).json({ error: 'Ошибка разбана: ' + e.message });
+    }
+  });
+});
+
+
+// ── Теневой бан ─────────────────────────────────────────────────
+// В отличие от /admin/ban: ничего не блокирует и не рвёт соединение —
+// цель продолжает пользоваться сайтом как обычно и не должна ничего
+// заподозрить. Единственный эффект — его сообщения (публичный чат и
+// ЛС, см. sockets.js и /api/dm/send) реально доходят только до него
+// самого и до админов. Независимо от обычного banned — можно включить
+// одно, оба или ни одного.
+app.post('/api/admin/shadowban', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const target = await getUser((req.body.username || '').toLowerCase());
+      if (!target) return res.status(404).json({ error: 'Не найден' });
+      if (target.role === 'admin') return res.status(403).json({ error: 'Нельзя применить к администратору' });
+      target.shadowBanned = true;
+      target.shadowBanReason = req.body.reason || 'Нарушение правил';
+      await saveUser(target);
+      await logAdminAction(req.user.username, 'shadowban', target.username, { reason: target.shadowBanReason });
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[ShadowBan]', e);
+      res.status(500).json({ error: 'Ошибка теневого бана: ' + e.message });
+    }
+  });
+});
+
+
+app.post('/api/admin/unshadowban', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const target = await getUser((req.body.username || '').toLowerCase());
+      if (!target) return res.status(404).json({ error: 'Не найден' });
+      target.shadowBanned = false; target.shadowBanReason = null;
+      await saveUser(target);
+      await logAdminAction(req.user.username, 'unshadowban', target.username, {});
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('[UnShadowBan]', e);
+      res.status(500).json({ error: 'Ошибка снятия теневого бана: ' + e.message });
     }
   });
 });
@@ -1869,15 +1931,19 @@ app.post('/api/tournaments/:id/chat-unmute', authMiddleware, async (req, res) =>
 app.get('/api/dm/conversations', authMiddleware, async (req, res) => {
   const me = req.user.username.toLowerCase();
 
-  const msgs = await db('SELECT id, from_user, to_user, text, ts FROM dm_messages WHERE from_user ILIKE $1 OR to_user ILIKE $1 ORDER BY ts DESC LIMIT 500', [me]);
+  const msgs = await db('SELECT id, from_user, to_user, text, ts, shadow_hidden FROM dm_messages WHERE from_user ILIKE $1 OR to_user ILIKE $1 ORDER BY ts DESC LIMIT 500', [me]);
   const convMap = new Map();
   for (const m of msgs.rows) {
+    // Сообщение теневого бана от partner'а мне — как будто его никогда не
+    // было: не создаёт (и не поднимает) беседу в списке. Свои же собственные
+    // "невидимые" исходящие сообщения я по-прежнему вижу как обычно.
+    if (m.shadow_hidden && m.from_user.toLowerCase() !== me) continue;
     const partner = m.from_user.toLowerCase() === me ? m.to_user : m.from_user;
     const key = dmRoomKey(me, partner.toLowerCase());
     if (!convMap.has(key)) convMap.set(key, { partner, lastMsg: m.text, lastTs: m.ts });
   }
 
-  const unreadRows = await db("SELECT from_user, COUNT(*) as cnt FROM dm_messages WHERE to_user ILIKE $1 AND read = false GROUP BY from_user", [me]);
+  const unreadRows = await db("SELECT from_user, COUNT(*) as cnt FROM dm_messages WHERE to_user ILIKE $1 AND read = false AND shadow_hidden = false GROUP BY from_user", [me]);
   const unreadMap = new Map(unreadRows.rows.map(r => [r.from_user.toLowerCase(), Number(r.cnt)]));
 
   const blockedRows = await db('SELECT blocked FROM dm_blocks WHERE blocker ILIKE $1', [me]);
@@ -1902,7 +1968,10 @@ app.get('/api/dm/messages/:partner', authMiddleware, async (req, res) => {
   const r = since
     ? await db("SELECT * FROM dm_messages WHERE ((from_user ILIKE $1 AND to_user ILIKE $2) OR (from_user ILIKE $2 AND to_user ILIKE $1)) AND ts > $3 ORDER BY ts ASC LIMIT 100", [me, partner, since.toISOString()])
     : await db("SELECT * FROM (SELECT * FROM dm_messages WHERE ((from_user ILIKE $1 AND to_user ILIKE $2) OR (from_user ILIKE $2 AND to_user ILIKE $1)) ORDER BY ts DESC LIMIT 100) sub ORDER BY ts ASC", [me, partner]);
-  const msgs = r.rows.map(m => ({ id: m.id, from: m.from_user, to: m.to_user, text: m.text, ts: m.ts, read: m.read }));
+  // Сообщения, отправленные теневым баном, видит только сам отправитель —
+  // если это писал partner, а не я, они для меня как будто не существуют.
+  const rows = r.rows.filter(m => !m.shadow_hidden || m.from_user.toLowerCase() === me);
+  const msgs = rows.map(m => ({ id: m.id, from: m.from_user, to: m.to_user, text: m.text, ts: m.ts, read: m.read }));
   const blockedByMe      = await db('SELECT 1 FROM dm_blocks WHERE blocker ILIKE $1 AND blocked ILIKE $2', [me, partner]);
   const blockedByPartner = await db('SELECT 1 FROM dm_blocks WHERE blocker ILIKE $1 AND blocked ILIKE $2', [partner, me]);
   const partnerVip = isVip(await getUser(partner));
@@ -1923,10 +1992,18 @@ app.post('/api/dm/send', authMiddleware, rateLimit(limiterStrict), async (req, r
   if (!toUser) return res.status(404).json({ error: 'Пользователь не найден' });
   const blocked = await db('SELECT 1 FROM dm_blocks WHERE (blocker ILIKE $1 AND blocked ILIKE $2) OR (blocker ILIKE $2 AND blocked ILIKE $1)', [me, to]);
   if (blocked.rows.length > 0) return res.status(403).json({ error: 'Переписка заблокирована' });
+  const shadowHidden = !!meUser.shadowBanned;
   const msg = { id: uuidv4(), from: me, to, text: text.trim(), ts: new Date().toISOString(), read: false };
-  await db('INSERT INTO dm_messages (id, from_user, to_user, text, ts, read) VALUES ($1,$2,$3,$4,$5,$6)', [msg.id, msg.from, msg.to, msg.text, msg.ts, msg.read]);
-  const recipientSocket = findSocketByUsername(to);
-  if (recipientSocket) recipientSocket.emit('dm_message', msg);
+  await db('INSERT INTO dm_messages (id, from_user, to_user, text, ts, read, shadow_hidden) VALUES ($1,$2,$3,$4,$5,$6,$7)', [msg.id, msg.from, msg.to, msg.text, msg.ts, msg.read, shadowHidden]);
+  // Теневой бан: получателю сообщение НЕ шлём вообще (для него это как будто
+  // никогда не отправлялось) — только отправителю, чтобы у него всё выглядело
+  // как обычная успешная отправка.
+  if (!shadowHidden) {
+    const recipientSocket = findSocketByUsername(to);
+    if (recipientSocket) recipientSocket.emit('dm_message', msg);
+  } else {
+    emitToAdmins('dm_message', msg).catch(() => {});
+  }
   const senderSocket = findSocketByUsername(me);
   if (senderSocket) senderSocket.emit('dm_message', msg);
   res.json(msg);
@@ -3187,9 +3264,12 @@ app.post('/api/clubs/:id/join', authMiddleware, rateLimit(limiterStrict), async 
 app.post('/api/user/emoji', authMiddleware, async (req, res) => {
   try {
     const { emoji } = req.body;
-    if (typeof emoji !== 'string' || emoji.length > 10) return res.status(400).json({ error: 'Неверный эмодзи' });
-    const forbidden = ['🏳️‍🌈', '🏳️‍⚧️', '🌈', '⚧️', '🏳️‍🌈', '🏳️‍⚧️'];
-    if (forbidden.includes(emoji) || emoji.includes('🌈') || emoji.includes('⚧') || emoji.includes('🏳️')) {
+    if (typeof emoji !== 'string') return res.status(400).json({ error: 'Неверный эмодзи' });
+    // Белый список: разрешён ТОЛЬКО пустая строка (снять эмодзи) или
+    // один из эмодзи, показанных в пикере на /settings. Раньше здесь
+    // был чёрный список "запрещённых" эмодзи — он не мешал прислать
+    // произвольный текст напрямую через API, минуя интерфейс.
+    if (emoji !== '' && !PROFILE_EMOJIS.has(emoji)) {
       return res.status(400).json({ error: 'Этот эмодзи запрещён' });
     }
     const userId = req.user.userId;

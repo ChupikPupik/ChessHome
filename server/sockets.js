@@ -850,6 +850,23 @@ function chatMessageHasBadWords(text) {
     socket._lastChatMsg = text; socket._dupCount = 0;
 
     const msg = { id: uuidv4(), username: socket.username, message: text, role: user?.role === 'admin' ? 'admin' : 'user', timestamp: now, emoji: user.emoji || '', vip: isVip(user) };
+
+    // ── Теневой бан: сообщение сохраняем как обычно (для админ-аудита
+    // и истории), но реальным адресатам оно не уходит вообще — рассылаем
+    // только самому автору (чтобы у него всё выглядело как обычная
+    // успешная отправка) и админам (чтобы можно было проверить, что он
+    // пишет). Остальные получатели никогда не увидят это сообщение —
+    // ни в реальном времени, ни при следующей загрузке истории (см.
+    // фильтр по msg.shadowHidden в GET /api/chat).
+    if (user.shadowBanned) {
+      msg.shadowHidden = true;
+      globalChat.push(msg); if (globalChat.length > 500) globalChat.shift();
+      socket.emit('global_chat', msg);
+      emitToAdmins('global_chat', msg).catch(() => {});
+      saveChatMsg(msg).catch(e => console.error('[Chat save]', e.message));
+      return;
+    }
+
     globalChat.push(msg); if (globalChat.length > 500) globalChat.shift();
     io.emit('global_chat', msg);
     saveChatMsg(msg).catch(e => console.error('[Chat save]', e.message));

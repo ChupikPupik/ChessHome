@@ -646,6 +646,7 @@ function renderUserList(users, container) {
     if (u.role === 'admin') { const b = document.createElement('span'); b.style.cssText='color:var(--accent);font-size:11px;margin-left:6px'; b.textContent='ADMIN'; nm.appendChild(b); }
     if (u.vip) { const vipImg = document.createElement('img'); vipImg.src='/img/vip.png'; vipImg.alt='VIP'; vipImg.title = u.vipUntil ? ('VIP до ' + new Date(u.vipUntil).toLocaleDateString('ru')) : 'VIP'; vipImg.style.cssText='height:15px;width:auto;vertical-align:middle;margin-left:6px'; nm.appendChild(vipImg); }
     if (u.banned) { const b = document.createElement('span'); b.style.cssText='color:var(--red);font-size:11px;margin-left:6px'; b.textContent='БАН'; nm.appendChild(b); }
+    if (u.shadowBanned) { const b = document.createElement('span'); b.style.cssText='color:var(--text-muted);font-size:11px;margin-left:6px;border:1px solid var(--text-muted);border-radius:4px;padding:0 4px'; b.title = u.shadowBanReason || ''; b.textContent='ТЕНЬ'; nm.appendChild(b); }
     const st = document.createElement('div'); st.style.cssText = 'font-size:12px;color:var(--text-muted)';
     st.textContent = '★' + u.rating + ' · ' + u.gamesPlayed + ' партий · ' + u.wins + 'W/' + u.losses + 'L';
     info.appendChild(nm); info.appendChild(st); row.appendChild(info);
@@ -708,6 +709,29 @@ function renderUserList(users, container) {
         }
       };
       btns.appendChild(b);
+    }
+    // Теневой бан — независимая кнопка-переключатель (можно совмещать с
+    // обычным баном или включать саму по себе). Не показываем самому себе.
+    if (u.username !== currentUser.username) {
+      if (u.shadowBanned) {
+        const sb = document.createElement('button'); sb.className='btn btn-ghost btn-sm'; sb.textContent='👁️ Снять тень';
+        sb.onclick = async () => {
+          sb.disabled = true;
+          try { await apiPost('/admin/unshadowban', { username: u.username }); toast('Теневой бан снят', 'success'); loadAdminUsers(); }
+          catch(e) { toast('Ошибка: ' + e.message, 'error'); sb.disabled = false; }
+        };
+        btns.appendChild(sb);
+      } else {
+        const sb = document.createElement('button'); sb.className='btn btn-ghost btn-sm'; sb.title='Пишет как обычно, но его никто не видит и не получает от него сообщений — он сам об этом не узнает'; sb.textContent='🌫️ Теневой бан';
+        sb.onclick = async () => {
+          const r = prompt('Причина теневого бана для ' + u.username + ':', 'Нарушение правил');
+          if (!r) return;
+          sb.disabled = true;
+          try { await apiPost('/admin/shadowban', { username: u.username, reason: r }); toast('Теневой бан включён', 'success'); loadAdminUsers(); }
+          catch(e) { toast('Ошибка: ' + e.message, 'error'); sb.disabled = false; }
+        };
+        btns.appendChild(sb);
+      }
     }
     row.appendChild(btns); container.appendChild(row);
   });

@@ -197,6 +197,41 @@ function nickHasBadWord(username) {
   return BAD_NICK_WORDS.some(w => n.includes(normNick(w)));
 }
 
+// ── Белый список эмодзи профиля ───────────────────────────────
+// ВАЖНО: это единственная надёжная защита от подмены эмодзи
+// произвольным текстом. Раньше проверялся только чёрный список
+// ("запрещённые" эмодзи) — любой юзер, дёрнув /api/user/emoji
+// напрямую (мимо UI, через devtools/curl), мог отправить любую
+// строку. Теперь допускается ТОЛЬКО то, что есть в этом списке
+// (тот же набор, что показан в /settings).
+const PROFILE_EMOJIS = new Set([
+  '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰',
+  '😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','😎','🤩','🥳','😏',
+  '😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','😠',
+  '😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🤔','🤭','🤫','🤥',
+  '😶','😐','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','😴','🤤','😪','😵','🤐',
+  '🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠','😈','👿','👹','👺','💩','👻','💀',
+  '☠️','👽','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','🙈','🙉','🙊',
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐒','🐔',
+  '🐧','🐦','🐤','🐣','🐥','🐺','🐗','🐴','🦄','🐝','🐛','🦋','🐌','🐞','🐜','🦟',
+  '🦗','🕷️','🦂','🐢','🐍','🦎','🐙','🦑','🦐','🦞','🐠','🐟','🐡','🐬','🐳','🐋',
+  '🦈','🐊','🐅','🐆','🦓','🦍','🦧','🦣','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🐃',
+  '🐂','🐄','🐎','🐖','🐏','🐑','🦙','🐐','🦌','🐕','🐩','🐈','🐓','🦃','🐇','🐁',
+  '🐀','🐿️','🦔','🐾','🐉','🐲','🌵','🎄','🌲','🌳','🌴','🌿','🍀','🍁','🍂','🍃',
+  '🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🥝','🍅',
+  '🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🌰','🍞',
+  '🥐','🥖','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪',
+  '🌮','🌯','🥙','🧆','🥚','🍳','🥘','🍲','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘',
+  '🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡','🦀',
+  '🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🥧','🍫','🍬','🍭','🍮','🍯','🥛','🍼',
+  '🥤','🧃','🧉','🧊','🍺','🍻','🥂','🥃','🥄','🍴','🍽️','🥢',
+  '⚽','🏀','🏈','⚾','🥎','🏐','🏉','🎾','🥏','🎳','🏆','🥇','🥈','🥉',
+  '🎮','🕹️','🎲','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🎸','🎷','🎺','🎻',
+  '❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','💕','💞','💓','💗','💖','💘','💝',
+  '✨','🌟','⭐','🌙','☀️','🌈','⚡','💫','☄️','❄️','☃️','⛄','🔥','💧','🌊','🌪️',
+  '🎁','🎀','🎊','🎉','🎈','🎃','🎄','🎋','🎆','🎇'
+]);
+
 
 // ── Защита от похожих ников ───────────────────────────────────
 function normForSimilarity(name) {
@@ -384,6 +419,8 @@ function rowToUser(row) {
     role:             row.role,
     banned:           row.banned,
     banReason:        row.ban_reason,
+    shadowBanned:     row.shadow_banned || false,
+    shadowBanReason:  row.shadow_ban_reason || null,
     createdAt:        Number(row.created_at),
     createdFromIP:    row.created_from_ip,
     createdDeviceId:  row.created_device_id,
@@ -427,18 +464,19 @@ async function saveUser(u) {
     INSERT INTO users (id, username, username_low, email, password_hash, rating,
       games_played, wins, losses, draws, avatar, role, banned, ban_reason,
       created_at, created_from_ip, created_device_id, emoji, bio, fshr_rating, fide_rating,
-      two_factor_enabled, vip_until)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+      two_factor_enabled, vip_until, shadow_banned, shadow_ban_reason)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
     ON CONFLICT (id) DO UPDATE SET
       rating=$6, games_played=$7, wins=$8, losses=$9, draws=$10,
       avatar=$11, role=$12, banned=$13, ban_reason=$14, emoji=$18,
-      bio=$19, fshr_rating=$20, fide_rating=$21, two_factor_enabled=$22, vip_until=$23
+      bio=$19, fshr_rating=$20, fide_rating=$21, two_factor_enabled=$22, vip_until=$23,
+      shadow_banned=$24, shadow_ban_reason=$25
   `, [u.id, u.username, u.username.toLowerCase(), u.email || null,
       u.passwordHash, u.rating, u.gamesPlayed, u.wins, u.losses, u.draws,
       u.avatar || null, u.role || 'user', u.banned || false, u.banReason || null,
       u.createdAt, u.createdFromIP || null, u.createdDeviceId || null, u.emoji || '',
       u.bio || '', u.fshrRating ?? null, u.fideRating ?? null, u.twoFactorEnabled || false,
-      u.vipUntil ?? null]);
+      u.vipUntil ?? null, u.shadowBanned || false, u.shadowBanReason || null]);
 }
 
 
@@ -1977,12 +2015,19 @@ async function requireVipGranter(req, res, cb) {
 }
 
 
-function sanitizeUser(u) {
+// viewerIsSelf: если true — перед нами сам владелец профиля, и статус
+// теневого бана от него скрывается (banned=false), как будто ничего не
+// произошло. Всем остальным (viewerIsSelf=false/не передан) теневой бан
+// показывается точно так же, как обычный banned — с той же меткой "БАН"
+// в интерфейсе — потому что для окружающих разницы нет.
+function sanitizeUser(u, viewerIsSelf = false) {
+  const shadowVisible = !!u.shadowBanned && !viewerIsSelf;
   return {
     id: u.id, username: u.username, rating: u.rating,
     gamesPlayed: u.gamesPlayed, wins: u.wins, losses: u.losses, draws: u.draws,
     createdAt: u.createdAt, avatar: u.avatar, role: u.role || 'user',
-    banned: u.banned || false, banReason: u.banReason || null,
+    banned: (u.banned || shadowVisible) || false,
+    banReason: (u.banned ? u.banReason : (shadowVisible ? (u.shadowBanReason || 'Нарушение правил') : null)) || null,
     puzzle_rating: u.puzzle_rating ?? 1200, puzzle_solved: u.puzzle_solved ?? 0,
     puzzle_attempted: u.puzzle_attempted ?? 0, emoji: u.emoji || '',
     bio: u.bio || '', fshrRating: u.fshrRating ?? null, fideRating: u.fideRating ?? null,
@@ -1992,7 +2037,7 @@ function sanitizeUser(u) {
 
 
 function adminSanitizeUser(u) {
-  return { ...sanitizeUser(u), email: u.email || null, createdFromIP: u.createdFromIP || null, createdDeviceId: u.createdDeviceId || null, vipUntil: u.vipUntil ?? null };
+  return { ...sanitizeUser(u, false), email: u.email || null, createdFromIP: u.createdFromIP || null, createdDeviceId: u.createdDeviceId || null, vipUntil: u.vipUntil ?? null, shadowBanned: u.shadowBanned || false, shadowBanReason: u.shadowBanReason || null };
 }
 
 
@@ -2694,6 +2739,19 @@ async function main() {
   // VIP-значок: временный статус (метка времени окончания в мс), выдаётся вручную
   // из админ-панели только chesshome и Marina64 (см. isVipGranter/requireVipGranter).
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS vip_until BIGINT`);
+  // Теневой бан: в отличие от обычного banned (который блокирует ЛЮБОЕ
+  // действие и виден самому юзеру), shadow_banned НИЧЕГО не блокирует —
+  // человек продолжает пользоваться сайтом как обычно, но его сообщения
+  // (публичный чат и ЛС) реально видит только он сам и админы; для всех
+  // остальных они как будто не отправлялись. При этом на публичном
+  // профиле остальные пользователи видят его как забаненного (см.
+  // sanitizeUser), а сам он — нет.
+  await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS shadow_banned BOOLEAN DEFAULT FALSE`);
+  await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS shadow_ban_reason TEXT`);
+  // Помечает ЛС, отправленные во время теневого бана — такие сообщения
+  // хранятся (для админ-аудита), но не показываются получателю (см.
+  // /api/dm/send и /api/dm/messages/:partner).
+  await db(`ALTER TABLE dm_messages ADD COLUMN IF NOT EXISTS shadow_hidden BOOLEAN DEFAULT FALSE`);
   // Товарищеские (нерейтинговые) партии: старые записи считаются рейтинговыми
   await db(`ALTER TABLE games ADD COLUMN IF NOT EXISTS rated BOOLEAN DEFAULT TRUE`);
   // Создание таблицы для дневника разработки (перенесено сюда из глобальной области)
@@ -2868,6 +2926,7 @@ module.exports = {
   BAD_NICK_WORDS,
   normNick,
   nickHasBadWord,
+  PROFILE_EMOJIS,
   normForSimilarity,
   app,
   parseCookieHeader,
