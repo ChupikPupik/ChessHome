@@ -1,0 +1,14 @@
+[Unit]
+Description=ChessHome Go service
+After=network.target
+
+[Service]
+Type=simple
+# Поменяй путь на тот, куда реально положишь проект на сервере
+WorkingDirectory=/root/chesshome-go
+ExecStart=/root/chesshome-go/chesshome-go
+Restart=on-failure
+Environment=GO_PORT=8081
+
+[Install]
+WantedBy=multi-user.target
