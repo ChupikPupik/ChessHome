@@ -83,12 +83,22 @@ A lot of work has gone into stability and security.
 
 - Node.js
 - Express
+- Go
 - PostgreSQL
 - Socket.IO
 - JavaScript
 - HTML
 - CSS
 - Stockfish
+
+---
+
+## Architecture
+
+New backend features are being progressively written in Go, running as a
+separate service alongside the existing Node.js/Express core. Both share
+the same PostgreSQL database. This is an ongoing migration — most of the
+platform still runs on Node.js.
 
 ---
 
