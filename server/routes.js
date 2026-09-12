@@ -511,43 +511,6 @@ app.post('/api/login',
     }
     clearLoginFailStreak(usernameLow);
 
-    // Пароль верный. Если у аккаунта включена 2FA — токен пока не выдаём,
-    // отправляем код на почту и ждём отдельного подтверждения.
-    if (user.twoFactorEnabled) {
-      if (!user.email) {
-        // Не должно происходить (включить 2FA можно только с привязанной почтой),
-        // но на всякий случай не блокируем вход, если так вышло.
-        console.warn('[2FA] У пользователя включена 2FA, но нет email:', user.username);
-      } else {
-        const usernameLowKey = user.username.toLowerCase();
-        const lastSent = twoFactorLastSent.get(usernameLowKey) || 0;
-        if (Date.now() - lastSent < TWO_FA_RESEND_COOLDOWN_MS) {
-          // Уже отправляли код совсем недавно (например, юзер вышел и сразу
-          // зашёл заново) — не долбим почтовый API повторно, просто просим
-          // ввести уже присланный код или немного подождать.
-          return res.json({ twoFactorRequired: true, message: 'Код уже отправлен на ' + user.email + '. Проверьте почту (или подождите немного перед новой попыткой).' });
-        }
-
-        const code = String(Math.floor(100000 + Math.random() * 900000));
-        for (const [k, v] of pendingLogins.entries()) {
-          if (v.username === user.username) pendingLogins.delete(k);
-        }
-        pendingLogins.set(code, { username: user.username, expiresAt: Date.now() + 10 * 60 * 1000 });
-        try {
-          await Promise.race([
-            sendTwoFactorLoginEmail(user.email, code),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000))
-          ]);
-          twoFactorLastSent.set(usernameLowKey, Date.now());
-        } catch (err) {
-          pendingLogins.delete(code);
-          console.error('[2FA send]', err.message);
-          return res.status(500).json({ error: 'Не удалось отправить код подтверждения: ' + err.message });
-        }
-        return res.json({ twoFactorRequired: true, message: 'Код подтверждения отправлен на ' + user.email });
-      }
-    }
-
     const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.cookie('ch_token', token, AUTH_COOKIE_OPTS);
     res.json({ user: sanitizeUser(user, true) });

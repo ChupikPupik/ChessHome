@@ -488,13 +488,22 @@ async function loadChat() {
     SELECT * FROM (SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT 500) sub ORDER BY timestamp ASC
   `);
   for (const row of r.rows) {
-    globalChat.push({ id: row.id, username: row.username, message: row.message, role: row.role, timestamp: Number(row.timestamp) });
+    globalChat.push({
+      id: row.id,
+      username: row.username,
+      message: row.message,
+      role: row.role,
+      timestamp: Number(row.timestamp),
+      shadowHidden: row.shadow_hidden || false,
+      emoji: row.emoji || '',
+      vip: row.vip || false,
+    });
   }
 }
 
 async function saveChatMsg(msg) {
-  await db('INSERT INTO chat_messages (id, username, message, role, timestamp) VALUES ($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING',
-    [msg.id, msg.username, msg.message, msg.role || 'user', msg.timestamp]);
+  await db('INSERT INTO chat_messages (id, username, message, role, timestamp, shadow_hidden, emoji, vip) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING',
+    [msg.id, msg.username, msg.message, msg.role || 'user', msg.timestamp, msg.shadowHidden || false, msg.emoji || '', msg.vip || false]);
 }
 
 async function deleteChatMsg(msgId) {
@@ -2752,6 +2761,17 @@ async function main() {
   // хранятся (для админ-аудита), но не показываются получателю (см.
   // /api/dm/send и /api/dm/messages/:partner).
   await db(`ALTER TABLE dm_messages ADD COLUMN IF NOT EXISTS shadow_hidden BOOLEAN DEFAULT FALSE`);
+  // То же самое, но для глобального чата — раньше shadow_hidden/emoji/vip
+  // для сообщений публичного чата существовали только в оперативной памяти
+  // (в globalChat), а не в БД. Из-за этого после pm2 restart all/перезапуска
+  // процесса вся история чата теряла эти пометки: теневые сообщения
+  // "рассекречивались", а vip-значки и emoji рядом с ником пропадали, пока
+  // человек не написал что-то новое (см. loadChat/saveChatMsg). Сообщения,
+  // отправленные ДО этой миграции, задним числом эти поля не получат —
+  // взять их неоткуда, они просто не сохранялись раньше.
+  await db(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS shadow_hidden BOOLEAN DEFAULT FALSE`);
+  await db(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT ''`);
+  await db(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS vip BOOLEAN DEFAULT FALSE`);
   // Товарищеские (нерейтинговые) партии: старые записи считаются рейтинговыми
   await db(`ALTER TABLE games ADD COLUMN IF NOT EXISTS rated BOOLEAN DEFAULT TRUE`);
   // Создание таблицы для дневника разработки (перенесено сюда из глобальной области)
