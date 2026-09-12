@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Клубы — Chess Home</title>
+  <title data-i18n="clubs.page_title">Clubs — Chess Home</title>
   <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/i18n.js"></script>
   <script src="/js/header.js"></script>
   <link rel="icon" href="/img/logo/favicon.png">
   <style>
@@ -465,35 +466,35 @@
     <!-- ── СПИСОК КЛУБОВ ── -->
     <div id="clubs-list-view">
       <div class="page-hero">
-        <h1>🛡️ <span>Клубы</span></h1>
-        <p>Вступай в шахматные клубы, общайся и соревнуйся вместе</p>
+        <h1>🛡️ <span data-i18n="clubs.title">Clubs</span></h1>
+        <p data-i18n="clubs.subtitle">Join chess clubs, chat and compete together</p>
       </div>
 
       <div id="limits-bar" class="limits-bar" style="display:none">
-        <span class="limit-item">👤 Вы в клубах: <span class="limit-num" id="lim-member">0</span>/10</span>
-        <span class="limit-item">✏️ Создано вами: <span class="limit-num" id="lim-created">0</span>/5</span>
+        <span class="limit-item"><span data-i18n="clubs.limit_member_prefix">👤 You're in clubs: </span><span class="limit-num" id="lim-member">0</span>/10</span>
+        <span class="limit-item"><span data-i18n="clubs.limit_created_prefix">✏️ Created by you: </span><span class="limit-num" id="lim-created">0</span>/5</span>
       </div>
 
       <div class="toolbar">
         <div class="tabs-bar">
-          <button class="tab-btn active" id="tab-all" onclick="switchTab('all')">🌍 Все клубы</button>
-          <button class="tab-btn" id="tab-my" onclick="switchTab('my')">🛡️ Мои клубы</button>
+          <button class="tab-btn active" id="tab-all" data-i18n="clubs.tab_all" onclick="switchTab('all')">🌍 All clubs</button>
+          <button class="tab-btn" id="tab-my" data-i18n="clubs.tab_my" onclick="switchTab('my')">🛡️ My clubs</button>
         </div>
         <div class="search-box">
           <span style="color:var(--text-muted)">🔍</span>
-          <input type="text" id="search-input" placeholder="Поиск клубов..." oninput="filterClubs()">
+          <input type="text" id="search-input" data-i18n-placeholder="clubs.search_placeholder" placeholder="Search clubs..." oninput="filterClubs()">
         </div>
-        <button class="btn btn-primary btn-sm" onclick="openCreateModal()" id="create-btn" style="display:none">+ Создать клуб</button>
+        <button class="btn btn-primary btn-sm" data-i18n="clubs.create_btn" onclick="openCreateModal()" id="create-btn" style="display:none">+ Create a club</button>
       </div>
 
       <div class="clubs-grid" id="clubs-grid">
-        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Загрузка...</div>
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)" data-i18n="clubs.loading">Loading...</div>
       </div>
     </div>
 
-    <!-- ── СТРАНИЦА КЛУБА ── -->
+    <!-- ── CLUB PAGE ── -->
     <div id="club-detail">
-      <button class="back-btn" onclick="backToList()">← Все клубы</button>
+      <button class="back-btn" data-i18n="clubs.back_to_list" onclick="backToList()">← All clubs</button>
 
       <!-- BANNER -->
       <div class="club-banner">
@@ -507,13 +508,13 @@
 
       <!-- TABS -->
       <div class="club-tabs-bar">
-        <button class="club-tab-btn active" data-ctab="home" onclick="switchClubTab('home')">🏠 Главная</button>
-        <button class="club-tab-btn" data-ctab="roster" onclick="switchClubTab('roster')">👥 Состав <span class="club-tab-count" id="ctab-count-roster">0</span></button>
-        <button class="club-tab-btn" data-ctab="tournaments" onclick="switchClubTab('tournaments')">🏆 Турниры <span class="club-tab-count" id="ctab-count-tournaments">0</span></button>
-        <button class="club-tab-btn" data-ctab="stats" onclick="switchClubTab('stats')">📊 Статистика</button>
+        <button class="club-tab-btn active" data-ctab="home" data-i18n="clubs.tab_home" onclick="switchClubTab('home')">🏠 Home</button>
+        <button class="club-tab-btn" data-ctab="roster" onclick="switchClubTab('roster')"><span data-i18n="clubs.tab_roster">👥 Roster</span> <span class="club-tab-count" id="ctab-count-roster">0</span></button>
+        <button class="club-tab-btn" data-ctab="tournaments" onclick="switchClubTab('tournaments')"><span data-i18n="clubs.tab_tournaments">🏆 Tournaments</span> <span class="club-tab-count" id="ctab-count-tournaments">0</span></button>
+        <button class="club-tab-btn" data-ctab="stats" data-i18n="clubs.tab_stats" onclick="switchClubTab('stats')">📊 Statistics</button>
       </div>
 
-      <!-- TAB: ГЛАВНАЯ -->
+      <!-- TAB: HOME -->
       <div class="club-tab-panel" id="ctab-home">
         <div class="club-home-grid">
           <div class="club-home-left">
@@ -521,8 +522,8 @@
             <div id="edit-desc-form">
               <textarea id="edit-desc-ta" maxlength="500"></textarea>
               <div style="display:flex;gap:8px;margin-top:8px">
-                <button class="btn btn-primary btn-sm" onclick="saveDesc(currentClubId)">Сохранить</button>
-                <button class="btn btn-ghost btn-sm" onclick="toggleEditDesc()">Отмена</button>
+                <button class="btn btn-primary btn-sm" data-i18n="common.save" onclick="saveDesc(currentClubId)">Save</button>
+                <button class="btn btn-ghost btn-sm" data-i18n="clubs.cancel_btn" onclick="toggleEditDesc()">Cancel</button>
               </div>
             </div>
           </div>
@@ -531,28 +532,28 @@
             <div class="club-chat-section" id="club-chat-section" style="display:none">
               <div class="club-chat-header">
                 <span style="font-size:18px">💬</span>
-                <h3>Чат клуба</h3>
+                <h3 data-i18n="clubs.chat_title">Club chat</h3>
                 <div style="position:relative">
-                  <button class="chat-info-btn" id="chat-info-btn" title="Правила чата" onclick="toggleChatInfo()">ℹ</button>
+                  <button class="chat-info-btn" id="chat-info-btn" data-i18n-title="clubs.chat_rules_tooltip" title="Chat rules" onclick="toggleChatInfo()">ℹ</button>
                   <div class="chat-info-popup" id="chat-info-popup" style="display:none">
-                    <b style="color:var(--text-primary)">Правила чата</b><br><br>
-                    Мнения авторов сообщений могут не совпадать с позицией администрации клуба и платформы Chess Home.
-                    Администрация не несёт ответственности за высказывания участников.<br><br>
-                    Запрещено: оскорбления, мат, спам, реклама, ссылки на сторонние ресурсы.
-                    Нарушителям может быть выдан мут или бан в чате.
+                    <b style="color:var(--text-primary)" data-i18n="clubs.chat_rules_title">Chat rules</b><br><br>
+                    <span data-i18n-html="clubs.chat_rules_body">Opinions expressed in messages may not reflect the position of the club or Chess Home administration.
+                    The administration is not responsible for statements made by members.<br><br>
+                    Forbidden: insults, profanity, spam, advertising, links to third-party resources.
+                    Violators may be muted or banned from the chat.</span>
                   </div>
                 </div>
               </div>
               <div class="club-chat-messages" id="club-chat-messages"></div>
               <div class="club-chat-footer" id="club-chat-footer">
-                <div class="club-chat-not-member" id="chat-not-member" style="display:none">
-                  Вступите в клуб, чтобы писать в чат
+                <div class="club-chat-not-member" id="chat-not-member" style="display:none" data-i18n="clubs.chat_join_prompt">
+                  Join the club to write in the chat
                 </div>
                 <div class="club-chat-banned" id="chat-banned-notice" style="display:none"></div>
                 <div class="club-chat-input-row" id="chat-input-row" style="display:none">
-                  <input type="text" id="club-chat-input" placeholder="Написать сообщение..." maxlength="300"
+                  <input type="text" id="club-chat-input" data-i18n-placeholder="clubs.chat_input_placeholder" placeholder="Write a message..." maxlength="300"
                     onkeydown="if(event.key==='Enter')sendClubChatMsg()">
-                  <button class="club-chat-send" onclick="sendClubChatMsg()">Отправить</button>
+                  <button class="club-chat-send" data-i18n="clubs.chat_send_btn" onclick="sendClubChatMsg()">Send</button>
                 </div>
               </div>
             </div>
@@ -560,23 +561,23 @@
         </div>
       </div>
 
-      <!-- TAB: СОСТАВ -->
+      <!-- TAB: ROSTER -->
       <div class="club-tab-panel" id="ctab-roster" style="display:none">
         <div class="members-section" id="detail-members"></div>
       </div>
 
-      <!-- TAB: ТУРНИРЫ -->
+      <!-- TAB: TOURNAMENTS -->
       <div class="club-tab-panel" id="ctab-tournaments" style="display:none">
         <div class="club-tourns-toolbar">
-          <h3>🏆 Турниры клуба</h3>
-          <button class="btn btn-primary btn-sm" id="btn-create-club-tournament" style="display:none" onclick="createClubTournament()">✚ Создать клубный турнир</button>
+          <h3 data-i18n="clubs.tournaments_title">🏆 Club tournaments</h3>
+          <button class="btn btn-primary btn-sm" id="btn-create-club-tournament" style="display:none" data-i18n="clubs.create_tournament_btn" onclick="createClubTournament()">✚ Create a club tournament</button>
         </div>
         <div class="club-tourns-grid" id="club-tourns-grid">
-          <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-muted)">Загрузка...</div>
+          <div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-muted)" data-i18n="clubs.loading">Loading...</div>
         </div>
       </div>
 
-      <!-- TAB: СТАТИСТИКА -->
+      <!-- TAB: STATS -->
       <div class="club-tab-panel" id="ctab-stats" style="display:none">
         <div class="club-stats-grid" id="club-stats-grid"></div>
       </div>
@@ -589,21 +590,21 @@
 <!-- ── CREATE MODAL ── -->
 <div class="modal-overlay" id="create-modal" style="display:none" onclick="if(event.target===this)closeCreateModal()">
   <div class="modal-box">
-    <h2>🛡️ Создать клуб</h2>
+    <h2 data-i18n="clubs.create_modal_title">🛡️ Create a club</h2>
     <div class="form-group">
-      <label>Название клуба *</label>
-      <input type="text" id="new-club-name" placeholder="Например: Русский гамбит" maxlength="40">
+      <label data-i18n="clubs.name_label">Club name *</label>
+      <input type="text" id="new-club-name" data-i18n-placeholder="clubs.name_placeholder" placeholder="For example: Russian Gambit" maxlength="40">
     </div>
     <div class="form-group">
-      <label>Описание</label>
-      <textarea id="new-club-desc" placeholder="Расскажите о вашем клубе..." maxlength="500"></textarea>
+      <label data-i18n="clubs.description_label">Description</label>
+      <textarea id="new-club-desc" data-i18n-placeholder="clubs.description_placeholder" placeholder="Tell us about your club..." maxlength="500"></textarea>
     </div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">
-      ⚠️ Название не может содержать «ChessHome» · Максимум 5 созданных клубов · Максимум 10 членств
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px" data-i18n="clubs.create_hint">
+      ⚠️ The name cannot contain "ChessHome" · Maximum 5 created clubs · Maximum 10 memberships
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost btn-sm" onclick="closeCreateModal()">Отмена</button>
-      <button class="btn btn-primary btn-sm" onclick="createClub()">Создать</button>
+      <button class="btn btn-ghost btn-sm" data-i18n="clubs.cancel_btn" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" data-i18n="clubs.create_submit_btn" onclick="createClub()">Create</button>
     </div>
   </div>
 </div>
@@ -659,9 +660,9 @@ async function apiReq(method, path, body) {
   } catch (e) {
     // Ответ пришёл не в JSON (например, HTML-страница ошибки от прокси
     // или пустое тело) — не даём "сырой" ошибке JSON.parse всплыть наружу.
-    throw new Error('Сервер вернул некорректный ответ' + (res.status ? ` (${res.status})` : '') + '. Попробуйте ещё раз.');
+    throw new Error(CH_I18N.t('clubs.error.bad_response') + (res.status ? ` (${res.status})` : '') + '. ' + CH_I18N.t('clubs.error.try_again'));
   }
-  if (!res.ok) throw new Error(data.error || 'Ошибка');
+  if (!res.ok) throw new Error(data.error || CH_I18N.t('common.error'));
   return data;
 }
 
@@ -685,7 +686,7 @@ async function loadClubs() {
     updateLimitsBar();
   } catch(e) {
     document.getElementById('clubs-grid').innerHTML =
-      `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">Не удалось загрузить клубы</div>`;
+      `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)">${CH_I18N.t('clubs.error.load_failed')}</div>`;
   }
 }
 
@@ -732,7 +733,7 @@ function renderClubs() {
   let list = allClubs;
   if (currentTab === 'my') {
     if (!currentUser) {
-      document.getElementById('clubs-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔐</div><h3>Войдите в аккаунт</h3><p>Чтобы видеть свои клубы</p></div>`;
+      document.getElementById('clubs-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔐</div><h3>${CH_I18N.t('common.login_required')}</h3><p>${CH_I18N.t('clubs.login_required_desc')}</p></div>`;
       return;
     }
     list = allClubs.filter(c => isMember(c));
@@ -740,7 +741,7 @@ function renderClubs() {
   if (q) list = list.filter(c => c.name.toLowerCase().includes(q) || (c.description||'').toLowerCase().includes(q));
 
   if (!list.length) {
-    document.getElementById('clubs-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🛡️</div><h3>Клубов не найдено</h3><p>${currentTab === 'my' ? 'Вступите в клуб или создайте свой' : 'Попробуйте другой запрос'}</p></div>`;
+    document.getElementById('clubs-grid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🛡️</div><h3>${CH_I18N.t('clubs.not_found_title')}</h3><p>${currentTab === 'my' ? CH_I18N.t('clubs.not_found_my') : CH_I18N.t('clubs.not_found_search')}</p></div>`;
     return;
   }
 
@@ -757,7 +758,7 @@ function renderClubs() {
           <div class="club-title">
             ${escapeHtml(club.name)}
             ${club.official ? '<span class="official-badge">OFFICIAL</span>' : ''}
-            ${member ? '<span style="font-size:11px;color:var(--accent)">✓ В клубе</span>' : ''}
+            ${member ? `<span style="font-size:11px;color:var(--accent)">${CH_I18N.t('clubs.badge_member')}</span>` : ''}
           </div>
           <div class="club-meta">
             <span class="club-members">👥 ${club.memberCount||0}</span>
@@ -783,7 +784,7 @@ async function openClub(id, keepTab) {
   history.pushState({ clubId: id }, '', '/clubs/' + id);
   document.getElementById('clubs-list-view').style.display = 'none';
   document.getElementById('club-detail').style.display = 'block';
-  document.getElementById('club-banner-info').innerHTML = '<div style="color:var(--text-muted)">Загрузка...</div>';
+  document.getElementById('club-banner-info').innerHTML = `<div style="color:var(--text-muted)">${CH_I18N.t('clubs.loading')}</div>`;
   document.getElementById('detail-members').innerHTML = '';
   // Hide chat while loading
   const chatSection = document.getElementById('club-chat-section');
@@ -798,7 +799,7 @@ async function openClub(id, keepTab) {
     // Load chat
     loadClubChat(id);
   } catch(e) {
-    document.getElementById('club-banner-info').innerHTML = `<div style="color:var(--text-muted)">Не удалось загрузить клуб</div>`;
+    document.getElementById('club-banner-info').innerHTML = `<div style="color:var(--text-muted)">${CH_I18N.t('clubs.error.load_club_failed')}</div>`;
   }
 }
 
@@ -866,24 +867,24 @@ function renderClubDetail(club) {
       ${club.official ? '<span class="official-badge">OFFICIAL</span>' : ''}
     </div>
     <div class="club-banner-meta">
-      <span>👥 <b>${club.memberCount||0}</b> участников</span>
-      <span>🛡 <b>${admins.length}</b> админов</span>
-      <span>📅 Создан ${new Date(club.createdAt||0).toLocaleDateString('ru-RU')}</span>
+      <span>👥 <b>${club.memberCount||0}</b> ${CH_I18N.t('clubs.members_label')}</span>
+      <span>🛡 <b>${admins.length}</b> ${CH_I18N.t('clubs.admins_label')}</span>
+      <span>📅 ${CH_I18N.t('clubs.created_label')}${new Date(club.createdAt||0).toLocaleDateString(CH_I18N.getLang()==='ru'?'ru-RU':'en-US')}</span>
     </div>
   `;
 
   document.getElementById('club-banner-actions').innerHTML = `
     ${!me ? '' : isMem
-      ? `${!isCreator || !club.official ? `<button class="btn btn-ghost btn-sm" onclick="leaveClub('${club.id}')">🚪 Выйти</button>` : ''}`
-      : canJoin ? `<button class="btn btn-primary btn-sm" onclick="joinClub('${club.id}')">+ Вступить</button>` : '<span style="color:var(--text-muted);font-size:13px">Вы в 10 клубах (максимум)</span>'
+      ? `${!isCreator || !club.official ? `<button class="btn btn-ghost btn-sm" onclick="leaveClub('${club.id}')">${CH_I18N.t('clubs.leave_btn')}</button>` : ''}`
+      : canJoin ? `<button class="btn btn-primary btn-sm" onclick="joinClub('${club.id}')">${CH_I18N.t('clubs.join_btn')}</button>` : `<span style="color:var(--text-muted);font-size:13px">${CH_I18N.t('clubs.max_clubs_notice')}</span>`
     }
-    ${isSuperAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteClub('${club.id}')">🗑️ Удалить</button>` : ''}
+    ${isSuperAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteClub('${club.id}')">${CH_I18N.t('clubs.delete_btn')}</button>` : ''}
   `;
 
   // ── Главная: описание ──
   document.getElementById('club-desc-card').innerHTML = `
-    ${club.description ? escapeHtml(club.description) : '<span style="color:var(--text-muted)">Описание пока не добавлено</span>'}
-    ${(isAdmin||isSuperAdmin) ? `<button class="btn btn-ghost btn-sm desc-edit-btn" onclick="toggleEditDesc()">✏️ Редактировать</button>` : ''}
+    ${club.description ? escapeHtml(club.description) : `<span style="color:var(--text-muted)">${CH_I18N.t('clubs.no_description')}</span>`}
+    ${(isAdmin||isSuperAdmin) ? `<button class="btn btn-ghost btn-sm desc-edit-btn" onclick="toggleEditDesc()">${CH_I18N.t('clubs.edit_btn')}</button>` : ''}
   `;
   document.getElementById('edit-desc-ta').value = club.description || '';
 
@@ -900,20 +901,20 @@ function renderClubDetail(club) {
       <div style="flex:1;min-width:0">
         <div class="member-name"><a href="/profile/${escapeHtml(username)}">${escapeHtml(username)}</a></div>
         <div class="member-role">
-          ${isCreatorM ? '<span style="color:var(--accent)">♛ Создатель</span>' : isAdminM ? '<span style="color:var(--text-secondary)">🛡 Администратор</span>' : 'Участник'}
+          ${isCreatorM ? `<span style="color:var(--accent)">${CH_I18N.t('clubs.role_creator')}</span>` : isAdminM ? `<span style="color:var(--text-secondary)">${CH_I18N.t('clubs.role_admin')}</span>` : CH_I18N.t('clubs.role_member')}
         </div>
       </div>
       <div class="member-actions">
-        ${canPromote ? `<button class="btn btn-ghost btn-sm" title="Назначить администратором" onclick="promoteUser('${club.id}','${username}')">⬆️</button>` : ''}
-        ${canDemote  ? `<button class="btn btn-ghost btn-sm" title="Снять с должности" onclick="demoteUser('${club.id}','${username}')">⬇️</button>` : ''}
-        ${canKick    ? `<button class="btn btn-danger btn-sm" title="Исключить" onclick="kickUser('${club.id}','${username}')">✕</button>` : ''}
+        ${canPromote ? `<button class="btn btn-ghost btn-sm" title="${CH_I18N.t('clubs.tooltip_promote')}" onclick="promoteUser('${club.id}','${username}')">⬆️</button>` : ''}
+        ${canDemote  ? `<button class="btn btn-ghost btn-sm" title="${CH_I18N.t('clubs.tooltip_demote')}" onclick="demoteUser('${club.id}','${username}')">⬇️</button>` : ''}
+        ${canKick    ? `<button class="btn btn-danger btn-sm" title="${CH_I18N.t('clubs.tooltip_kick')}" onclick="kickUser('${club.id}','${username}')">✕</button>` : ''}
       </div>
     </div>`;
   }).join('');
 
   document.getElementById('detail-members').innerHTML = `
-    <h3>👥 Участники (${members.length})</h3>
-    ${membersHtml || '<div style="color:var(--text-muted);font-size:14px">Нет участников</div>'}
+    <h3>${CH_I18N.t('clubs.members_heading',{n:members.length})}</h3>
+    ${membersHtml || `<div style="color:var(--text-muted);font-size:14px">${CH_I18N.t('clubs.no_members')}</div>`}
   `;
   document.getElementById('ctab-count-roster').textContent = members.length;
 
@@ -933,7 +934,7 @@ async function saveDesc(clubId) {
   const desc = document.getElementById('edit-desc-ta').value;
   try {
     await apiReq('PATCH', '/clubs/' + clubId, { description: desc });
-    toast('Описание обновлено', 'success');
+    toast(CH_I18N.t('clubs.toast.desc_updated'),'success');
     toggleEditDesc();
     openClub(clubId, true);
   } catch(e) { toast(e.message, 'error'); }
@@ -952,17 +953,17 @@ async function loadClubTournaments(clubId) {
     clubTournamentsCache = list;
     document.getElementById('ctab-count-tournaments').textContent = list.length;
     if (!list.length) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🏆</div><h3>Турниров пока нет</h3><p>Администраторы клуба могут создать первый</p></div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🏆</div><h3>${CH_I18N.t('clubs.no_tournaments_title')}</h3><p>${CH_I18N.t('clubs.no_tournaments_desc')}</p></div>`;
       return;
     }
-    const statusLabels = { active: 'Идёт', upcoming: 'Скоро', finished: 'Завершён' };
+    const statusLabels = { active: CH_I18N.t('clubs.status.active'), upcoming: CH_I18N.t('clubs.status.upcoming'), finished: CH_I18N.t('clubs.status.finished') };
     grid.innerHTML = list.map(t => {
-      const dateStr = new Date(t.startsAt).toLocaleString('ru-RU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      const dateStr = new Date(t.startsAt).toLocaleString(CH_I18N.getLang()==='ru'?'ru-RU':'en-US', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
       return `
       <a class="ct-card status-${t.status}" href="/tournament/${t.id}">
         <div class="ct-card-top">
           <span class="ct-status ${t.status}"><span class="dot"></span>${statusLabels[t.status]||t.status}</span>
-          ${t.clubOnly ? '<span class="ct-only-badge">🔒 Только клуб</span>' : ''}
+          ${t.clubOnly ? `<span class="ct-only-badge">${CH_I18N.t('clubs.club_only_badge')}</span>` : ''}
         </div>
         <div class="ct-card-title">${escapeHtml(t.name)}</div>
         <div class="ct-card-meta">
@@ -973,7 +974,7 @@ async function loadClubTournaments(clubId) {
       </a>`;
     }).join('');
   } catch(e) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-muted)">Не удалось загрузить турниры</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-muted)">${CH_I18N.t('clubs.error.load_tournaments_failed')}</div>`;
   }
 }
 
@@ -981,7 +982,7 @@ async function renderClubStats(clubId) {
   const club = allClubs.find(c => c.id === clubId);
   const grid = document.getElementById('club-stats-grid');
   if (!club) return;
-  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted)">Загрузка...</div>`;
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted)">${CH_I18N.t('clubs.loading')}</div>`;
   let tournaments = clubTournamentsCache;
   if (!tournaments) {
     try { tournaments = await apiReq('GET', '/tournaments?clubId=' + encodeURIComponent(clubId)); clubTournamentsCache = tournaments; }
@@ -991,72 +992,72 @@ async function renderClubStats(clubId) {
   const upcoming = tournaments.filter(t => t.status === 'upcoming').length;
   const finished = tournaments.filter(t => t.status === 'finished').length;
   grid.innerHTML = `
-    <div class="stat-card"><div class="stat-val">${club.memberCount||0}</div><div class="stat-lbl">Участников</div></div>
-    <div class="stat-card"><div class="stat-val">${(club.admins||[]).length}</div><div class="stat-lbl">Администраторов</div></div>
-    <div class="stat-card"><div class="stat-val">${tournaments.length}</div><div class="stat-lbl">Всего турниров</div></div>
-    <div class="stat-card"><div class="stat-val">${active}</div><div class="stat-lbl">Идут сейчас</div></div>
-    <div class="stat-card"><div class="stat-val">${upcoming}</div><div class="stat-lbl">Предстоят</div></div>
-    <div class="stat-card"><div class="stat-val">${finished}</div><div class="stat-lbl">Завершено</div></div>
+    <div class="stat-card"><div class="stat-val">${club.memberCount||0}</div><div class="stat-lbl">${CH_I18N.t('clubs.stat.members')}</div></div>
+    <div class="stat-card"><div class="stat-val">${(club.admins||[]).length}</div><div class="stat-lbl">${CH_I18N.t('clubs.stat.admins')}</div></div>
+    <div class="stat-card"><div class="stat-val">${tournaments.length}</div><div class="stat-lbl">${CH_I18N.t('clubs.stat.total_tournaments')}</div></div>
+    <div class="stat-card"><div class="stat-val">${active}</div><div class="stat-lbl">${CH_I18N.t('clubs.stat.active_now')}</div></div>
+    <div class="stat-card"><div class="stat-val">${upcoming}</div><div class="stat-lbl">${CH_I18N.t('clubs.stat.upcoming')}</div></div>
+    <div class="stat-card"><div class="stat-val">${finished}</div><div class="stat-lbl">${CH_I18N.t('clubs.stat.finished')}</div></div>
   `;
 }
 
 async function joinClub(id) {
   try {
     await apiReq('POST', '/clubs/' + id + '/join');
-    toast('Вы вступили в клуб!', 'success');
+    toast(CH_I18N.t('clubs.toast.joined'), 'success');
     await loadClubs();
     openClub(id, true);
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function leaveClub(id) {
-  if (!confirm('Выйти из клуба?')) return;
+  if (!confirm(CH_I18N.t('clubs.confirm.leave'))) return;
   try {
     await apiReq('POST', '/clubs/' + id + '/leave');
-    toast('Вы покинули клуб', 'info');
+    toast(CH_I18N.t('clubs.toast.left'), 'info');
     backToList();
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function kickUser(clubId, username) {
-  if (!confirm(`Исключить ${username} из клуба?`)) return;
+  if (!confirm(CH_I18N.t('clubs.confirm.kick',{username}))) return;
   try {
     await apiReq('POST', '/clubs/' + clubId + '/kick', { username });
-    toast(`${username} исключён`, 'success');
+    toast(CH_I18N.t('clubs.toast.kicked',{username}), 'success');
     openClub(clubId, true);
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function promoteUser(clubId, username) {
-  if (!confirm(`Назначить ${username} администратором?`)) return;
+  if (!confirm(CH_I18N.t('clubs.confirm.promote',{username}))) return;
   try {
     await apiReq('POST', '/clubs/' + clubId + '/promote', { username });
-    toast(`${username} назначен администратором`, 'success');
+    toast(CH_I18N.t('clubs.toast.promoted',{username}), 'success');
     openClub(clubId, true);
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function demoteUser(clubId, username) {
-  if (!confirm(`Снять ${username} с должности администратора?`)) return;
+  if (!confirm(CH_I18N.t('clubs.confirm.demote',{username}))) return;
   try {
     await apiReq('POST', '/clubs/' + clubId + '/demote', { username });
-    toast(`${username} снят с должности`, 'success');
+    toast(CH_I18N.t('clubs.toast.demoted',{username}), 'success');
     openClub(clubId, true);
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function deleteClub(id) {
-  if (!confirm('Удалить клуб? Это действие необратимо.')) return;
+  if (!confirm(CH_I18N.t('clubs.confirm.delete_club'))) return;
   try {
     await apiReq('DELETE', '/clubs/' + id);
-    toast('Клуб удалён', 'success');
+    toast(CH_I18N.t('clubs.toast.club_deleted'), 'success');
     backToList();
   } catch(e) { toast(e.message, 'error'); }
 }
 
 // ── Create modal ───────────────────────────────────────────────
 function openCreateModal() {
-  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  if (!currentUser) { toast(CH_I18N.t('common.login_required'), 'error'); return; }
   document.getElementById('new-club-name').value = '';
   document.getElementById('new-club-desc').value = '';
   document.getElementById('create-modal').style.display = 'flex';
@@ -1066,10 +1067,10 @@ function closeCreateModal() { document.getElementById('create-modal').style.disp
 async function createClub() {
   const name = document.getElementById('new-club-name').value.trim();
   const description = document.getElementById('new-club-desc').value.trim();
-  if (!name) { toast('Введите название', 'error'); return; }
+  if (!name) { toast(CH_I18N.t('clubs.error.enter_name'), 'error'); return; }
   try {
     const club = await apiReq('POST', '/clubs', { name, description });
-    toast('Клуб создан!', 'success');
+    toast(CH_I18N.t('clubs.toast.club_created'), 'success');
     closeCreateModal();
     await loadClubs();
     openClub(club.id);
@@ -1150,23 +1151,23 @@ function appendClubChatMsg(msg, scroll = true) {
   if (isAdmin) {
     const b = document.createElement('span'); b.className = 'msg-badge admin'; b.textContent = 'ADMIN'; header.appendChild(b);
   } else if (isClubAdm) {
-    const b = document.createElement('span'); b.className = 'msg-badge club-admin'; b.textContent = 'Админ клуба'; header.appendChild(b);
+    const b = document.createElement('span'); b.className = 'msg-badge club-admin'; b.textContent = CH_I18N.t('clubs.badge_club_admin'); header.appendChild(b);
   }
 
-  // @ кнопка
+  // @ button
   if (currentUser && !isMe) {
     const atBtn = document.createElement('button');
     atBtn.className = 'msg-action-btn';
     atBtn.style.cssText = 'opacity:0.6;font-size:11px;font-weight:700;transition:opacity 0.15s';
     atBtn.textContent = '@';
-    atBtn.title = 'Обратиться к ' + msg.username;
+    atBtn.title = CH_I18N.t('clubs.mention_tooltip') + msg.username;
     atBtn.onclick = e => { e.stopPropagation(); insertClubMention(msg.username); };
     header.appendChild(atBtn);
   }
 
   const timeEl = document.createElement('span');
   timeEl.className = 'msg-time';
-  timeEl.textContent = new Date(msg.timestamp).toLocaleTimeString('ru', {hour:'2-digit',minute:'2-digit'});
+  timeEl.textContent = new Date(msg.timestamp).toLocaleTimeString(CH_I18N.getLang()==='ru'?'ru':'en', {hour:'2-digit',minute:'2-digit'});
   header.appendChild(timeEl);
 
   body.appendChild(header);
@@ -1185,14 +1186,14 @@ function appendClubChatMsg(msg, scroll = true) {
     const banBtn = document.createElement('button');
     banBtn.className = 'msg-action-btn danger';
     banBtn.textContent = '🚫';
-    banBtn.title = 'Бан / Мут';
+    banBtn.title = CH_I18N.t('clubs.tooltip_ban_mute');
     banBtn.onclick = e => { e.stopPropagation(); showClubBanModal(msg.username, club.id); };
     acts.appendChild(banBtn);
     // Репорт для не-модераторов (и для модераторов тоже)
     const repBtn = document.createElement('button');
     repBtn.className = 'msg-action-btn';
     repBtn.textContent = '🚩';
-    repBtn.title = 'Репорт';
+    repBtn.title = CH_I18N.t('clubs.tooltip_report');
     repBtn.onclick = e => { e.stopPropagation(); reportClubMsg(msg.id, club.id); };
     acts.appendChild(repBtn);
     div.appendChild(acts);
@@ -1202,7 +1203,7 @@ function appendClubChatMsg(msg, scroll = true) {
     const repBtn = document.createElement('button');
     repBtn.className = 'msg-action-btn';
     repBtn.textContent = '🚩';
-    repBtn.title = 'Репорт';
+    repBtn.title = CH_I18N.t('clubs.tooltip_report');
     repBtn.onclick = e => { e.stopPropagation(); reportClubMsg(msg.id, club?.id); };
     acts.appendChild(repBtn);
     div.appendChild(acts);
@@ -1238,7 +1239,7 @@ async function loadClubChat(clubId) {
   if (!section || !msgEl) return;
 
   section.style.display = '';
-  msgEl.innerHTML = '<div style="padding:16px;color:var(--text-muted);font-size:13px">Загрузка чата...</div>';
+  msgEl.innerHTML = `<div style="padding:16px;color:var(--text-muted);font-size:13px">${CH_I18N.t('clubs.chat_loading')}</div>`;
 
   // Настройка footer
   const club = allClubs.find(c => c.id === clubId);
@@ -1263,11 +1264,11 @@ async function loadClubChat(clubId) {
 
       if (data.myBan) {
         if (data.myBan.permanent) {
-          bannedNotice.textContent = '🚫 Вы заблокированы в чате этого клуба';
+          bannedNotice.textContent = CH_I18N.t('clubs.chat.banned_permanent');
           bannedNotice.style.display = '';
         } else if (data.myBan.until > Date.now()) {
           const mins = Math.ceil((data.myBan.until - Date.now()) / 60000);
-          bannedNotice.textContent = `🔇 Вы заглушены ещё ${mins} мин.`;
+          bannedNotice.textContent = CH_I18N.t('clubs.chat.muted',{mins});
           bannedNotice.style.display = '';
         } else {
           inputRow.style.display = 'flex';
@@ -1280,7 +1281,7 @@ async function loadClubChat(clubId) {
         msgEl.innerHTML = '';
         notMember.style.display = '';
       } else {
-        msgEl.innerHTML = `<div style="padding:16px;color:var(--text-muted);font-size:13px">Ошибка: ${escapeHtml(e.message)}</div>`;
+        msgEl.innerHTML = `<div style="padding:16px;color:var(--text-muted);font-size:13px">${CH_I18N.t('clubs.chat.error_prefix')}${escapeHtml(e.message)}</div>`;
       }
     }
   }
@@ -1336,10 +1337,10 @@ async function sendClubChatMsg() {
   const inp = document.getElementById('club-chat-input');
   const text = inp?.value.trim();
   if (!text || !currentClubChatId) return;
-  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  if (!currentUser) { toast(CH_I18N.t('common.login_required'), 'error'); return; }
 
   if (chatHasBad(text)) {
-    toast('Сообщение содержит запрещённые слова', 'error');
+    toast(CH_I18N.t('clubs.chat.forbidden_words'), 'error');
     return;
   }
 
@@ -1361,14 +1362,14 @@ function showClubBanModal(username, clubId) {
 
   overlay.innerHTML = `
     <div class="club-ban-box">
-      <h3>🚫 Действие над ${escapeHtml(username)}</h3>
-      <p style="color:var(--text-muted);font-size:13px;margin:4px 0 0">Выберите действие:</p>
+      <h3>${CH_I18N.t('clubs.ban_modal.title',{username: escapeHtml(username)})}</h3>
+      <p style="color:var(--text-muted);font-size:13px;margin:4px 0 0">${CH_I18N.t('clubs.ban_modal.subtitle')}</p>
       <div class="ban-opts">
-        <button class="ban-opt-btn" id="cban-mute">🔇 Мут на 15 минут — заглушить + удалить все сообщения</button>
-        <button class="ban-opt-btn danger" id="cban-ban">🚫 Бан — заблокировать навсегда в этом чате + удалить все сообщения</button>
-        <button class="ban-opt-btn" id="cban-report">🚩 Только репорт — уведомить администрацию</button>
+        <button class="ban-opt-btn" id="cban-mute">${CH_I18N.t('clubs.ban_modal.mute_btn')}</button>
+        <button class="ban-opt-btn danger" id="cban-ban">${CH_I18N.t('clubs.ban_modal.ban_btn')}</button>
+        <button class="ban-opt-btn" id="cban-report">${CH_I18N.t('clubs.ban_modal.report_btn')}</button>
       </div>
-      <button id="cban-cancel" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-family:var(--font-body)">Отмена</button>
+      <button id="cban-cancel" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--text-muted);cursor:pointer;font-size:13px;font-family:var(--font-body)">${CH_I18N.t('clubs.cancel_btn')}</button>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -1377,14 +1378,14 @@ function showClubBanModal(username, clubId) {
     overlay.remove();
     try {
       await apiReq('POST', '/clubs/' + clubId + '/chat-ban', { username, type: 'mute' });
-      toast(`${username} заглушен на 15 мин.`, 'success');
+      toast(CH_I18N.t('clubs.toast.muted',{username}), 'success');
     } catch(e) { toast(e.message, 'error'); }
   };
   overlay.querySelector('#cban-ban').onclick = async () => {
     overlay.remove();
     try {
       await apiReq('POST', '/clubs/' + clubId + '/chat-ban', { username, type: 'ban' });
-      toast(`${username} заблокирован в чате клуба`, 'success');
+      toast(CH_I18N.t('clubs.toast.banned',{username}), 'success');
     } catch(e) { toast(e.message, 'error'); }
   };
   overlay.querySelector('#cban-report').onclick = () => {
@@ -1396,16 +1397,17 @@ function showClubBanModal(username, clubId) {
 }
 
 async function reportClubMsg(msgId, clubId, forUser) {
-  const reason = prompt(`Причина репорта${forUser ? ' на ' + forUser : ''}:`, 'Нарушение правил');
+  const reason = prompt(CH_I18N.t('clubs.report.reason_prompt',{forUser: forUser ? CH_I18N.t('clubs.report.for_user',{forUser}) : ''}), CH_I18N.t('clubs.report.reason_default'));
   if (reason === null) return;
   try {
     await apiReq('POST', '/clubs/' + clubId + '/chat-report', { msgId, reason });
-    toast('Репорт отправлен администраторам', 'success');
+    toast(CH_I18N.t('clubs.toast.report_sent'), 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 // ── Init ───────────────────────────────────────────────────────
 async function init() {
+  await new Promise(res => CH_I18N.onReady(res));
   CH.initHeader();
   // Токен теперь в HttpOnly-cookie — спрашиваем сервер напрямую вместо
   // decode-а JWT, который раньше лежал в localStorage.
@@ -1435,6 +1437,16 @@ async function init() {
 }
 
 init();
+
+// ── LANGUAGE SWITCH: refresh dynamic (JS-rendered) content ───────
+document.addEventListener('ch-lang-changed', () => {
+  if (document.getElementById('clubs-list-view').style.display !== 'none') {
+    loadClubs();
+  }
+  if (currentClubId && document.getElementById('club-detail').style.display !== 'none') {
+    openClub(currentClubId, true);
+  }
+});
 </script>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/ping-widget.js"></script>

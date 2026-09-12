@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Форум — Chess Home</title>
+  <title data-i18n="forum.page_title">Forum — Chess Home</title>
+  <script src="/js/i18n.js"></script>
   <script src="/js/header.js"></script>
   <link rel="icon" href="/img/logo/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -211,56 +212,56 @@ a{color:inherit;text-decoration:none}
   <!-- LIST -->
   <div id="view-list">
     <div class="forum-header">
-      <h1>💬 Форум Chess Home</h1>
-      <button class="btn btn-primary" onclick="toggleNewThread()">✏️ Новое обсуждение</button>
+      <h1 data-i18n="forum.title">💬 Chess Home Forum</h1>
+      <button class="btn btn-primary" data-i18n="forum.new_thread_btn" onclick="toggleNewThread()">✏️ New discussion</button>
     </div>
 
     <div id="new-thread-panel">
-      <h2>✏️ Создать обсуждение</h2>
+      <h2 data-i18n="forum.create_thread_title">✏️ Create a discussion</h2>
       <div style="margin-bottom:14px">
-        <label class="form-label">Заголовок <span style="color:var(--red)">*</span></label>
-        <input id="nt-title" class="nt-title-input" maxlength="120" placeholder="Кратко о теме…"
+        <label class="form-label"><span data-i18n="forum.title_label">Title</span> <span style="color:var(--red)">*</span></label>
+        <input id="nt-title" class="nt-title-input" maxlength="120" data-i18n-placeholder="forum.title_placeholder" placeholder="A short summary…"
           oninput="document.getElementById('nt-tc').textContent=this.value.length">
         <div style="font-size:11px;color:var(--text3);margin-top:4px"><span id="nt-tc">0</span>/120</div>
       </div>
-      <label class="form-label" style="margin-bottom:6px;display:block">Описание <span style="color:var(--red)">*</span></label>
+      <label class="form-label" style="margin-bottom:6px;display:block"><span data-i18n="forum.description_label">Description</span> <span style="color:var(--red)">*</span></label>
       <div id="nt-editor-mount"></div>
       <div id="nt-error" style="color:var(--red);font-size:13px;margin-top:10px;min-height:18px"></div>
       <div class="editor-actions">
-        <button class="btn btn-ghost btn-sm" onclick="toggleNewThread()">Отмена</button>
-        <button class="btn btn-primary" id="nt-submit" onclick="submitNewThread()">📨 Опубликовать</button>
+        <button class="btn btn-ghost btn-sm" data-i18n="forum.cancel_btn" onclick="toggleNewThread()">Cancel</button>
+        <button class="btn btn-primary" id="nt-submit" data-i18n="forum.publish_btn" onclick="submitNewThread()">📨 Post</button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:12px">⚠️ Не более 3 обсуждений в сутки</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:12px" data-i18n="forum.limit_threads_hint">⚠️ No more than 3 discussions per day</div>
     </div>
 
     <div id="thread-list-wrap">
-      <div class="forum-loading"><div class="spinner"></div>&nbsp;Загружаем форум…</div>
+      <div class="forum-loading"><div class="spinner"></div>&nbsp;<span data-i18n="forum.loading_forum">Loading the forum…</span></div>
     </div>
     <div id="forum-pagination" class="forum-pagination"></div>
   </div>
 
   <!-- THREAD -->
   <div id="view-thread">
-    <div class="tv-back" onclick="backToList()">← Все обсуждения</div>
+    <div class="tv-back" data-i18n="forum.back_to_list" onclick="backToList()">← All discussions</div>
     <h1 id="tv-title" class="tv-title"></h1>
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px">
       <div id="tv-meta" class="tv-meta" style="margin-bottom:0"></div>
-      <button class="btn btn-ghost btn-sm" id="search-replies-btn" onclick="openReplySearch()">🔍 Поиск в ответах</button>
+      <button class="btn btn-ghost btn-sm" id="search-replies-btn" data-i18n="forum.search_replies_btn" onclick="openReplySearch()">🔍 Search replies</button>
     </div>
     <div id="tv-op"></div>
     <div id="tv-replies"></div>
     <div id="tv-reply-section" class="reply-section" style="display:none">
-      <h3>💬 Ваш ответ</h3>
+      <h3 data-i18n="forum.your_reply">💬 Your reply</h3>
       <div id="reply-editor-mount"></div>
       <div id="reply-error" style="color:var(--red);font-size:13px;margin-top:8px;min-height:18px"></div>
       <div class="editor-actions">
-        <button class="btn btn-primary" id="reply-submit" onclick="submitReply()">📨 Ответить</button>
+        <button class="btn btn-primary" id="reply-submit" data-i18n="forum.reply_btn" onclick="submitReply()">📨 Reply</button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:10px">⚠️ Не более 10 ответов в сутки</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px" data-i18n="forum.limit_replies_hint">⚠️ No more than 10 replies per day</div>
     </div>
     <div id="tv-auth-req" style="display:none;text-align:center;padding:32px 0;color:var(--text3)">
       <div style="font-size:36px;margin-bottom:10px">🔒</div>
-      <p>Чтобы отвечать, нужно <a href="#" style="color:var(--accent)" onclick="openModal('modal-login');return false">войти в аккаунт</a></p>
+      <p data-i18n-html="forum.auth_required_html">To reply, you need to <a href="#" style="color:var(--accent)" onclick="openModal('modal-login');return false">sign in</a></p>
     </div>
   </div>
 </div>
@@ -269,20 +270,20 @@ a{color:inherit;text-decoration:none}
 <div class="modal-overlay" id="modal-login">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
-    <h2>♚ Вход</h2>
+    <h2 data-i18n="forum.login_modal_title">♚ Sign in</h2>
     <form onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label class="form-label">Имя пользователя</label>
-        <input class="form-input" id="login-username" placeholder="Ваш ник" autocomplete="username">
+        <label class="form-label" data-i18n="forum.username_label">Username</label>
+        <input class="form-input" id="login-username" data-i18n-placeholder="forum.username_placeholder" placeholder="Your nickname" autocomplete="username">
       </div>
       <div class="form-group">
-        <label class="form-label">Пароль</label>
-        <input class="form-input" id="login-password" type="password" placeholder="Пароль" autocomplete="current-password">
+        <label class="form-label" data-i18n="forum.password_label">Password</label>
+        <input class="form-input" id="login-password" type="password" data-i18n-placeholder="forum.password_placeholder" placeholder="Password" autocomplete="current-password">
       </div>
       <div class="form-error" id="login-error"></div>
       <div class="form-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeModal('modal-login');window.location='/?register=1'">Нет аккаунта?</button>
-        <button type="submit" class="btn btn-primary">Войти</button>
+        <button type="button" class="btn btn-ghost" data-i18n="forum.no_account_btn" onclick="closeModal('modal-login');window.location='/?register=1'">No account?</button>
+        <button type="submit" class="btn btn-primary" data-i18n="header.login">Sign in</button>
       </div>
     </form>
   </div>
@@ -292,9 +293,9 @@ a{color:inherit;text-decoration:none}
 <div class="modal-overlay" id="modal-reply-search">
   <div class="modal" style="max-width: 600px">
     <button class="modal-close" onclick="closeModal('modal-reply-search')">✕</button>
-    <h2>🔍 Поиск в теме</h2>
+    <h2 data-i18n="forum.search_modal_title">🔍 Search this discussion</h2>
     <div class="form-group">
-      <input id="search-query" class="form-input" placeholder="Слово или фраза..." autocomplete="off">
+      <input id="search-query" class="form-input" data-i18n-placeholder="forum.search_placeholder" placeholder="A word or phrase..." autocomplete="off">
     </div>
     <div id="search-results" style="max-height: 400px; overflow-y: auto;"></div>
   </div>
@@ -336,11 +337,11 @@ function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/<
 function timeAgo(ts){
   if(!ts)return'';
   const d=Date.now()-ts;
-  if(d<60000)return'только что';
-  if(d<3600000)return Math.floor(d/60000)+' мин. назад';
-  if(d<86400000)return Math.floor(d/3600000)+' ч. назад';
-  if(d<7*86400000)return Math.floor(d/86400000)+' дн. назад';
-  return new Date(ts).toLocaleDateString('ru',{day:'numeric',month:'short',year:'numeric'});
+  if(d<60000)return CH_I18N.t('forum.time.just_now');
+  if(d<3600000)return CH_I18N.t('forum.time.minutes_ago',{n:Math.floor(d/60000)});
+  if(d<86400000)return CH_I18N.t('forum.time.hours_ago',{n:Math.floor(d/3600000)});
+  if(d<7*86400000)return CH_I18N.t('forum.time.days_ago',{n:Math.floor(d/86400000)});
+  return new Date(ts).toLocaleDateString(CH_I18N.getLang()==='ru'?'ru':'en',{day:'numeric',month:'short',year:'numeric'});
 }
 
 function mdRender(text){
@@ -361,7 +362,7 @@ function mdRender(text){
 async function apiGet(path){
   const res=await fetch(API+path,{credentials:'include'});
   const data=await res.json();
-  if(!res.ok)throw new Error(data.error||'Ошибка '+res.status);
+  if(!res.ok)throw new Error(data.error||CH_I18N.t('forum.error_status',{status:res.status}));
   return data;
 }
 async function apiPost(path,body){
@@ -372,13 +373,13 @@ async function apiPost(path,body){
     body:JSON.stringify(body)
   });
   const data=await res.json();
-  if(!res.ok)throw new Error(data.error||'Ошибка '+res.status);
+  if(!res.ok)throw new Error(data.error||CH_I18N.t('forum.error_status',{status:res.status}));
   return data;
 }
 async function apiDelete(path){
   const res=await fetch(API+path,{method:'DELETE',credentials:'include'});
   const data=await res.json();
-  if(!res.ok)throw new Error(data.error||'Ошибка '+res.status);
+  if(!res.ok)throw new Error(data.error||CH_I18N.t('forum.error_status',{status:res.status}));
   return data;
 }
 
@@ -417,7 +418,7 @@ async function handleLogin(e){
     // Токен приходит в HttpOnly-cookie, сервер выставляет её сам.
     currentUser=data.user;
     closeModal('modal-login');updateAuthUI();
-    toast('Добро пожаловать, '+un+'! ♟️','success');
+    toast(CH_I18N.t('forum.toast.welcome',{username:un}),'success');
     renderView();
   }catch(er){errEl.textContent=er.message;}
 }
@@ -432,40 +433,41 @@ function createEditor(mountId,opts){
   const mount=document.getElementById(mountId);
   if(!mount)return null;
   const maxLen=opts.maxLen||5000;
-  const ph=opts.placeholder||'Напишите здесь…';
+  const ph=opts.placeholder||CH_I18N.t('forum.editor.default_placeholder');
   const minH=opts.minHeight||'130px';
   const uid='ed_'+mountId;
+  const T=CH_I18N.t;
 
   mount.innerHTML=
     '<div class="md-wrap">'
       +'<div class="md-toolbar">'
-        +'<button title="Жирный" type="button" onclick="mdc(\''+uid+'\',\'bold\')"><b>B</b></button>'
-        +'<button title="Курсив" type="button" onclick="mdc(\''+uid+'\',\'italic\')"><i>I</i></button>'
-        +'<button title="Зачёркнутый" type="button" onclick="mdc(\''+uid+'\',\'strike\')"><s>S</s></button>'
+        +'<button title="'+T('forum.editor.tooltip_bold')+'" type="button" onclick="mdc(\''+uid+'\',\'bold\')"><b>B</b></button>'
+        +'<button title="'+T('forum.editor.tooltip_italic')+'" type="button" onclick="mdc(\''+uid+'\',\'italic\')"><i>I</i></button>'
+        +'<button title="'+T('forum.editor.tooltip_strike')+'" type="button" onclick="mdc(\''+uid+'\',\'strike\')"><s>S</s></button>'
         +'<div class="md-sep"></div>'
-        +'<button title="Заголовок 2" type="button" onclick="mdc(\''+uid+'\',\'h2\')">H2</button>'
-        +'<button title="Заголовок 3" type="button" onclick="mdc(\''+uid+'\',\'h3\')">H3</button>'
+        +'<button title="'+T('forum.editor.tooltip_h2')+'" type="button" onclick="mdc(\''+uid+'\',\'h2\')">H2</button>'
+        +'<button title="'+T('forum.editor.tooltip_h3')+'" type="button" onclick="mdc(\''+uid+'\',\'h3\')">H3</button>'
         +'<div class="md-sep"></div>'
-        +'<button title="Цитата" type="button" onclick="mdc(\''+uid+'\',\'quote\')">\u201c\u201d</button>'
-        +'<button title="Код" type="button" onclick="mdc(\''+uid+'\',\'code\')">{ }</button>'
-        +'<button title="Блок кода" type="button" onclick="mdc(\''+uid+'\',\'codeblock\')">```</button>'
+        +'<button title="'+T('forum.editor.tooltip_quote')+'" type="button" onclick="mdc(\''+uid+'\',\'quote\')">\u201c\u201d</button>'
+        +'<button title="'+T('forum.editor.tooltip_code')+'" type="button" onclick="mdc(\''+uid+'\',\'code\')">{ }</button>'
+        +'<button title="'+T('forum.editor.tooltip_codeblock')+'" type="button" onclick="mdc(\''+uid+'\',\'codeblock\')">```</button>'
         +'<div class="md-sep"></div>'
-        +'<button title="Список" type="button" onclick="mdc(\''+uid+'\',\'ul\')">• —</button>'
-        +'<button title="Нумерация" type="button" onclick="mdc(\''+uid+'\',\'ol\')">1.</button>'
+        +'<button title="'+T('forum.editor.tooltip_list')+'" type="button" onclick="mdc(\''+uid+'\',\'ul\')">• —</button>'
+        +'<button title="'+T('forum.editor.tooltip_numbered')+'" type="button" onclick="mdc(\''+uid+'\',\'ol\')">1.</button>'
         +'<div class="md-sep"></div>'
-        +'<button title="Линия" type="button" onclick="mdc(\''+uid+'\',\'hr\')">—</button>'
+        +'<button title="'+T('forum.editor.tooltip_hr')+'" type="button" onclick="mdc(\''+uid+'\',\'hr\')">—</button>'
       +'</div>'
       +'<div class="md-tabs">'
-        +'<div class="md-tab active" id="'+uid+'_tw" onclick="mdTab(\''+uid+'\',\'write\')">Редактор</div>'
-        +'<div class="md-tab" id="'+uid+'_tp" onclick="mdTab(\''+uid+'\',\'preview\')">Предпросмотр</div>'
+        +'<div class="md-tab active" id="'+uid+'_tw" onclick="mdTab(\''+uid+'\',\'write\')">'+T('forum.editor.tab_write')+'</div>'
+        +'<div class="md-tab" id="'+uid+'_tp" onclick="mdTab(\''+uid+'\',\'preview\')">'+T('forum.editor.tab_preview')+'</div>'
       +'</div>'
       +'<div class="md-panel active" id="'+uid+'_pw">'
         +'<textarea class="md-textarea" id="'+uid+'_ta" placeholder="'+ph+'" maxlength="'+maxLen+'" style="min-height:'+minH+'" oninput="mdInp(\''+uid+'\')"></textarea>'
       +'</div>'
       +'<div class="md-panel post-body" id="'+uid+'_pp">'
-        +'<div class="md-preview-wrap" id="'+uid+'_pv"><span class="md-empty">Введите текст…</span></div>'
+        +'<div class="md-preview-wrap" id="'+uid+'_pv"><span class="md-empty">'+T('forum.editor.empty_preview')+'</span></div>'
       +'</div>'
-      +'<div class="md-hint"><b>**жирный**</b> &nbsp; <i>*курсив*</i> &nbsp; <code>`код`</code> &nbsp; &gt; цитата</div>'
+      +'<div class="md-hint">'+T('forum.editor.hint')+'</div>'
     +'</div>'
     +'<div class="char-counter" id="'+uid+'_cc"><span id="'+uid+'_cn">0</span>/'+maxLen+'</div>';
 
@@ -487,7 +489,7 @@ function mdInp(uid){
   if(cn)cn.textContent=ta.value.length;
   if(cc){const max=parseInt(ta.maxLength)||5000;const r=ta.value.length/max;cc.className='char-counter'+(r>=1?' over':r>=.9?' warn':'');}
   const pp=document.getElementById(uid+'_pp');
-  if(pp&&pp.classList.contains('active')){const pv=document.getElementById(uid+'_pv');if(pv)pv.innerHTML=ta.value.trim()?mdRender(ta.value):'<span class="md-empty">Введите текст…</span>';}
+  if(pp&&pp.classList.contains('active')){const pv=document.getElementById(uid+'_pv');if(pv)pv.innerHTML=ta.value.trim()?mdRender(ta.value):'<span class="md-empty">'+CH_I18N.t('forum.editor.empty_preview')+'</span>';}
 }
 
 function mdTab(uid,which){
@@ -497,25 +499,26 @@ function mdTab(uid,which){
   document.getElementById(uid+'_pp').classList.toggle('active',which==='preview');
   if(which==='preview'){
     const ta=document.getElementById(uid+'_ta');const pv=document.getElementById(uid+'_pv');
-    if(ta&&pv)pv.innerHTML=ta.value.trim()?mdRender(ta.value):'<span class="md-empty">Введите текст…</span>';
+    if(ta&&pv)pv.innerHTML=ta.value.trim()?mdRender(ta.value):'<span class="md-empty">'+CH_I18N.t('forum.editor.empty_preview')+'</span>';
   }
 }
 
 function mdc(uid,cmd){
   const ta=document.getElementById(uid+'_ta');if(!ta)return;
   const s=ta.selectionStart,en=ta.selectionEnd,sel=ta.value.slice(s,en);
+  const T=CH_I18N.t;
   let ins='',off=0;
   switch(cmd){
-    case'bold':ins='**'+(sel||'жирный')+'**';off=sel?ins.length:2;break;
-    case'italic':ins='*'+(sel||'курсив')+'*';off=sel?ins.length:1;break;
-    case'strike':ins='~~'+(sel||'текст')+'~~';off=sel?ins.length:2;break;
-    case'h2':ins='\n## '+(sel||'Заголовок')+'\n';off=ins.length;break;
-    case'h3':ins='\n### '+(sel||'Заголовок')+'\n';off=ins.length;break;
-    case'quote':ins='\n> '+(sel||'цитата')+'\n';off=ins.length;break;
-    case'code':ins='`'+(sel||'код')+'`';off=sel?ins.length:1;break;
-    case'codeblock':ins='\n```\n'+(sel||'код')+'\n```\n';off=ins.length;break;
-    case'ul':ins='\n- '+(sel||'пункт')+'\n';off=ins.length;break;
-    case'ol':ins='\n1. '+(sel||'пункт')+'\n';off=ins.length;break;
+    case'bold':ins='**'+(sel||T('forum.editor.default_bold'))+'**';off=sel?ins.length:2;break;
+    case'italic':ins='*'+(sel||T('forum.editor.default_italic'))+'*';off=sel?ins.length:1;break;
+    case'strike':ins='~~'+(sel||T('forum.editor.default_strike'))+'~~';off=sel?ins.length:2;break;
+    case'h2':ins='\n## '+(sel||T('forum.editor.default_heading'))+'\n';off=ins.length;break;
+    case'h3':ins='\n### '+(sel||T('forum.editor.default_heading'))+'\n';off=ins.length;break;
+    case'quote':ins='\n> '+(sel||T('forum.editor.default_quote'))+'\n';off=ins.length;break;
+    case'code':ins='`'+(sel||T('forum.editor.default_code'))+'`';off=sel?ins.length:1;break;
+    case'codeblock':ins='\n```\n'+(sel||T('forum.editor.default_code'))+'\n```\n';off=ins.length;break;
+    case'ul':ins='\n- '+(sel||T('forum.editor.default_list_item'))+'\n';off=ins.length;break;
+    case'ol':ins='\n1. '+(sel||T('forum.editor.default_list_item'))+'\n';off=ins.length;break;
     case'hr':ins='\n---\n';off=ins.length;break;
     default:return;
   }
@@ -545,15 +548,15 @@ function showList(){
   document.getElementById('view-list').style.display='block';
   document.getElementById('view-thread').style.display='none';
   history.replaceState({},'','/forum');
-  document.title='Форум — Chess Home';
-  if(!ntEditor)ntEditor=createEditor('nt-editor-mount',{maxLen:10000,minHeight:'180px',placeholder:'Опишите тему подробнее. Поддерживается **Markdown**…'});
+  document.title=CH_I18N.t('forum.page_title');
+  if(!ntEditor)ntEditor=createEditor('nt-editor-mount',{maxLen:10000,minHeight:'180px',placeholder:CH_I18N.t('forum.new_thread_placeholder')});
   loadList(forumPage);
 }
 
 async function loadList(page){
   page=page||0;forumPage=page;
   const wrap=document.getElementById('thread-list-wrap');
-  wrap.innerHTML='<div class="forum-loading"><div class="spinner"></div>&nbsp;Загружаем…</div>';
+  wrap.innerHTML='<div class="forum-loading"><div class="spinner"></div>&nbsp;'+CH_I18N.t('forum.loading_short')+'</div>';
   try{
     const data=await apiGet('/forum/threads?page='+page+'&limit='+PER_PAGE);
     renderList(data);
@@ -566,7 +569,7 @@ function renderList(data){
   const threads=data.threads,total=data.total,page=data.page,limit=data.limit;
   const wrap=document.getElementById('thread-list-wrap');
   if(!threads||!threads.length){
-    wrap.innerHTML='<div class="forum-empty"><div class="ei">💬</div><p>Обсуждений пока нет. Будьте первым!</p></div>';
+    wrap.innerHTML='<div class="forum-empty"><div class="ei">💬</div><p>'+CH_I18N.t('forum.empty_threads')+'</p></div>';
     document.getElementById('forum-pagination').innerHTML='';
     return;
   }
@@ -577,12 +580,12 @@ function renderList(data){
     card.innerHTML=
       '<div class="tc-title">'+esc(t.title)+'</div>'
       +'<div class="tc-excerpt">'+esc(excerpt)+'</div>'
-      +'<div class="tc-meta">автор:&nbsp;<span class="au" data-u="'+esc(t.author)+'">'+esc(t.author)+'</span>'
+      +'<div class="tc-meta">'+CH_I18N.t('forum.author_label')+'&nbsp;<span class="au" data-u="'+esc(t.author)+'">'+esc(t.author)+'</span>'
         +' <span>·</span> '+timeAgo(t.createdAt)
-        +(t.replyCount?' <span>·</span> посл. ответ: '+timeAgo(t.lastActivityAt):'')
+        +(t.replyCount?' <span>·</span> '+CH_I18N.t('forum.last_reply_label')+' '+timeAgo(t.lastActivityAt):'')
       +'</div>'
-      +'<div class="tc-stats"><div class="tc-stat"><strong>'+(t.replyCount||0)+'</strong>ответов</div>'
-        +'<div class="tc-stat"><strong>'+(t.views||0)+'</strong>просм.</div></div>';
+      +'<div class="tc-stats"><div class="tc-stat"><strong>'+(t.replyCount||0)+'</strong>'+CH_I18N.t('forum.replies_label')+'</div>'
+        +'<div class="tc-stat"><strong>'+(t.views||0)+'</strong>'+CH_I18N.t('forum.views_label')+'</div></div>';
     card.addEventListener('click',function(ev){
       if(ev.target.classList.contains('au')){window.location='/profile/'+ev.target.dataset.u;return;}
       openThread(t.slug||t.id, 1);
@@ -620,10 +623,10 @@ async function showThread(slug, page){
   currentThreadSlug = slug;
   document.getElementById('view-list').style.display='none';
   document.getElementById('view-thread').style.display='block';
-  document.getElementById('tv-title').textContent='Загружаем…';
+  document.getElementById('tv-title').textContent=CH_I18N.t('forum.loading_short');
   document.getElementById('tv-op').innerHTML='<div class="forum-loading"><div class="spinner"></div></div>';
   document.getElementById('tv-replies').innerHTML='';
-  // очистим старую пагинацию
+  // clear the old pagination
   const oldPag = document.querySelector('#tv-replies + .reply-pagination');
   if(oldPag) oldPag.remove();
   replyEditor=null;document.getElementById('reply-editor-mount').innerHTML='';
@@ -631,9 +634,9 @@ async function showThread(slug, page){
     const data=await apiGet('/forum/threads/'+encodeURIComponent(slug)+'?replyPage='+page+'&replyLimit='+REPLIES_PER_PAGE);
     currentThreadId=data.thread.id;
     renderThread(data.thread, data.replies, data.replyMeta);
-    document.title=data.thread.title+' — Форум Chess Home';
+    document.title=data.thread.title+' — '+CH_I18N.t('forum.page_title');
   }catch(e){
-    document.getElementById('tv-title').textContent='Ошибка';
+    document.getElementById('tv-title').textContent=CH_I18N.t('common.error');
     document.getElementById('tv-op').innerHTML='<div class="forum-empty"><div class="ei">⚠️</div><p>'+esc(e.message)+'</p></div>';
   }
 }
@@ -641,17 +644,17 @@ async function showThread(slug, page){
 function renderThread(thread, replies, replyMeta){
   document.getElementById('tv-title').textContent=thread.title;
   const canDel=currentUser&&currentUser.role==='admin';
-  var meta='автор: <span class="au" onclick="window.location=\'/profile/'+esc(thread.author)+'\'">'+esc(thread.author)+'</span>'
+  var meta=CH_I18N.t('forum.author_label')+' <span class="au" onclick="window.location=\'/profile/'+esc(thread.author)+'\'">'+esc(thread.author)+'</span>'
     +' <span>·</span> '+timeAgo(thread.createdAt)
-    +' <span>·</span> '+(thread.views||0)+' просм.'
-    +' <span>·</span> '+(thread.replyCount||0)+' отв.';
-  if(canDel)meta+=' <button class="del-btn" onclick="delThread(\''+thread.id+'\')">🗑 Удалить тему</button>';
+    +' <span>·</span> '+(thread.views||0)+' '+CH_I18N.t('forum.views_label')
+    +' <span>·</span> '+(thread.replyCount||0)+' '+CH_I18N.t('forum.replies_abbrev');
+  if(canDel)meta+=' <button class="del-btn" onclick="delThread(\''+thread.id+'\')">'+CH_I18N.t('forum.delete_thread_btn')+'</button>';
   document.getElementById('tv-meta').innerHTML=meta;
   document.getElementById('tv-op').innerHTML=makePost(thread.body,thread.author,thread.createdAt,true,null,false,0);
 
   const rEl=document.getElementById('tv-replies');rEl.innerHTML='';
   if(!replies||!replies.length){
-    rEl.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px 0;font-size:14px">Ответов пока нет. Будьте первым!</div>';
+    rEl.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px 0;font-size:14px">'+CH_I18N.t('forum.empty_replies')+'</div>';
   }else{
     replies.forEach(function(r,i){
       const canDelR=currentUser&&currentUser.role==='admin';
@@ -695,7 +698,7 @@ function renderThread(thread, replies, replyMeta){
   const ar=document.getElementById('tv-auth-req');
   if(currentUser){
     rs.style.display='block';ar.style.display='none';
-    if(!replyEditor)replyEditor=createEditor('reply-editor-mount',{maxLen:5000,minHeight:'120px',placeholder:'Ваш ответ… (поддерживается Markdown)'});
+    if(!replyEditor)replyEditor=createEditor('reply-editor-mount',{maxLen:5000,minHeight:'120px',placeholder:CH_I18N.t('forum.reply_placeholder')});
   }else{
     rs.style.display='none';ar.style.display='block';
   }
@@ -723,7 +726,7 @@ function backToList(){
   document.getElementById('view-thread').style.display='none';
   document.getElementById('view-list').style.display='block';
   history.pushState({},'','/forum');
-  document.title='Форум — Chess Home';
+  document.title=CH_I18N.t('forum.page_title');
   loadList(forumPage);
 }
 
@@ -739,19 +742,19 @@ async function submitNewThread(){
   const title=document.getElementById('nt-title').value.trim();
   const body=ntEditor?ntEditor.getValue().trim():'';
   const errEl=document.getElementById('nt-error');errEl.textContent='';
-  if(!title){errEl.textContent='Введите заголовок';return;}
-  if(!body){errEl.textContent='Введите описание';return;}
-  const btn=document.getElementById('nt-submit');btn.disabled=true;btn.textContent='Публикация…';
+  if(!title){errEl.textContent=CH_I18N.t('forum.error.enter_title');return;}
+  if(!body){errEl.textContent=CH_I18N.t('forum.error.enter_description');return;}
+  const btn=document.getElementById('nt-submit');btn.disabled=true;btn.textContent=CH_I18N.t('forum.publishing');
   try{
     const data=await apiPost('/forum/threads',{title:title,body:body});
     document.getElementById('new-thread-panel').classList.remove('open');
     document.getElementById('nt-title').value='';
     document.getElementById('nt-tc').textContent='0';
     if(ntEditor)ntEditor.clear();
-    toast('Обсуждение создано ✅','success');
+    toast(CH_I18N.t('forum.toast.thread_created'),'success');
     openThread(data.thread.slug, 1);
   }catch(e){errEl.textContent=e.message;}
-  finally{btn.disabled=false;btn.textContent='📨 Опубликовать';}
+  finally{btn.disabled=false;btn.textContent=CH_I18N.t('forum.publish_btn');}
 }
 
 async function submitReply(){
@@ -759,45 +762,45 @@ async function submitReply(){
   if(!currentThreadId)return;
   const body=replyEditor?replyEditor.getValue().trim():'';
   const errEl=document.getElementById('reply-error');errEl.textContent='';
-  if(!body){errEl.textContent='Введите текст ответа';return;}
-  const btn=document.getElementById('reply-submit');btn.disabled=true;btn.textContent='Отправка…';
+  if(!body){errEl.textContent=CH_I18N.t('forum.error.enter_reply');return;}
+  const btn=document.getElementById('reply-submit');btn.disabled=true;btn.textContent=CH_I18N.t('forum.sending');
   try{
     await apiPost('/forum/threads/'+currentThreadId+'/replies',{body:body});
     if(replyEditor)replyEditor.clear();
-    toast('Ответ опубликован ✅','success');
+    toast(CH_I18N.t('forum.toast.reply_posted'),'success');
     await showThread(currentThreadSlug, currentReplyPage);
     var last=document.querySelector('#tv-replies > div:last-child');
     if(last)last.scrollIntoView({behavior:'smooth',block:'start'});
   }catch(e){errEl.textContent=e.message;}
-  finally{btn.disabled=false;btn.textContent='📨 Ответить';}
+  finally{btn.disabled=false;btn.textContent=CH_I18N.t('forum.reply_btn');}
 }
 
 async function delThread(id){
-  if(!confirm('Удалить обсуждение и все ответы?'))return;
-  try{await apiDelete('/forum/threads/'+id);toast('Удалено','success');backToList();}
+  if(!confirm(CH_I18N.t('forum.confirm.delete_thread')))return;
+  try{await apiDelete('/forum/threads/'+id);toast(CH_I18N.t('forum.toast.deleted'),'success');backToList();}
   catch(e){toast(e.message,'error');}
 }
 
 async function delReply(id){
-  if(!confirm('Удалить ответ?'))return;
+  if(!confirm(CH_I18N.t('forum.confirm.delete_reply')))return;
   try{
-    await apiDelete('/forum/replies/'+id);toast('Удалено','success');
+    await apiDelete('/forum/replies/'+id);toast(CH_I18N.t('forum.toast.deleted'),'success');
     var el=document.getElementById('reply-'+id);
     if(el){el.style.opacity='0';el.style.transition='.3s';setTimeout(function(){el.remove();},300);}
   }catch(e){toast(e.message,'error');}
 }
 
-// ── ПОИСК ПО ОТВЕТАМ ──────────────────────────────────────
+// ── REPLY SEARCH ──────────────────────────────────────
 async function openReplySearch() {
   if (!currentThreadId && !currentThreadSlug) {
-    toast('Не выбрана тема', 'error');
+    toast(CH_I18N.t('forum.toast.no_thread_selected'), 'error');
     return;
   }
   const modal = document.getElementById('modal-reply-search');
   const input = document.getElementById('search-query');
   const resultsDiv = document.getElementById('search-results');
   input.value = '';
-  resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">Введите запрос...</div>';
+  resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">'+CH_I18N.t('forum.search.enter_query')+'</div>';
   openModal('modal-reply-search');
   input.focus();
   let timeout = null;
@@ -805,7 +808,7 @@ async function openReplySearch() {
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => {
       const q = input.value.trim();
-      if (!q) { resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">Введите запрос...</div>'; return; }
+      if (!q) { resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">'+CH_I18N.t('forum.search.enter_query')+'</div>'; return; }
       performReplySearch(q);
     }, 300);
   };
@@ -816,14 +819,14 @@ async function performReplySearch(q) {
     const data = await apiGet('/forum/threads/' + encodeURIComponent(currentThreadSlug) + '/search?q=' + encodeURIComponent(q));
     const resultsDiv = document.getElementById('search-results');
     if (!data.results.length) {
-      resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">😕 Ничего не найдено</div>';
+      resultsDiv.innerHTML = '<div style="text-align:center;padding:20px">'+CH_I18N.t('forum.search.no_results')+'</div>';
       return;
     }
-    let html = '<div style="font-size:13px;margin-bottom:12px">Найдено: ' + data.results.length + '</div>';
+    let html = '<div style="font-size:13px;margin-bottom:12px">' + CH_I18N.t('forum.search.found_count',{n:data.results.length}) + '</div>';
     data.results.forEach(res => {
       html += `<div class="search-result" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer" onclick="goToReplyPage('${res.page}', '${res.id}')">
         <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
-          <strong>${esc(res.author)}</strong> <span style="font-size:11px;color:var(--text3)">стр. ${res.page}</span>
+          <strong>${esc(res.author)}</strong> <span style="font-size:11px;color:var(--text3)">${CH_I18N.t('forum.search.page_label',{page:res.page})}</span>
         </div>
         <div style="font-size:13px;color:var(--text2)">${esc(res.body)}</div>
       </div>`;
@@ -849,6 +852,7 @@ async function goToReplyPage(page, replyId) {
 }
 
 document.addEventListener('DOMContentLoaded',async function(){
+  await new Promise(res => CH_I18N.onReady(res));
   CH.initHeader();
   try{await tryAutoLogin();}catch(e){console.warn(e);}
   updateAuthUI();
@@ -856,6 +860,22 @@ document.addEventListener('DOMContentLoaded',async function(){
   setInterval(fetchOnline,15000);
   renderView();
   window.addEventListener('popstate',renderView);
+});
+
+// ── LANGUAGE SWITCH: refresh dynamic (JS-rendered) content ───────
+document.addEventListener('ch-lang-changed', () => {
+  // Editors are built from a JS template baked with translated strings —
+  // rebuild them so toolbar tooltips/tabs/hint pick up the new language.
+  if (document.getElementById('new-thread-panel')) {
+    ntEditor = null;
+    createEditor('nt-editor-mount',{maxLen:10000,minHeight:'180px',placeholder:CH_I18N.t('forum.new_thread_placeholder')});
+  }
+  if (document.getElementById('view-list').style.display !== 'none') {
+    loadList(forumPage);
+  } else if (currentThreadSlug) {
+    replyEditor = null;
+    showThread(currentThreadSlug, currentReplyPage);
+  }
 });
 </script>
 <script src="/socket.io/socket.io.js"></script>

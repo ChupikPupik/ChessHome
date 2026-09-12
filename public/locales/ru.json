@@ -1,0 +1,525 @@
+{
+  "common": {
+    "close": "Закрыть",
+    "save": "Сохранить",
+    "search": "Поиск",
+    "error": "Ошибка",
+    "login_required": "Войдите в аккаунт"
+  },
+  "nav": {
+    "home": "Главная",
+    "play": "Играть",
+    "puzzles": "Задачи",
+    "storm": "Puzzle Storm",
+    "analysis": "Анализ партии",
+    "editor": "Редактор позиций",
+    "tournaments": "Турниры",
+    "clubs": "Клубы",
+    "blog": "Блоги",
+    "forum": "Форумы",
+    "settings": "Настройки",
+    "profile": "Мой профиль",
+    "appeal": "Связь с администрацией",
+    "faq": "Частые вопросы",
+    "about": "О сайте",
+    "privacy": "Конфиденциальность",
+    "terms": "Соглашение"
+  },
+  "settings": {
+    "title": "⚙️ Настройки",
+    "page_title": "Настройки — Chess Home",
+
+    "lang_title": "🌐 Язык",
+    "lang_desc": "Язык интерфейса сайта",
+    "lang_ru": "Русский",
+    "lang_en": "English",
+
+    "emoji_section_title": "😀 Эмодзи профиля",
+    "emoji_name": "Ваш эмодзи",
+    "emoji_desc": "Отображается в чате и профиле",
+    "emoji_remove": "✕ Убрать",
+    "emoji_hint": "Нажмите на превью, чтобы выбрать. Если не выбран — ничего не отображается.",
+    "emoji_pick_title": "Кликните, чтобы выбрать эмодзи",
+    "emoji_change_title": "Кликните, чтобы сменить эмодзи",
+    "emoji_modal_title": "Выберите эмодзи",
+    "emoji_modal_remove": "✕ Убрать эмодзи",
+
+    "game_section_title": "🎮 Игра",
+    "sounds_name": "Звуковые эффекты",
+    "sounds_desc": "Звуки ходов, взятий, шаха",
+    "hints_name": "Подсказки ходов",
+    "hints_desc": "Показывать возможные ходы",
+    "coords_name": "Координаты на доске",
+    "coords_desc": "Буквы и цифры по краям",
+    "animation_name": "Анимация ходов",
+    "animation_desc": "Плавное перемещение фигур",
+
+    "board_section_title": "🎨 Доска",
+    "board_theme_name": "Тема доски",
+    "board_theme_classic": "Классическая",
+    "board_theme_blue": "Синяя",
+    "board_theme_green": "Зелёная",
+    "board_theme_orange": "Оранжевая",
+
+    "account_section_title": "👤 Аккаунт",
+    "account_not_logged_in": "Войдите в аккаунт для управления профилем",
+    "account_my_profile": "👤 Мой профиль",
+    "twofa_name": "Подтверждение входа по email (2FA)",
+    "twofa_desc": "При входе будет запрашиваться код, отправленный на вашу почту",
+
+    "info_section_title": "🔗 Информация",
+    "info_about": "О сайте",
+    "info_privacy": "Конфиденциальность",
+    "info_terms": "Соглашение",
+    "info_footer": "Chess Home v1.0.0 · Сделано с ♥ в России",
+
+    "toast_saved": "Сохранено",
+    "toast_board_theme_saved": "Тема доски сохранена",
+    "toast_emoji_saved": "Эмодзи сохранён!",
+    "toast_emoji_removed": "Эмодзи убран",
+    "toast_2fa_on": "2FA включена",
+    "toast_2fa_off": "2FA выключена"
+  },
+
+  "header": {
+    "menu_aria": "Меню",
+    "online_suffix": "онлайн",
+    "players_online_suffix": "игроков онлайн",
+
+    "sec_play": "Игра",
+    "sec_puzzles": "Задачи",
+    "sec_community": "Сообщество",
+    "sec_tools": "Инструменты",
+    "sec_other": "Другое",
+
+    "nav_home": "Главная",
+    "nav_play": "Играть",
+    "nav_tournaments": "Турниры",
+    "nav_club_tournaments": "Межклубные турниры",
+    "nav_puzzles": "Задачи",
+    "nav_storm": "Puzzle Storm",
+    "nav_clubs": "Клубы",
+    "nav_blog": "Блоги",
+    "nav_news": "Новости",
+    "nav_forum": "Форумы",
+    "nav_analysis": "Анализ",
+    "nav_editor": "Редактор",
+    "nav_stats": "Статистика сайта",
+    "nav_age": "Возраст сайта",
+    "nav_dev_diary": "Дневник разработки",
+    "nav_report": "Репорт",
+    "nav_support": "Поддержать проект",
+    "nav_settings": "Настройки",
+    "nav_more": "Ещё",
+
+    "login": "Войти",
+    "register": "Регистрация",
+    "my_profile": "Мой профиль",
+    "messages": "Сообщения",
+    "admin_panel": "Панель Admin",
+    "logout": "Выйти",
+
+    "rating": "рейтинг",
+    "wins": "побед",
+    "games": "игр",
+
+    "friends_online_label": "Друзья онлайн",
+    "toast_login_to_see_friends": "Войдите, чтобы видеть друзей",
+    "toast_no_friends_online": "Нет друзей онлайн",
+    "toast_error_loading_friends": "Ошибка загрузки друзей",
+    "console_need_login": "Необходимо войти",
+    "vip_player": "VIP-игрок"
+  },
+
+  "blog": {
+    "page_title": "Блог — Chess Home",
+    "title": "📰 Блог Chess Home",
+    "write_article": "✏️ Написать статью",
+    "tab_official": "👑 Официальный",
+    "tab_community": "🌍 Сообщество",
+    "filter_published": "Опубликованные",
+    "filter_my_drafts": "Мои черновики",
+    "filter_hidden": "🙈 Скрытые",
+    "community_login_hint": "<a href=\"/\">Войдите</a>, чтобы писать статьи в блоге сообщества",
+    "loading": "Загрузка...",
+    "loading_comments": "Загрузка комментариев...",
+
+    "disclaimer": {
+      "intro": "<b>Блог сообщества</b> — статьи написаны участниками Chess Home.",
+      "short": " Мнения авторов могут не совпадать с позицией администрации.",
+      "full": "Администрация Chess Home не несёт ответственности за содержание публикаций участников сообщества. Мнения, оценки и суждения авторов являются их личной позицией и могут не совпадать с позицией редакции и администрации платформы. Если вы обнаружили нарушение правил — используйте кнопку «Пожаловаться» или обратитесь к администратору.",
+      "more": "Подробнее",
+      "less": "Скрыть",
+      "all_hidden_notice": "Здесь показаны все скрытые статьи — из обоих разделов сразу, независимо от переключателя выше.",
+      "all_drafts_notice": "Здесь показаны все черновики — из обоих разделов сразу, независимо от переключателя выше.",
+      "post_body": "<span class=\"vd-icon\">ℹ️</span><div>Это публикация из <b style=\"color:var(--blue)\">блога сообщества</b>. Мнение автора является его личной позицией и может не совпадать с позицией администрации Chess Home. Администрация не несёт ответственности за содержание публикаций участников.</div>"
+    },
+
+    "back_to_list": "← Все статьи",
+    "back_to_post": "← К статье",
+    "draft_badge": "ЧЕРНОВИК",
+    "likes_suffix": "нравится",
+    "like_login_hint": "<a href=\"/\" style=\"color:var(--accent)\">Войдите</a>, чтобы поставить лайк",
+    "manage_label": "⚙️ Управление",
+    "manage_article_label": "⚙️ Управление статьёй",
+    "admin_panel_label": "⚙️ Панель администратора",
+    "edit_link": "✏️ Редактировать",
+    "hide_btn": "🙈 Прикрыть",
+    "delete_btn": "🗑 Удалить",
+    "restore_btn": "↩️ Вернуть",
+    "delete_forever_btn": "🗑 Удалить навсегда",
+    "to_draft_btn": "📦 В черновик",
+    "publish_btn": "🚀 Опубликовать",
+    "comments_label": "Комментарии",
+    "comment_login_hint": "<a href=\"/\">Войдите</a>, чтобы оставить комментарий",
+
+    "empty": {
+      "no_drafts": "Черновиков нет",
+      "no_hidden": "Скрытых статей нет",
+      "no_community": "Статей сообщества пока нет. Будь первым!",
+      "no_official": "Официальных статей пока нет.",
+      "no_comments": "Будьте первым, кто оставит комментарий!"
+    },
+
+    "badge_hidden": "🙈 ПРИКРЫТА",
+
+    "write_tab": "✏️ Писать",
+    "preview_tab": "👁 Предпросмотр",
+    "editor_tab": "✏️ Редактор",
+    "comment_placeholder": "Напишите комментарий (Markdown поддерживается)...\n**жирный** *курсив* `код` > цитата",
+    "preview_empty_short": "Предпросмотр...",
+    "preview_empty_long": "Предпросмотр появится здесь...",
+    "send_btn": "💬 Отправить",
+    "cancel_plain": "Отмена",
+    "cancel_btn": "✕ Отмена",
+
+    "new_article_title": "✏️ Новая статья",
+    "edit_article_title": "✏️ Редактировать статью",
+    "title_placeholder": "Заголовок статьи...",
+    "toolbar": {
+      "bullet_list": "• список",
+      "numbered_list": "1. список",
+      "quote": "❝ цитата",
+      "code": "&lt;/&gt; код",
+      "code_block": "``` блок",
+      "link": "🔗 ссылка",
+      "divider": "— разделитель",
+      "link_text": "текст"
+    },
+    "editor_placeholder": "Пиши статью в Markdown...\n\n## Заголовок\n**жирный** *курсив* ~~зачёркнутый~~\n> цитата\n\n- пункт\n- ещё пункт\n\n```\nкод\n```",
+    "editor_hint": "**жирный** · *курсив* · ## Заголовок · > цитата · `код` · [ссылка](url)",
+    "chars_suffix": "символов",
+    "save_draft_btn": "💾 Сохранить черновик",
+    "default_code_placeholder": "код здесь",
+
+    "edit_btn": "✏️ Изменить",
+    "moderation_btn": "🛡 Модерация",
+    "deleted": "🗑 Удалено",
+    "deleted_by_admin": "🗑 Удалено администратором",
+    "edited_tooltip": "Редактировалось",
+    "edited_label": "✏️ изменено",
+    "edits_left": "(осталось правок: {n})",
+    "mod_panel_title": "🛡 Панель модератора — {author}",
+    "mod": {
+      "mute_post": "🔇 Мут 1ч (этот пост)",
+      "mute_global": "🔇 Мут 1ч (везде)",
+      "ban_post": "🚫 Бан (этот пост)",
+      "ban_global": "🚫 Глобальный бан",
+      "unban": "✅ Разбан",
+      "action_mute": "Замьютить",
+      "action_ban": "Забанить",
+      "action_unban": "Разбанить",
+      "scope_global": "глобально (весь блог)",
+      "scope_post": "на этом посте"
+    },
+
+    "ban": {
+      "blocked": "🚫 Вы заблокированы в комментариях этого блога.",
+      "muted": "🔇 Вы замьючены. Писать можно через {mins} мин."
+    },
+
+    "comment_count": {
+      "one": "{n} комментарий",
+      "few": "{n} комментария",
+      "many": "{n} комментариев"
+    },
+    "no_comments_yet": "Комментариев пока нет",
+
+    "confirm": {
+      "delete_post": "Удалить эту статью? Отменить нельзя.",
+      "delete_comment": "Удалить этот комментарий?",
+      "delete_forever": "Удалить эту статью навсегда? Отменить нельзя.",
+      "hide_post": "Прикрыть эту статью? Она перестанет быть видна всем, но её можно будет вернуть во вкладке «Скрытые».",
+      "mod_action": "{action} пользователя {username} {scope}?"
+    },
+
+    "toast": {
+      "login_to_like": "Войдите, чтобы поставить лайк",
+      "login_to_react": "Войдите, чтобы реагировать",
+      "restored_to_draft": "Статья возвращена в черновики",
+      "article_deleted": "Статья удалена",
+      "published": "🚀 Опубликовано!",
+      "draft_saved": "💾 Черновик сохранён",
+      "publish_toggle_on": "✅ Опубликовано!",
+      "publish_toggle_off": "📦 Убрано в черновик",
+      "hidden_done": "Статья прикрыта. Вернуть её можно во вкладке «Скрытые»",
+      "enter_title": "Введите заголовок",
+      "enter_body": "Напишите текст статьи",
+      "login_to_write": "Войдите, чтобы писать статьи",
+      "write_comment": "Напишите комментарий",
+      "max_chars": "Максимум 4000 символов",
+      "empty_text": "Текст не может быть пустым",
+      "comment_added": "Комментарий добавлен ✓",
+      "comment_updated": "Комментарий обновлён ✓",
+      "comment_deleted": "Комментарий удалён",
+      "mod_applied": "{action} применён к {username}"
+    },
+
+    "error": {
+      "bad_response": "Сервер вернул некорректный ответ",
+      "server_error": "Ошибка сервера ({status}). Попробуйте ещё раз или сократите текст"
+    }
+  },
+
+  "forum": {
+    "page_title": "Форум — Chess Home",
+    "title": "💬 Форум Chess Home",
+    "new_thread_btn": "✏️ Новое обсуждение",
+    "create_thread_title": "✏️ Создать обсуждение",
+    "title_label": "Заголовок",
+    "title_placeholder": "Кратко о теме…",
+    "description_label": "Описание",
+    "cancel_btn": "Отмена",
+    "publish_btn": "📨 Опубликовать",
+    "publishing": "Публикация…",
+    "sending": "Отправка…",
+    "limit_threads_hint": "⚠️ Не более 3 обсуждений в сутки",
+    "loading_forum": "Загружаем форум…",
+    "loading_short": "Загружаем…",
+    "back_to_list": "← Все обсуждения",
+    "search_replies_btn": "🔍 Поиск в ответах",
+    "your_reply": "💬 Ваш ответ",
+    "reply_btn": "📨 Ответить",
+    "reply_placeholder": "Ваш ответ… (поддерживается Markdown)",
+    "new_thread_placeholder": "Опишите тему подробнее. Поддерживается **Markdown**…",
+    "limit_replies_hint": "⚠️ Не более 10 ответов в сутки",
+    "auth_required_html": "Чтобы отвечать, нужно <a href=\"#\" style=\"color:var(--accent)\" onclick=\"openModal('modal-login');return false\">войти в аккаунт</a>",
+
+    "login_modal_title": "♚ Вход",
+    "username_label": "Имя пользователя",
+    "username_placeholder": "Ваш ник",
+    "password_label": "Пароль",
+    "password_placeholder": "Пароль",
+    "no_account_btn": "Нет аккаунта?",
+
+    "search_modal_title": "🔍 Поиск в теме",
+    "search_placeholder": "Слово или фраза...",
+
+    "author_label": "автор:",
+    "last_reply_label": "посл. ответ:",
+    "replies_label": "ответов",
+    "views_label": "просм.",
+    "replies_abbrev": "отв.",
+    "delete_thread_btn": "🗑 Удалить тему",
+    "empty_threads": "Обсуждений пока нет. Будьте первым!",
+    "empty_replies": "Ответов пока нет. Будьте первым!",
+
+    "editor": {
+      "default_placeholder": "Напишите здесь…",
+      "empty_preview": "Введите текст…",
+      "tab_write": "Редактор",
+      "tab_preview": "Предпросмотр",
+      "hint": "<b>**жирный**</b> &nbsp; <i>*курсив*</i> &nbsp; <code>`код`</code> &nbsp; &gt; цитата",
+      "tooltip_bold": "Жирный",
+      "tooltip_italic": "Курсив",
+      "tooltip_strike": "Зачёркнутый",
+      "tooltip_h2": "Заголовок 2",
+      "tooltip_h3": "Заголовок 3",
+      "tooltip_quote": "Цитата",
+      "tooltip_code": "Код",
+      "tooltip_codeblock": "Блок кода",
+      "tooltip_list": "Список",
+      "tooltip_numbered": "Нумерация",
+      "tooltip_hr": "Линия",
+      "default_bold": "жирный",
+      "default_italic": "курсив",
+      "default_strike": "текст",
+      "default_heading": "Заголовок",
+      "default_quote": "цитата",
+      "default_code": "код",
+      "default_list_item": "пункт"
+    },
+
+    "time": {
+      "just_now": "только что",
+      "minutes_ago": "{n} мин. назад",
+      "hours_ago": "{n} ч. назад",
+      "days_ago": "{n} дн. назад"
+    },
+
+    "error_status": "Ошибка {status}",
+    "error": {
+      "enter_title": "Введите заголовок",
+      "enter_description": "Введите описание",
+      "enter_reply": "Введите текст ответа"
+    },
+
+    "confirm": {
+      "delete_thread": "Удалить обсуждение и все ответы?",
+      "delete_reply": "Удалить ответ?"
+    },
+
+    "search": {
+      "enter_query": "Введите запрос...",
+      "no_results": "😕 Ничего не найдено",
+      "found_count": "Найдено: {n}",
+      "page_label": "стр. {page}"
+    },
+
+    "toast": {
+      "thread_created": "Обсуждение создано ✅",
+      "reply_posted": "Ответ опубликован ✅",
+      "deleted": "Удалено",
+      "no_thread_selected": "Не выбрана тема",
+      "welcome": "Добро пожаловать, {username}! ♟️"
+    }
+  },
+
+  "clubs": {
+    "page_title": "Клубы — Chess Home",
+    "title": "Клубы",
+    "subtitle": "Вступай в шахматные клубы, общайся и соревнуйся вместе",
+    "limit_member_prefix": "👤 Вы в клубах: ",
+    "limit_created_prefix": "✏️ Создано вами: ",
+    "tab_all": "🌍 Все клубы",
+    "tab_my": "🛡️ Мои клубы",
+    "search_placeholder": "Поиск клубов...",
+    "create_btn": "+ Создать клуб",
+    "loading": "Загрузка...",
+    "back_to_list": "← Все клубы",
+    "tab_home": "🏠 Главная",
+    "tab_roster": "👥 Состав",
+    "tab_tournaments": "🏆 Турниры",
+    "tab_stats": "📊 Статистика",
+    "cancel_btn": "Отмена",
+
+    "chat_title": "Чат клуба",
+    "chat_rules_tooltip": "Правила чата",
+    "chat_rules_title": "Правила чата",
+    "chat_rules_body": "Мнения авторов сообщений могут не совпадать с позицией администрации клуба и платформы Chess Home.\nАдминистрация не несёт ответственности за высказывания участников.<br><br>Запрещено: оскорбления, мат, спам, реклама, ссылки на сторонние ресурсы.\nНарушителям может быть выдан мут или бан в чате.",
+    "chat_join_prompt": "Вступите в клуб, чтобы писать в чат",
+    "chat_input_placeholder": "Написать сообщение...",
+    "chat_send_btn": "Отправить",
+    "chat_loading": "Загрузка чата...",
+
+    "tournaments_title": "🏆 Турниры клуба",
+    "create_tournament_btn": "✚ Создать клубный турнир",
+
+    "create_modal_title": "🛡️ Создать клуб",
+    "name_label": "Название клуба *",
+    "name_placeholder": "Например: Русский гамбит",
+    "description_label": "Описание",
+    "description_placeholder": "Расскажите о вашем клубе...",
+    "create_hint": "⚠️ Название не может содержать «ChessHome» · Максимум 5 созданных клубов · Максимум 10 членств",
+    "create_submit_btn": "Создать",
+
+    "error": {
+      "bad_response": "Сервер вернул некорректный ответ",
+      "try_again": "Попробуйте ещё раз.",
+      "load_failed": "Не удалось загрузить клубы",
+      "load_club_failed": "Не удалось загрузить клуб",
+      "load_tournaments_failed": "Не удалось загрузить турниры",
+      "enter_name": "Введите название"
+    },
+
+    "not_found_title": "Клубов не найдено",
+    "not_found_my": "Вступите в клуб или создайте свой",
+    "not_found_search": "Попробуйте другой запрос",
+    "login_required_desc": "Чтобы видеть свои клубы",
+    "badge_member": "✓ В клубе",
+
+    "members_label": "участников",
+    "admins_label": "админов",
+    "created_label": "Создан ",
+    "leave_btn": "🚪 Выйти",
+    "join_btn": "+ Вступить",
+    "max_clubs_notice": "Вы в 10 клубах (максимум)",
+    "delete_btn": "🗑️ Удалить",
+    "no_description": "Описание пока не добавлено",
+    "edit_btn": "✏️ Редактировать",
+    "role_creator": "♛ Создатель",
+    "role_admin": "🛡 Администратор",
+    "role_member": "Участник",
+    "tooltip_promote": "Назначить администратором",
+    "tooltip_demote": "Снять с должности",
+    "tooltip_kick": "Исключить",
+    "members_heading": "👥 Участники ({n})",
+    "no_members": "Нет участников",
+
+    "no_tournaments_title": "Турниров пока нет",
+    "no_tournaments_desc": "Администраторы клуба могут создать первый",
+    "club_only_badge": "🔒 Только клуб",
+    "status": {
+      "active": "Идёт",
+      "upcoming": "Скоро",
+      "finished": "Завершён"
+    },
+
+    "stat": {
+      "members": "Участников",
+      "admins": "Администраторов",
+      "total_tournaments": "Всего турниров",
+      "active_now": "Идут сейчас",
+      "upcoming": "Предстоят",
+      "finished": "Завершено"
+    },
+
+    "confirm": {
+      "leave": "Выйти из клуба?",
+      "kick": "Исключить {username} из клуба?",
+      "promote": "Назначить {username} администратором?",
+      "demote": "Снять {username} с должности администратора?",
+      "delete_club": "Удалить клуб? Это действие необратимо."
+    },
+
+    "toast": {
+      "desc_updated": "Описание обновлено",
+      "joined": "Вы вступили в клуб!",
+      "left": "Вы покинули клуб",
+      "kicked": "{username} исключён",
+      "promoted": "{username} назначен администратором",
+      "demoted": "{username} снят с должности",
+      "club_deleted": "Клуб удалён",
+      "club_created": "Клуб создан!",
+      "muted": "{username} заглушен на 15 мин.",
+      "banned": "{username} заблокирован в чате клуба",
+      "report_sent": "Репорт отправлен администраторам"
+    },
+
+    "chat": {
+      "banned_permanent": "🚫 Вы заблокированы в чате этого клуба",
+      "muted": "🔇 Вы заглушены ещё {mins} мин.",
+      "error_prefix": "Ошибка: ",
+      "forbidden_words": "Сообщение содержит запрещённые слова"
+    },
+
+    "badge_club_admin": "Админ клуба",
+    "mention_tooltip": "Обратиться к ",
+    "tooltip_ban_mute": "Бан / Мут",
+    "tooltip_report": "Репорт",
+
+    "ban_modal": {
+      "title": "🚫 Действие над {username}",
+      "subtitle": "Выберите действие:",
+      "mute_btn": "🔇 Мут на 15 минут — заглушить + удалить все сообщения",
+      "ban_btn": "🚫 Бан — заблокировать навсегда в этом чате + удалить все сообщения",
+      "report_btn": "🚩 Только репорт — уведомить администрацию"
+    },
+
+    "report": {
+      "reason_prompt": "Причина репорта{forUser}:",
+      "for_user": " на {forUser}",
+      "reason_default": "Нарушение правил"
+    }
+  }
+}

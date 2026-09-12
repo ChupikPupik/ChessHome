@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Блог — Chess Home</title>
+  <title data-i18n="blog.page_title">Blog — Chess Home</title>
+  <script src="/js/i18n.js"></script>
   <script src="/js/header.js"></script>
   <link rel="icon" href="/img/logo/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -397,55 +398,53 @@ a{color:inherit;text-decoration:none}
   <!-- LIST -->
   <div id="view-list">
     <div class="blog-header">
-      <h1>📰 Блог Chess Home</h1>
+      <h1 data-i18n="blog.title">📰 Chess Home Blog</h1>
       <div id="new-post-wrap" style="display:none">
-        <button class="btn btn-primary btn-sm" onclick="openEditor(null)">✏️ Написать статью</button>
+        <button class="btn btn-primary btn-sm" data-i18n="blog.write_article" onclick="openEditor(null)">✏️ Write an article</button>
       </div>
     </div>
 
-    <!-- Официальный / Сообщество -->
+    <!-- Official / Community -->
     <div class="section-tabs">
-      <button class="section-tab active" id="stab-official" onclick="switchSection('official')">👑 Официальный</button>
-      <button class="section-tab" id="stab-community" onclick="switchSection('community')">🌍 Сообщество</button>
+      <button class="section-tab active" id="stab-official" data-i18n="blog.tab_official" onclick="switchSection('official')">👑 Official</button>
+      <button class="section-tab" id="stab-community" data-i18n="blog.tab_community" onclick="switchSection('community')">🌍 Community</button>
     </div>
 
-    <!-- Черновики (для залогиненных в community) -->
+    <!-- Drafts (for logged-in users in community) -->
     <div id="filter-tabs-wrap" class="filter-tabs" style="display:none">
-      <button class="filter-tab active" id="ftab-pub" onclick="switchFilter('published')">Опубликованные</button>
-      <button class="filter-tab" id="ftab-draft" onclick="switchFilter('drafts')">Мои черновики</button>
-      <button class="filter-tab" id="ftab-hidden" style="display:none" onclick="switchFilter('hidden')">🙈 Скрытые</button>
+      <button class="filter-tab active" id="ftab-pub" data-i18n="blog.filter_published" onclick="switchFilter('published')">Published</button>
+      <button class="filter-tab" id="ftab-draft" data-i18n="blog.filter_my_drafts" onclick="switchFilter('drafts')">My drafts</button>
+      <button class="filter-tab" id="ftab-hidden" style="display:none" data-i18n="blog.filter_hidden" onclick="switchFilter('hidden')">🙈 Hidden</button>
     </div>
 
-    <!-- Подсказка для гостей в разделе community -->
-    <div id="community-login-hint" style="display:none" class="login-prompt">
-      <a href="/">Войдите</a>, чтобы писать статьи в блоге сообщества
+    <!-- Hint for guests in the community section -->
+    <div id="community-login-hint" style="display:none" class="login-prompt" data-i18n-html="blog.community_login_hint">
+      <a href="/">Sign in</a> to write articles in the community blog
     </div>
 
-    <!-- Дисклеймер сообщества -->
+    <!-- Community disclaimer -->
     <div id="community-disclaimer-bar" style="display:none" class="community-disclaimer">
       <span class="disc-icon">ℹ️</span>
       <div class="disc-text">
-        <b>Блог сообщества</b> — статьи написаны участниками Chess Home.
-        <span id="disc-short"> Мнения авторов могут не совпадать с позицией администрации.</span>
-        <div class="disc-full" id="disc-full">
-          Администрация Chess Home не несёт ответственности за содержание публикаций участников сообщества.
-          Мнения, оценки и суждения авторов являются их личной позицией и могут не совпадать с позицией редакции и администрации платформы.
-          Если вы обнаружили нарушение правил — используйте кнопку «Пожаловаться» или обратитесь к администратору.
+        <span data-i18n-html="blog.disclaimer.intro"><b>Community Blog</b> — articles are written by Chess Home members.</span>
+        <span id="disc-short" data-i18n="blog.disclaimer.short"> Opinions expressed by authors may not reflect the position of the administration.</span>
+        <div class="disc-full" id="disc-full" data-i18n="blog.disclaimer.full">
+          The Chess Home administration is not responsible for the content of posts by community members.
         </div>
       </div>
-      <button class="disc-toggle-btn" id="disc-toggle-btn" onclick="toggleDisclaimer()">Подробнее</button>
+      <button class="disc-toggle-btn" id="disc-toggle-btn" data-i18n="blog.disclaimer.more" onclick="toggleDisclaimer()">Details</button>
     </div>
 
     <div id="blog-list" class="blog-list">
-      <div class="blog-loading"><div class="spinner"></div> Загрузка...</div>
+      <div class="blog-loading"><div class="spinner"></div> <span data-i18n="blog.loading">Loading...</span></div>
     </div>
   </div>
 
   <!-- POST VIEW -->
   <div id="view-post">
-    <div class="vp-back" onclick="goBack()">← Все статьи</div>
+    <div class="vp-back" data-i18n="blog.back_to_list" onclick="goBack()">← All articles</div>
     <div class="vp-hero">
-      <div id="vp-draft-wrap" style="display:none"><span class="draft-badge">ЧЕРНОВИК</span></div>
+      <div id="vp-draft-wrap" style="display:none"><span class="draft-badge" data-i18n="blog.draft_badge">DRAFT</span></div>
       <div class="vp-title" id="vp-title"></div>
       <div class="vp-meta">
         <div class="author-chip">
@@ -459,31 +458,31 @@ a{color:inherit;text-decoration:none}
     </div>
     <div class="md-body" id="vp-body"></div>
     <!-- Дисклеймер внутри поста (только для community) -->
-    <div class="vp-disclaimer" id="vp-disclaimer" style="display:none">
+    <div class="vp-disclaimer" id="vp-disclaimer" style="display:none" data-i18n-html="blog.disclaimer.post_body">
       <span class="vd-icon">ℹ️</span>
-      <div>Это публикация из <b style="color:var(--blue)">блога сообщества</b>. Мнение автора является его личной позицией и может не совпадать с позицией администрации Chess Home. Администрация не несёт ответственности за содержание публикаций участников.</div>
+      <div>This post is from the <b style="color:var(--blue)">community blog</b>. The author's opinion is their own and may not reflect the position of the Chess Home administration. The administration is not responsible for the content of member posts.</div>
     </div>
     <div class="vp-actions">
       <button class="like-btn" id="like-btn" onclick="toggleLike()">
-        <span class="heart">❤️</span><span id="like-count">0</span> нравится
+        <span class="heart">❤️</span><span id="like-count">0</span> <span data-i18n="blog.likes_suffix">likes</span>
       </button>
-      <span id="like-login-hint" style="display:none;font-size:13px;color:var(--text3)">
-        <a href="/" style="color:var(--accent)">Войдите</a>, чтобы поставить лайк
+      <span id="like-login-hint" style="display:none;font-size:13px;color:var(--text3)" data-i18n-html="blog.like_login_hint">
+        <a href="/" style="color:var(--accent)">Sign in</a> to like
       </span>
     </div>
     <div id="vp-author-bar" class="vp-author-bar" style="display:none">
-      <span class="bar-label" id="vp-bar-label">⚙️ Управление</span>
-      <button class="btn btn-ghost btn-sm" onclick="editCurrentPost()">✏️ Редактировать</button>
+      <span class="bar-label" id="vp-bar-label" data-i18n="blog.manage_label">⚙️ Manage</span>
+      <button class="btn btn-ghost btn-sm" data-i18n="blog.edit_link" onclick="editCurrentPost()">✏️ Edit</button>
       <button class="btn btn-ghost btn-sm" id="toggle-pub-btn" onclick="togglePublish()"></button>
-      <button class="btn btn-ghost btn-sm" id="hide-post-btn" style="display:none" onclick="hidePost()">🙈 Прикрыть</button>
-      <button class="btn btn-danger btn-sm" onclick="deletePost()">🗑 Удалить</button>
+      <button class="btn btn-ghost btn-sm" id="hide-post-btn" style="display:none" data-i18n="blog.hide_btn" onclick="hidePost()">🙈 Hide</button>
+      <button class="btn btn-danger btn-sm" data-i18n="blog.delete_btn" onclick="deletePost()">🗑 Delete</button>
     </div>
 
-    <!-- Большая кнопка Комментарии -->
+    <!-- Big Comments button -->
     <a id="comments-btn-wrap" href="#" onclick="openCommentsView(event)" style="display:none;text-decoration:none;margin-top:28px;display:block">
       <div class="comments-big-btn">
         <span class="cbb-icon">💬</span>
-        <span class="cbb-label">Комментарии</span>
+        <span class="cbb-label" data-i18n="blog.comments_label">Comments</span>
         <span class="cbb-count" id="cbb-count"></span>
         <span class="cbb-arrow">→</span>
       </div>
@@ -492,19 +491,19 @@ a{color:inherit;text-decoration:none}
 
   <!-- COMMENTS VIEW -->
   <div id="view-comments" style="display:none">
-    <div class="vp-back" onclick="closeCommentsView()">← К статье</div>
+    <div class="vp-back" data-i18n="blog.back_to_post" onclick="closeCommentsView()">← Back to article</div>
     <div class="cmt-header">
-      <h2 class="cmt-title" id="cmt-post-title">Комментарии</h2>
+      <h2 class="cmt-title" id="cmt-post-title" data-i18n="blog.comments_label">Comments</h2>
       <span class="cmt-subtitle" id="cmt-count-label"></span>
     </div>
 
     <!-- Бан-уведомление -->
     <div id="cmt-ban-notice" style="display:none" class="cmt-ban-box"></div>
 
-    <!-- Форма ввода -->
+    <!-- Input form -->
     <div id="cmt-write-wrap">
-      <div id="cmt-login-hint" style="display:none" class="login-prompt">
-        <a href="/">Войдите</a>, чтобы оставить комментарий
+      <div id="cmt-login-hint" style="display:none" class="login-prompt" data-i18n-html="blog.comment_login_hint">
+        <a href="/">Sign in</a> to leave a comment
       </div>
       <div id="cmt-form" style="display:none">
         <div class="cmt-md-wrap">
@@ -518,38 +517,39 @@ a{color:inherit;text-decoration:none}
             <button onclick="cmtInsLine('- ')">•</button>
           </div>
           <div class="cmt-tabs">
-            <div class="md-tab active" id="ctab-write" onclick="cmtSwitchTab('write')">✏️ Писать</div>
-            <div class="md-tab" id="ctab-prev"  onclick="cmtSwitchTab('preview')">👁 Предпросмотр</div>
+            <div class="md-tab active" id="ctab-write" data-i18n="blog.write_tab" onclick="cmtSwitchTab('write')">✏️ Write</div>
+            <div class="md-tab" id="ctab-prev" data-i18n="blog.preview_tab" onclick="cmtSwitchTab('preview')">👁 Preview</div>
           </div>
           <div class="md-panel active" id="cpanel-write">
             <textarea id="cmt-textarea" class="cmt-textarea" maxlength="4000"
-              placeholder="Напишите комментарий (Markdown поддерживается)...&#10;**жирный** *курсив* `код` > цитата"
+              data-i18n-placeholder="blog.comment_placeholder"
+              placeholder="Write a comment (Markdown supported)...&#10;**bold** *italic* `code` > quote"
               oninput="cmtUpdateCounter()"></textarea>
           </div>
           <div class="md-panel" id="cpanel-preview">
-            <div class="cmt-preview-wrap md-body" id="cmt-preview-body"><span class="md-empty">Предпросмотр...</span></div>
+            <div class="cmt-preview-wrap md-body" id="cmt-preview-body"><span class="md-empty" data-i18n="blog.preview_empty_short">Preview...</span></div>
           </div>
         </div>
         <div class="cmt-form-bottom">
           <span class="char-counter" id="cmt-counter">0 / 4000</span>
-          <button class="btn btn-primary" id="cmt-submit-btn" onclick="submitComment()">💬 Отправить</button>
+          <button class="btn btn-primary" id="cmt-submit-btn" data-i18n="blog.send_btn" onclick="submitComment()">💬 Send</button>
         </div>
       </div>
     </div>
 
-    <!-- Список комментариев -->
+    <!-- Comments list -->
     <div id="cmt-list" class="cmt-list">
-      <div class="blog-loading"><div class="spinner"></div> Загрузка комментариев...</div>
+      <div class="blog-loading"><div class="spinner"></div> <span data-i18n="blog.loading_comments">Loading comments...</span></div>
     </div>
   </div>
 
   <!-- EDITOR -->
   <div id="editor-panel">
     <div class="editor-back-row">
-      <h2 id="editor-h2">✏️ Новая статья</h2>
-      <button class="btn btn-ghost btn-sm" onclick="cancelEditor()">✕ Отмена</button>
+      <h2 id="editor-h2" data-i18n="blog.new_article_title">✏️ New article</h2>
+      <button class="btn btn-ghost btn-sm" data-i18n="blog.cancel_btn" onclick="cancelEditor()">✕ Cancel</button>
     </div>
-    <input type="text" class="title-input" id="post-title" placeholder="Заголовок статьи..." maxlength="200">
+    <input type="text" class="title-input" id="post-title" data-i18n-placeholder="blog.title_placeholder" placeholder="Article title..." maxlength="200">
     <div class="md-wrap">
       <div class="md-toolbar">
         <button onclick="ins('**','**')"><b>B</b></button>
@@ -560,34 +560,35 @@ a{color:inherit;text-decoration:none}
         <button onclick="insLine('### ')">H3</button>
         <button onclick="insLine('#### ')">H4</button>
         <div class="md-sep"></div>
-        <button onclick="insLine('- ')">• список</button>
-        <button onclick="insLine('1. ')">1. список</button>
-        <button onclick="insLine('> ')">❝ цитата</button>
+        <button data-i18n="blog.toolbar.bullet_list" onclick="insLine('- ')">• list</button>
+        <button data-i18n="blog.toolbar.numbered_list" onclick="insLine('1. ')">1. list</button>
+        <button data-i18n="blog.toolbar.quote" onclick="insLine('> ')">❝ quote</button>
         <div class="md-sep"></div>
-        <button onclick="ins('`','`')">&lt;/&gt; код</button>
-        <button onclick="insBlock()">``` блок</button>
+        <button data-i18n-html="blog.toolbar.code" onclick="ins('`','`')">&lt;/&gt; code</button>
+        <button data-i18n-html="blog.toolbar.code_block" onclick="insBlock()">``` block</button>
         <div class="md-sep"></div>
-        <button onclick="ins('[текст](','url)')">🔗 ссылка</button>
-        <button onclick="insLine('---')">— разделитель</button>
+        <button data-i18n="blog.toolbar.link" onclick="insLink()">🔗 link</button>
+        <button data-i18n="blog.toolbar.divider" onclick="insLine('---')">— divider</button>
       </div>
       <div class="md-tabs">
-        <div class="md-tab active" id="etab-write" onclick="switchETab('write')">✏️ Редактор</div>
-        <div class="md-tab" id="etab-preview" onclick="switchETab('preview')">👁 Предпросмотр</div>
+        <div class="md-tab active" id="etab-write" data-i18n="blog.editor_tab" onclick="switchETab('write')">✏️ Editor</div>
+        <div class="md-tab" id="etab-preview" data-i18n="blog.preview_tab" onclick="switchETab('preview')">👁 Preview</div>
       </div>
       <div class="md-panel active" id="epanel-write">
         <textarea class="md-textarea" id="post-body"
-          placeholder="Пиши статью в Markdown...&#10;&#10;## Заголовок&#10;**жирный** *курсив* ~~зачёркнутый~~&#10;> цитата&#10;&#10;- пункт&#10;- ещё пункт&#10;&#10;```&#10;код&#10;```"
+          data-i18n-placeholder="blog.editor_placeholder"
+          placeholder="Write your article in Markdown...&#10;&#10;## Heading&#10;**bold** *italic* ~~strikethrough~~&#10;> quote&#10;&#10;- item&#10;- another item&#10;&#10;```&#10;code&#10;```"
           oninput="updateCounter()"></textarea>
-        <div class="md-hint">**жирный** · *курсив* · ## Заголовок · > цитата · `код` · [ссылка](url)</div>
+        <div class="md-hint" data-i18n="blog.editor_hint">**bold** · *italic* · ## Heading · > quote · `code` · [link](url)</div>
       </div>
       <div class="md-panel" id="epanel-preview">
-        <div class="md-preview-wrap md-body" id="editor-preview"><span class="md-empty">Предпросмотр появится здесь...</span></div>
+        <div class="md-preview-wrap md-body" id="editor-preview"><span class="md-empty" data-i18n="blog.preview_empty_long">Preview will appear here...</span></div>
       </div>
     </div>
-    <div class="char-counter" id="char-counter">0 символов</div>
+    <div class="char-counter" id="char-counter">0 characters</div>
     <div class="editor-actions">
-      <button class="btn btn-ghost" id="btn-draft" onclick="savePost('draft')">💾 Сохранить черновик</button>
-      <button class="btn btn-primary" id="btn-pub" onclick="savePost('published')">🚀 Опубликовать</button>
+      <button class="btn btn-ghost" id="btn-draft" data-i18n="blog.save_draft_btn" onclick="savePost('draft')">💾 Save draft</button>
+      <button class="btn btn-primary" id="btn-pub" data-i18n="blog.publish_btn" onclick="savePost('published')">🚀 Publish</button>
     </div>
   </div>
 
@@ -611,7 +612,10 @@ function getDevId() {
 const DEVID = getDevId();
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function formatDate(ts) { return new Date(ts).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}); }
+function formatDate(ts) {
+  const locale = CH_I18N.getLang() === 'ru' ? 'ru-RU' : 'en-US';
+  return new Date(ts).toLocaleDateString(locale,{day:'numeric',month:'long',year:'numeric'});
+}
 function mdRender(text) {
   if (!text) return '';
   return DOMPurify.sanitize(marked.parse(text, {breaks:true,gfm:true}), {USE_PROFILES:{html:true}});
@@ -654,13 +658,13 @@ async function parseApiResponse(r) {
     console.error('[API] Не-JSON ответ', r.status, raw.slice(0, 300));
     const err = new Error(
       r.ok
-        ? 'Сервер вернул некорректный ответ'
-        : `Ошибка сервера (${r.status}). Попробуйте ещё раз или сократите текст`
+        ? CH_I18N.t('blog.error.bad_response')
+        : CH_I18N.t('blog.error.server_error', {status: r.status})
     );
     err.status = r.status;
     throw err;
   }
-  if (!r.ok) { const err = new Error(d.error || 'Ошибка'); err.status = r.status; throw err; }
+  if (!r.ok) { const err = new Error(d.error || CH_I18N.t('common.error')); err.status = r.status; throw err; }
   return d;
 }
 async function apiPost(path, body) {
@@ -691,7 +695,7 @@ function buildHeader() {
   el.innerHTML = '';
   if (!currentUser) {
     const b = document.createElement('button'); b.className='btn btn-ghost btn-sm';
-    b.textContent='Войти'; b.onclick=()=>location.href='/'; el.appendChild(b); return;
+    b.textContent=CH_I18N.t('header.login'); b.onclick=()=>location.href='/'; el.appendChild(b); return;
   }
   const wrap = document.createElement('div'); wrap.className='user-menu';
   const btn = document.createElement('button'); btn.className='user-btn';
@@ -704,10 +708,10 @@ function buildHeader() {
   wrap.appendChild(btn);
   const drop = document.createElement('div'); drop.className='user-dropdown'; drop.id='hdr-drop';
   drop.innerHTML = `
-    <a class="dropdown-item" href="/profile" style="text-decoration:none;color:inherit">👤 Мой профиль</a>
-    <a class="dropdown-item" href="/inbox" style="text-decoration:none;color:inherit">✉️ Сообщения</a>
-    <a class="dropdown-item" href="/settings" style="text-decoration:none;color:inherit">⚙️ Настройки</a>
-    <hr><div class="dropdown-item danger" onclick="logout()">🚪 Выйти</div>`;
+    <a class="dropdown-item" href="/profile" style="text-decoration:none;color:inherit">👤 ${CH_I18N.t('header.my_profile')}</a>
+    <a class="dropdown-item" href="/inbox" style="text-decoration:none;color:inherit">✉️ ${CH_I18N.t('header.messages')}</a>
+    <a class="dropdown-item" href="/settings" style="text-decoration:none;color:inherit">⚙️ ${CH_I18N.t('nav.settings')}</a>
+    <hr><div class="dropdown-item danger" onclick="logout()">🚪 ${CH_I18N.t('header.logout')}</div>`;
   wrap.appendChild(drop); el.appendChild(wrap);
 }
 async function logout() {
@@ -768,7 +772,7 @@ function switchSection(sec) {
   const discFull = document.getElementById('disc-full');
   const discBtn = document.getElementById('disc-toggle-btn');
   if (discFull) discFull.classList.remove('open');
-  if (discBtn) discBtn.textContent = 'Подробнее';
+  if (discBtn) discBtn.textContent = CH_I18N.t('blog.disclaimer.more');
 
   loadPosts();
 }
@@ -778,7 +782,7 @@ function toggleDisclaimer() {
   const btn = document.getElementById('disc-toggle-btn');
   if (!full) return;
   const open = full.classList.toggle('open');
-  btn.textContent = open ? 'Скрыть' : 'Подробнее';
+  btn.textContent = CH_I18N.t(open ? 'blog.disclaimer.less' : 'blog.disclaimer.more');
 }
 
 function switchFilter(filter) {
@@ -791,7 +795,7 @@ function switchFilter(filter) {
 
 // ── LOAD & RENDER ────────────────────────────────────────────────
 async function loadPosts() {
-  document.getElementById('blog-list').innerHTML = '<div class="blog-loading"><div class="spinner"></div> Загрузка...</div>';
+  document.getElementById('blog-list').innerHTML = `<div class="blog-loading"><div class="spinner"></div> ${CH_I18N.t('blog.loading')}</div>`;
   try {
     let url = `/blog?section=${currentSection}&limit=50`;
     if (currentFilter === 'drafts') url += '&status=drafts';
@@ -809,17 +813,17 @@ function renderList() {
   const el = document.getElementById('blog-list');
   if (!allPosts.length) {
     const icon = currentFilter==='drafts' ? '📝' : currentFilter==='hidden' ? '🙈' : '📰';
-    const msg  = currentFilter==='drafts' ? 'Черновиков нет' :
-                 currentFilter==='hidden' ? 'Скрытых статей нет' :
-                 currentSection==='community' ? 'Статей сообщества пока нет. Будь первым!' :
-                 'Официальных статей пока нет.';
+    const msg  = currentFilter==='drafts' ? CH_I18N.t('blog.empty.no_drafts') :
+                 currentFilter==='hidden' ? CH_I18N.t('blog.empty.no_hidden') :
+                 currentSection==='community' ? CH_I18N.t('blog.empty.no_community') :
+                 CH_I18N.t('blog.empty.no_official');
     el.innerHTML = `<div class="blog-empty"><div class="ei">${icon}</div><p>${msg}</p></div>`;
     return;
   }
   el.innerHTML = currentFilter==='hidden'
-    ? `<div class="community-disclaimer" style="margin-bottom:12px"><span class="disc-icon">ℹ️</span><div class="disc-text">Здесь показаны все скрытые статьи — из обоих разделов сразу, независимо от переключателя выше.</div></div>`
+    ? `<div class="community-disclaimer" style="margin-bottom:12px"><span class="disc-icon">ℹ️</span><div class="disc-text">${CH_I18N.t('blog.disclaimer.all_hidden_notice')}</div></div>`
     : (currentFilter==='drafts' && isAdmin())
-    ? `<div class="community-disclaimer" style="margin-bottom:12px"><span class="disc-icon">ℹ️</span><div class="disc-text">Здесь показаны все черновики — из обоих разделов сразу, независимо от переключателя выше.</div></div>`
+    ? `<div class="community-disclaimer" style="margin-bottom:12px"><span class="disc-icon">ℹ️</span><div class="disc-text">${CH_I18N.t('blog.disclaimer.all_drafts_notice')}</div></div>`
     : '';
   allPosts.forEach(p => {
     const card = document.createElement('div');
@@ -829,7 +833,7 @@ function renderList() {
       // Скрытую статью нельзя открыть (по прямой ссылке — 404), поэтому здесь
       // сразу кнопки восстановить/удалить без клика на открытие.
       card.innerHTML = `
-        <span class="draft-badge">🙈 ПРИКРЫТА</span>
+        <span class="draft-badge">${CH_I18N.t('blog.badge_hidden')}</span>
         ${p.community ? '<span class="community-badge">✍️ '+esc(p.author)+'</span>' : ''}
         <div class="blog-card-title">${esc(p.title)}</div>
         ${excerpt ? `<div class="blog-card-excerpt">${esc(excerpt)}${(p.body||'').length>260?'…':''}</div>` : ''}
@@ -837,14 +841,14 @@ function renderList() {
           <span class="stat">📅 ${formatDate(p.createdAt)}</span>
         </div>
         <div class="vp-actions" style="margin-top:10px">
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restoreHiddenPost('${p.id}')">↩️ Вернуть</button>
-          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteHiddenPost('${p.id}')">🗑 Удалить навсегда</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();restoreHiddenPost('${p.id}')">${CH_I18N.t('blog.restore_btn')}</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteHiddenPost('${p.id}')">${CH_I18N.t('blog.delete_forever_btn')}</button>
         </div>`;
       el.appendChild(card);
       return;
     }
     card.innerHTML = `
-      ${p.status==='draft' ? '<span class="draft-badge">ЧЕРНОВИК</span>' : ''}
+      ${p.status==='draft' ? `<span class="draft-badge">${CH_I18N.t('blog.draft_badge')}</span>` : ''}
       ${p.community ? '<span class="community-badge">✍️ '+esc(p.author)+'</span>' : ''}
       <div class="blog-card-title">${esc(p.title)}</div>
       ${excerpt ? `<div class="blog-card-excerpt">${esc(excerpt)}${(p.body||'').length>260?'…':''}</div>` : ''}
@@ -865,17 +869,17 @@ async function restoreHiddenPost(id) {
     await apiPatch('/blog/'+id, {status:'draft'});
     allPosts = allPosts.filter(p=>p.id!==id);
     renderList();
-    toast('Статья возвращена в черновики','success');
+    toast(CH_I18N.t('blog.toast.restored_to_draft'),'success');
   } catch(e) { toast(e.message,'error'); }
 }
 
 async function deleteHiddenPost(id) {
-  if (!confirm('Удалить эту статью навсегда? Отменить нельзя.')) return;
+  if (!confirm(CH_I18N.t('blog.confirm.delete_forever'))) return;
   try {
     await apiDelete('/blog/'+id);
     allPosts = allPosts.filter(p=>p.id!==id);
     renderList();
-    toast('Статья удалена','success');
+    toast(CH_I18N.t('blog.toast.article_deleted'),'success');
   } catch(e) { toast(e.message,'error'); }
 }
 
@@ -917,9 +921,9 @@ async function openPost(id, noView) {
     if (canManage) {
       bar.style.display = '';
       document.getElementById('vp-bar-label').textContent =
-        (isAdmin() && !myPost) ? '⚙️ Панель администратора' : '⚙️ Управление статьёй';
+        (isAdmin() && !myPost) ? CH_I18N.t('blog.admin_panel_label') : CH_I18N.t('blog.manage_article_label');
       document.getElementById('toggle-pub-btn').textContent =
-        post.status==='published' ? '📦 В черновик' : '🚀 Опубликовать';
+        post.status==='published' ? CH_I18N.t('blog.to_draft_btn') : CH_I18N.t('blog.publish_btn');
       document.getElementById('hide-post-btn').style.display = isAdmin() ? '' : 'none';
     } else {
       bar.style.display = 'none';
@@ -957,7 +961,7 @@ function goBack() {
 // ── LIKE ─────────────────────────────────────────────────────────
 async function toggleLike() {
   if (!currentPost || currentPost.status==='draft') return;
-  if (!isLoggedIn()) { toast('Войдите, чтобы поставить лайк','info'); return; }
+  if (!isLoggedIn()) { toast(CH_I18N.t('blog.toast.login_to_like'),'info'); return; }
   const lb = document.getElementById('like-btn');
   const already = lb.classList.contains('liked');
   lb.disabled = true;
@@ -982,48 +986,49 @@ async function togglePublish() {
     const updated = await apiPatch('/blog/'+currentPost.id, {status:ns});
     currentPost.status = updated.status;
     document.getElementById('vp-draft-wrap').style.display = updated.status==='draft' ? '' : 'none';
-    document.getElementById('toggle-pub-btn').textContent = updated.status==='published' ? '📦 В черновик' : '🚀 Опубликовать';
+    document.getElementById('toggle-pub-btn').textContent = updated.status==='published' ? CH_I18N.t('blog.to_draft_btn') : CH_I18N.t('blog.publish_btn');
     const lb = document.getElementById('like-btn');
     lb.style.display = updated.status==='draft' ? 'none' : (isLoggedIn() ? '' : 'none');
     const idx = allPosts.findIndex(p=>p.id===currentPost.id);
     if (idx>=0) allPosts[idx].status = updated.status;
-    toast(ns==='published' ? '✅ Опубликовано!' : '📦 Убрано в черновик','success');
+    toast(ns==='published' ? CH_I18N.t('blog.toast.publish_toggle_on') : CH_I18N.t('blog.toast.publish_toggle_off'),'success');
   } catch(e) { toast(e.message,'error'); }
 }
 
 async function deletePost() {
-  if (!currentPost || !confirm('Удалить эту статью? Отменить нельзя.')) return;
+  if (!currentPost || !confirm(CH_I18N.t('blog.confirm.delete_post'))) return;
   try {
     await apiDelete('/blog/'+currentPost.id);
     allPosts = allPosts.filter(p=>p.id!==currentPost.id);
-    toast('Статья удалена','success');
+    toast(CH_I18N.t('blog.toast.article_deleted'),'success');
     goBack();
   } catch(e) { toast(e.message,'error'); }
 }
 
-// Прикрыть статью: она перестаёт быть видна где-либо (даже по прямой ссылке —
-// там теперь 404), но не удаляется — вернуть её можно во вкладке "Скрытые".
+// Hide the article: it stops being visible anywhere (even via a direct
+// link — that now 404s), but isn't deleted — it can be restored from the
+// "Hidden" tab.
 async function hidePost() {
-  if (!currentPost || !confirm('Прикрыть эту статью? Она перестанет быть видна всем, но её можно будет вернуть во вкладке «Скрытые».')) return;
+  if (!currentPost || !confirm(CH_I18N.t('blog.confirm.hide_post'))) return;
   try {
     await apiPatch('/blog/'+currentPost.id, {status:'hidden'});
     allPosts = allPosts.filter(p=>p.id!==currentPost.id);
-    toast('Статья прикрыта. Вернуть её можно во вкладке «Скрытые»','success');
+    toast(CH_I18N.t('blog.toast.hidden_done'),'success');
     goBack();
   } catch(e) { toast(e.message,'error'); }
 }
 
 // ── EDITOR ───────────────────────────────────────────────────────
 function openEditor(id) {
-  if (!isLoggedIn()) { toast('Войдите, чтобы писать статьи','info'); return; }
+  if (!isLoggedIn()) { toast(CH_I18N.t('blog.toast.login_to_write'),'info'); return; }
   editingId = id;
   if (id) {
     const p = allPosts.find(x=>x.id===id) || currentPost;
-    document.getElementById('editor-h2').textContent = '✏️ Редактировать статью';
+    document.getElementById('editor-h2').textContent = CH_I18N.t('blog.edit_article_title');
     document.getElementById('post-title').value = p?.title||'';
     document.getElementById('post-body').value = p?.body||'';
   } else {
-    document.getElementById('editor-h2').textContent = '✏️ Новая статья';
+    document.getElementById('editor-h2').textContent = CH_I18N.t('blog.new_article_title');
     document.getElementById('post-title').value = '';
     document.getElementById('post-body').value = '';
   }
@@ -1042,13 +1047,14 @@ function switchETab(tab) {
   document.getElementById('epanel-preview').classList.toggle('active', tab==='preview');
   if (tab==='preview') {
     const body = document.getElementById('post-body').value;
-    document.getElementById('editor-preview').innerHTML = body ? mdRender(body) : '<span class="md-empty">Предпросмотр появится здесь...</span>';
+    document.getElementById('editor-preview').innerHTML = body ? mdRender(body) : `<span class="md-empty">${CH_I18N.t('blog.preview_empty_long')}</span>`;
   }
 }
 function updateCounter() {
   const n = document.getElementById('post-body').value.length;
   const el = document.getElementById('char-counter');
-  el.textContent = n.toLocaleString('ru') + ' символов';
+  const locale = CH_I18N.getLang() === 'ru' ? 'ru' : 'en';
+  el.textContent = n.toLocaleString(locale) + ' ' + CH_I18N.t('blog.chars_suffix');
   el.className = 'char-counter'+(n>50000?' over':n>30000?' warn':'');
 }
 function ins(before, after) {
@@ -1068,10 +1074,14 @@ function insLine(prefix) {
 function insBlock() {
   const ta = document.getElementById('post-body');
   const s = ta.selectionStart, e = ta.selectionEnd, sel = ta.value.slice(s,e);
-  const block = '```\n'+(sel||'код здесь')+'\n```';
+  const placeholder = CH_I18N.t('blog.default_code_placeholder');
+  const block = '```\n'+(sel||placeholder)+'\n```';
   ta.value = ta.value.slice(0,s)+block+ta.value.slice(e);
-  ta.selectionStart = s+4; ta.selectionEnd = s+4+(sel||'код здесь').length;
+  ta.selectionStart = s+4; ta.selectionEnd = s+4+(sel||placeholder).length;
   ta.focus(); updateCounter();
+}
+function insLink() {
+  ins('['+CH_I18N.t('blog.toolbar.link_text')+'](','url)');
 }
 
 // UTF-8-safe base64 — обычный btoa() ломается на кириллице/эмодзи.
@@ -1087,15 +1097,15 @@ function b64EncodeUtf8(str) {
 async function savePost(status) {
   const title = document.getElementById('post-title').value.trim();
   const body  = document.getElementById('post-body').value.trim();
-  if (!title) { toast('Введите заголовок','error'); document.getElementById('post-title').focus(); return; }
-  if (!body)  { toast('Напишите текст статьи','error'); return; }
+  if (!title) { toast(CH_I18N.t('blog.toast.enter_title'),'error'); document.getElementById('post-title').focus(); return; }
+  if (!body)  { toast(CH_I18N.t('blog.toast.enter_body'),'error'); return; }
   document.getElementById('btn-draft').disabled = true;
   document.getElementById('btn-pub').disabled   = true;
   const payload = { title: b64EncodeUtf8(title), body: b64EncodeUtf8(body), status, encoding: 'b64' };
   try {
     if (editingId) { await apiPatch('/blog/'+editingId, payload); }
     else           { await apiPost('/blog', payload); }
-    toast(status==='published' ? '🚀 Опубликовано!' : '💾 Черновик сохранён','success');
+    toast(status==='published' ? CH_I18N.t('blog.toast.published') : CH_I18N.t('blog.toast.draft_saved'),'success');
     allPosts = [];
     goBack();
   } catch(e) {
@@ -1138,7 +1148,7 @@ function closeCommentsView() {
 
 async function loadComments() {
   const listEl = document.getElementById('cmt-list');
-  listEl.innerHTML = '<div class="blog-loading"><div class="spinner"></div> Загрузка...</div>';
+  listEl.innerHTML = `<div class="blog-loading"><div class="spinner"></div> ${CH_I18N.t('blog.loading')}</div>`;
   try {
     const data = await apiGet('/blog/'+cmtPostId+'/comments');
     cmtData = data.comments || [];
@@ -1148,7 +1158,7 @@ async function loadComments() {
     renderComments();
     const label = document.getElementById('cmt-count-label');
     const vis = cmtData.filter(c=>!c.deleted).length;
-    label.textContent = cmtData.length === 0 ? 'Комментариев пока нет' : `${cmtData.length} ${cmtData.length===1?'комментарий':cmtData.length<5?'комментария':'комментариев'}`;
+    label.textContent = cmtData.length === 0 ? CH_I18N.t('blog.no_comments_yet') : CH_I18N.tn('blog.comment_count', cmtData.length);
   } catch(e) {
     listEl.innerHTML = `<div class="cmt-empty"><div class="ei">⚠️</div><p>${esc(e.message)}</p></div>`;
   }
@@ -1159,10 +1169,10 @@ function renderBanNotice() {
   if (!myBan) { el.style.display='none'; return; }
   el.style.display='';
   if (myBan.type === 'ban') {
-    el.textContent = '🚫 Вы заблокированы в комментариях этого блога.';
+    el.textContent = CH_I18N.t('blog.ban.blocked');
   } else {
     const mins = myBan.until ? Math.max(1,Math.ceil((myBan.until-Date.now())/60000)) : 60;
-    el.textContent = `🔇 Вы замьючены. Писать можно через ${mins} мин.`;
+    el.textContent = CH_I18N.t('blog.ban.muted', {mins});
   }
 }
 
@@ -1182,7 +1192,7 @@ function renderWriteForm() {
 function renderComments() {
   const el = document.getElementById('cmt-list');
   if (cmtData.length === 0) {
-    el.innerHTML = '<div class="cmt-empty"><div class="ei">💬</div><p>Будьте первым, кто оставит комментарий!</p></div>';
+    el.innerHTML = `<div class="cmt-empty"><div class="ei">💬</div><p>${CH_I18N.t('blog.empty.no_comments')}</p></div>`;
     return;
   }
   el.innerHTML = '';
@@ -1204,14 +1214,13 @@ function buildCommentEl(c) {
 
   let bodyHtml;
   if (c.deleted) {
-    const by = c.deletedBy ? ` администратором` : '';
-    bodyHtml = `<div class="cmt-deleted">🗑 Удалено${by}</div>`;
+    bodyHtml = `<div class="cmt-deleted">${c.deletedBy ? CH_I18N.t('blog.deleted_by_admin') : CH_I18N.t('blog.deleted')}</div>`;
   } else {
     const editedBadge = c.editedAt
-      ? `<span class="cmt-edited-badge" title="Редактировалось">✏️ изменено</span>`
+      ? `<span class="cmt-edited-badge" title="${CH_I18N.t('blog.edited_tooltip')}">${CH_I18N.t('blog.edited_label')}</span>`
       : '';
     const editsBadge = isMe && !c.deleted && !isCAdmin
-      ? `<span class="cmt-edits-left">(осталось правок: ${editsLeft})</span>`
+      ? `<span class="cmt-edits-left">${CH_I18N.t('blog.edits_left', {n: editsLeft})}</span>`
       : '';
     bodyHtml = `<div class="cmt-body md-body" id="cmt-body-${c.id}">${mdRender(c.body)}</div>
       <div class="cmt-meta-line">${editedBadge}${editsBadge}</div>
@@ -1232,26 +1241,26 @@ function buildCommentEl(c) {
         <div class="cmt-form-bottom" style="padding-top:8px">
           <span class="char-counter" id="cmt-edit-cnt-${c.id}">0 / 4000</span>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost btn-sm" onclick="cancelEditComment('${c.id}')">Отмена</button>
-            <button class="btn btn-primary btn-sm" onclick="saveEditComment('${c.id}')">💾 Сохранить</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelEditComment('${c.id}')">${CH_I18N.t('blog.cancel_plain')}</button>
+            <button class="btn btn-primary btn-sm" onclick="saveEditComment('${c.id}')">💾 ${CH_I18N.t('common.save')}</button>
           </div>
         </div>
       </div>`;
   }
 
-  // Реакции
+  // Reactions
   const reactionsHtml = buildReactionsHtml(c);
-  // Кнопки
+  // Buttons
   let modBtns = '';
   if (!c.deleted) {
     if (canEdit) {
-      modBtns += `<button class="cmt-mod-btn" onclick="startEditComment('${c.id}')">✏️ Изменить</button>`;
+      modBtns += `<button class="cmt-mod-btn" onclick="startEditComment('${c.id}')">${CH_I18N.t('blog.edit_btn')}</button>`;
     }
     if (isMe || isCAdmin) {
-      modBtns += `<button class="cmt-mod-btn del" onclick="deleteComment('${c.id}')">🗑 Удалить</button>`;
+      modBtns += `<button class="cmt-mod-btn del" onclick="deleteComment('${c.id}')">${CH_I18N.t('blog.delete_btn')}</button>`;
     }
     if (isCAdmin && !isMe) {
-      modBtns += `<button class="cmt-mod-btn" onclick="toggleModPanel('${c.id}')">🛡 Модерация</button>`;
+      modBtns += `<button class="cmt-mod-btn" onclick="toggleModPanel('${c.id}')">${CH_I18N.t('blog.moderation_btn')}</button>`;
     }
   }
 
@@ -1268,13 +1277,13 @@ function buildCommentEl(c) {
     </div>
     ${isCAdmin && !c.deleted && !isMe ? `
     <div class="cmt-mod-panel" id="modpanel-${c.id}">
-      <div class="cmt-mod-panel-title">🛡 Панель модератора — ${esc(c.author)}</div>
+      <div class="cmt-mod-panel-title">${CH_I18N.t('blog.mod_panel_title', {author: esc(c.author)})}</div>
       <div class="cmt-mod-actions">
-        <button class="cmt-mod-action" onclick="modAction('mute','${c.author}','${c.id}',false)">🔇 Мут 1ч (этот пост)</button>
-        <button class="cmt-mod-action" onclick="modAction('mute','${c.author}','${c.id}',true)">🔇 Мут 1ч (везде)</button>
-        <button class="cmt-mod-action" onclick="modAction('ban','${c.author}','${c.id}',false)">🚫 Бан (этот пост)</button>
-        <button class="cmt-mod-action" onclick="modAction('ban','${c.author}','${c.id}',true)">🚫 Глобальный бан</button>
-        <button class="cmt-mod-action" onclick="modAction('unban','${c.author}','${c.id}',false)" style="color:var(--green);border-color:rgba(76,175,114,.35)">✅ Разбан</button>
+        <button class="cmt-mod-action" onclick="modAction('mute','${c.author}','${c.id}',false)">${CH_I18N.t('blog.mod.mute_post')}</button>
+        <button class="cmt-mod-action" onclick="modAction('mute','${c.author}','${c.id}',true)">${CH_I18N.t('blog.mod.mute_global')}</button>
+        <button class="cmt-mod-action" onclick="modAction('ban','${c.author}','${c.id}',false)">${CH_I18N.t('blog.mod.ban_post')}</button>
+        <button class="cmt-mod-action" onclick="modAction('ban','${c.author}','${c.id}',true)">${CH_I18N.t('blog.mod.ban_global')}</button>
+        <button class="cmt-mod-action" onclick="modAction('unban','${c.author}','${c.id}',false)" style="color:var(--green);border-color:rgba(76,175,114,.35)">${CH_I18N.t('blog.mod.unban')}</button>
       </div>
     </div>` : ''}
   `;
@@ -1317,7 +1326,7 @@ document.addEventListener('click', e => {
 });
 
 async function toggleReaction(cid, emoji) {
-  if (!isLoggedIn()) { toast('Войдите, чтобы реагировать','info'); return; }
+  if (!isLoggedIn()) { toast(CH_I18N.t('blog.toast.login_to_react'),'info'); return; }
   const c = cmtData.find(x=>x.id===cid); if (!c) return;
   const removing = c.myReaction === emoji;
   try {
@@ -1335,18 +1344,18 @@ function toggleModPanel(cid) {
 }
 
 async function deleteComment(cid) {
-  if (!confirm('Удалить этот комментарий?')) return;
+  if (!confirm(CH_I18N.t('blog.confirm.delete_comment'))) return;
   try {
     const res = await fetch(API+'/blog/'+cmtPostId+'/comments/'+cid+'/delete', {method:'POST',headers:getHdrs(),body:'{}'});
-    const d = await res.json(); if (!res.ok) throw new Error(d.error||'Ошибка');
+    const d = await res.json(); if (!res.ok) throw new Error(d.error||CH_I18N.t('common.error'));
     const c = cmtData.find(x=>x.id===cid);
     if (c) { c.deleted=true; c.deletedBy=d.deletedBy||null; c.body=null; }
     const el = document.getElementById('cmt-'+cid);
     if (el && c) { el.replaceWith(buildCommentEl(c)); }
-    toast('Комментарий удалён','success');
-    // Обновить счётчик
+    toast(CH_I18N.t('blog.toast.comment_deleted'),'success');
+    // Update the counter
     const vis = cmtData.filter(x=>!x.deleted).length;
-    document.getElementById('cmt-count-label').textContent = `${cmtData.length} ${cmtData.length===1?'комментарий':cmtData.length<5?'комментария':'комментариев'}`;
+    document.getElementById('cmt-count-label').textContent = CH_I18N.tn('blog.comment_count', cmtData.length);
   } catch(e) { toast(e.message,'error'); }
 }
 
@@ -1375,7 +1384,8 @@ function cmtEditCounter(cid) {
   const ta = document.getElementById('cmt-edit-ta-'+cid); if (!ta) return;
   const n = ta.value.length;
   const el = document.getElementById('cmt-edit-cnt-'+cid); if (!el) return;
-  el.textContent = n.toLocaleString('ru') + ' / 4000';
+  const locale = CH_I18N.getLang() === 'ru' ? 'ru' : 'en';
+  el.textContent = n.toLocaleString(locale) + ' / 4000';
   el.className = 'char-counter' + (n > 4000 ? ' over' : n > 3500 ? ' warn' : '');
 }
 function cmtEditIns(cid, b, a) {
@@ -1396,25 +1406,25 @@ function cmtEditInsLine(cid, prefix) {
 async function saveEditComment(cid) {
   const ta = document.getElementById('cmt-edit-ta-'+cid); if (!ta) return;
   const body = ta.value.trim();
-  if (!body) { toast('Текст не может быть пустым','error'); return; }
-  if (body.length > 4000) { toast('Максимум 4000 символов','error'); return; }
+  if (!body) { toast(CH_I18N.t('blog.toast.empty_text'),'error'); return; }
+  if (body.length > 4000) { toast(CH_I18N.t('blog.toast.max_chars'),'error'); return; }
   try {
     const res = await apiPatch('/blog/'+cmtPostId+'/comments/'+cid, {body});
     const c = cmtData.find(x=>x.id===cid);
     if (c) { c.body = res.body; c.editCount = res.editCount; c.editedAt = res.editedAt; }
     const el = document.getElementById('cmt-'+cid);
     if (el && c) el.replaceWith(buildCommentEl(c));
-    toast('Комментарий обновлён ✓','success');
+    toast(CH_I18N.t('blog.toast.comment_updated'),'success');
   } catch(e) { toast(e.message,'error'); }
 }
 
 async function modAction(action, username, cid, isGlobalMod) {
-  const labels = {mute:'Замьютить',ban:'Забанить',unban:'Разбанить'};
-  const scope = isGlobalMod ? 'глобально (весь блог)' : 'на этом посте';
-  if (!confirm(`${labels[action]||action} пользователя ${username} ${scope}?`)) return;
+  const labels = {mute:CH_I18N.t('blog.mod.action_mute'),ban:CH_I18N.t('blog.mod.action_ban'),unban:CH_I18N.t('blog.mod.action_unban')};
+  const scope = isGlobalMod ? CH_I18N.t('blog.mod.scope_global') : CH_I18N.t('blog.mod.scope_post');
+  if (!confirm(CH_I18N.t('blog.confirm.mod_action', {action: labels[action]||action, username, scope}))) return;
   try {
     await apiPost('/blog/'+cmtPostId+'/comments/mod', {action, username, global: isGlobalMod});
-    toast(`${labels[action]||action} применён к ${username}`,'success');
+    toast(CH_I18N.t('blog.toast.mod_applied', {action: labels[action]||action, username}),'success');
     const panel = document.getElementById('modpanel-'+cid); if (panel) panel.classList.remove('open');
   } catch(e) { toast(e.message,'error'); }
 }
@@ -1427,7 +1437,7 @@ function cmtSwitchTab(tab) {
   document.getElementById('cpanel-preview').classList.toggle('active', tab==='preview');
   if (tab==='preview') {
     const body = document.getElementById('cmt-textarea').value;
-    document.getElementById('cmt-preview-body').innerHTML = body ? mdRender(body) : '<span class="md-empty">Предпросмотр...</span>';
+    document.getElementById('cmt-preview-body').innerHTML = body ? mdRender(body) : `<span class="md-empty">${CH_I18N.t('blog.preview_empty_short')}</span>`;
   }
 }
 function cmtUpdateCounter() {
@@ -1452,8 +1462,8 @@ function cmtInsLine(prefix) {
 async function submitComment() {
   const ta = document.getElementById('cmt-textarea');
   const body = ta.value.trim();
-  if (!body) { toast('Напишите комментарий','error'); return; }
-  if (body.length > 4000) { toast('Максимум 4000 символов','error'); return; }
+  if (!body) { toast(CH_I18N.t('blog.toast.write_comment'),'error'); return; }
+  if (body.length > 4000) { toast(CH_I18N.t('blog.toast.max_chars'),'error'); return; }
   const btn = document.getElementById('cmt-submit-btn');
   btn.disabled = true;
   try {
@@ -1464,22 +1474,23 @@ async function submitComment() {
     const listEl = document.getElementById('cmt-list');
     if (listEl.querySelector('.cmt-empty')) listEl.innerHTML='';
     listEl.appendChild(buildCommentEl(res.comment));
-    // Обновить счётчик
+    // Update the counter
     const label = document.getElementById('cmt-count-label');
-    label.textContent = `${cmtData.length} ${cmtData.length===1?'комментарий':cmtData.length<5?'комментария':'комментариев'}`;
+    label.textContent = CH_I18N.tn('blog.comment_count', cmtData.length);
     const cbbCount = document.getElementById('cbb-count');
     const visCount = cmtData.filter(c=>!c.deleted).length;
     if (cbbCount) cbbCount.textContent = visCount > 0 ? visCount : '';
-    // Прокрутить к новому
+    // Scroll to the new comment
     const newEl = document.getElementById('cmt-'+res.comment.id);
     if (newEl) newEl.scrollIntoView({behavior:'smooth',block:'end'});
-    toast('Комментарий добавлен ✓','success');
+    toast(CH_I18N.t('blog.toast.comment_added'),'success');
   } catch(e) { toast(e.message,'error'); }
   finally { btn.disabled=false; }
 }
 
 // ── INIT ─────────────────────────────────────────────────────────
 async function init() {
+  await new Promise(res => CH_I18N.onReady(res));
   CH.initHeader();
   // CH will be updated after auth resolves
 
@@ -1508,6 +1519,20 @@ async function init() {
     showView('list');
   }
 }
+
+// ── LANGUAGE SWITCH: refresh dynamic (JS-rendered) content ───────
+document.addEventListener('ch-lang-changed', () => {
+  buildHeader();
+  if (document.getElementById('view-list').style.display !== 'none') renderList();
+  if (document.getElementById('view-post').style.display !== 'none' && currentPost) openPost(currentPost.id, true);
+  if (document.getElementById('view-comments').style.display !== 'none') {
+    renderBanNotice();
+    renderWriteForm();
+    renderComments();
+    const label = document.getElementById('cmt-count-label');
+    label.textContent = cmtData.length === 0 ? CH_I18N.t('blog.no_comments_yet') : CH_I18N.tn('blog.comment_count', cmtData.length);
+  }
+});
 
 init();
 </script>

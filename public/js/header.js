@@ -14,46 +14,76 @@
 
   const ADMINS = ['chesshome', 'marina64'];
 
+  // ─── i18n ─────────────────────────────────────────────────────────────────
+  // header.js подключается на КАЖДОЙ странице сайта, поэтому сам гарантирует
+  // наличие /js/i18n.js — странице не нужно помнить о нём отдельно. Если
+  // i18n.js уже подключён (как в settings.html) — просто дожидаемся его.
+  function t(key, vars) {
+    return (window.CH_I18N && window.CH_I18N.t) ? window.CH_I18N.t(key, vars) : key;
+  }
+  function _ensureI18nReady() {
+    return new Promise(resolve => {
+      function whenReady() {
+        if (window.CH_I18N && window.CH_I18N.onReady) window.CH_I18N.onReady(resolve);
+        else resolve(); // не блокируем хедер, если i18n почему-то не загрузился
+      }
+      if (window.CH_I18N) { whenReady(); return; }
+      const existing = document.querySelector('script[src="/js/i18n.js"]');
+      if (existing) {
+        existing.addEventListener('load', whenReady);
+        existing.addEventListener('error', resolve);
+        return;
+      }
+      const s = document.createElement('script');
+      s.src = '/js/i18n.js';
+      s.onload = whenReady;
+      s.onerror = resolve;
+      document.head.appendChild(s);
+    });
+  }
+
   // ─── МЕНЮ ─────────────────────────────────────────────────────────────────
+  // label заменён на i18nLabel (ключ словаря) — сам текст подставляется
+  // функцией t() в момент отрисовки, а не при загрузке скрипта.
   const NAV = [
     {
-      label: 'Игра',
+      i18nLabel: 'header.sec_play',
       items: [
-        { id: 'lobby',       label: 'Играть',   icon: '⚔️',  href: '/lobby' },
-        { id: 'tournaments', label: 'Турниры',  icon: '🏆',  href: '/tournaments', spa: false },
-        { id: 'club-tournaments', label: 'Межклубные турниры', icon: '🏰', href: '/interclub-tournaments.html', spa: false },
+        { id: 'lobby',       i18nLabel: 'header.nav_play',   icon: '⚔️',  href: '/lobby' },
+        { id: 'tournaments', i18nLabel: 'header.nav_tournaments',  icon: '🏆',  href: '/tournaments', spa: false },
+        { id: 'club-tournaments', i18nLabel: 'header.nav_club_tournaments', icon: '🏰', href: '/interclub-tournaments.html', spa: false },
       ]
     },
     {
-      label: 'Задачи',
+      i18nLabel: 'header.sec_puzzles',
       items: [
-        { id: 'puzzles', label: 'Задачи',        icon: '🧩', href: '/puzzles' },
-        { id: 'storm',   label: 'Puzzle Storm',  icon: '⚡', href: '/storm', spa: false },
+        { id: 'puzzles', i18nLabel: 'header.nav_puzzles',        icon: '🧩', href: '/puzzles' },
+        { id: 'storm',   i18nLabel: 'header.nav_storm',  icon: '⚡', href: '/storm', spa: false },
       ]
     },
     {
-      label: 'Сообщество',
+      i18nLabel: 'header.sec_community',
       items: [
-        { id: 'clubs', label: 'Клубы',   icon: '🛡️', href: '/clubs', spa: false },
-        { id: 'blog',  label: 'Блоги',   icon: '📰', href: '/blog', spa: false },
-        { id: 'news',  label: 'Новости', icon: '📢', href: '/news', spa: false },
-        { id: 'forum', label: 'Форумы',  icon: '💬', href: '/forum', spa: false },
+        { id: 'clubs', i18nLabel: 'header.nav_clubs',   icon: '🛡️', href: '/clubs', spa: false },
+        { id: 'blog',  i18nLabel: 'header.nav_blog',   icon: '📰', href: '/blog', spa: false },
+        { id: 'news',  i18nLabel: 'header.nav_news', icon: '📢', href: '/news', spa: false },
+        { id: 'forum', i18nLabel: 'header.nav_forum',  icon: '💬', href: '/forum', spa: false },
       ]
     },
     {
-      label: 'Инструменты',
+      i18nLabel: 'header.sec_tools',
       items: [
-        { id: 'analysis', label: 'Анализ',   icon: '🔍', href: '/analysis' },
-        { id: 'editor',   label: 'Редактор', icon: '✏️', href: '/editor' },
+        { id: 'analysis', i18nLabel: 'header.nav_analysis',   icon: '🔍', href: '/analysis' },
+        { id: 'editor',   i18nLabel: 'header.nav_editor', icon: '✏️', href: '/editor' },
       ]
     },
     {
-      label: 'Другое',
+      i18nLabel: 'header.sec_other',
       items: [
-        { id: 'stats',     label: 'Статистика сайта', icon: '📊', href: '/stats', spa: false },
-        { id: 'age',       label: 'Возраст сайта',    icon: '🎂', href: '/age', spa: false },
-        { id: 'dev-diary', label: 'Дневник разработки', icon: '📔', href: '/dev-diary', spa: false },
-        { id: 'report',    label: 'Репорт',             icon: '🚩', href: '/report', spa: false}
+        { id: 'stats',     i18nLabel: 'header.nav_stats', icon: '📊', href: '/stats', spa: false },
+        { id: 'age',       i18nLabel: 'header.nav_age',    icon: '🎂', href: '/age', spa: false },
+        { id: 'dev-diary', i18nLabel: 'header.nav_dev_diary', icon: '📔', href: '/dev-diary', spa: false },
+        { id: 'report',    i18nLabel: 'header.nav_report',             icon: '🚩', href: '/report', spa: false}
       ]
     },
   ];
@@ -61,17 +91,17 @@
   // Отдельная ссылка "Поддержать проект" — идёт ПОСЛЕ разделов меню,
   // не является дропдауном (как DONATE у lichess.org)
   const SUPPORT_LINK = {
-    label: 'Поддержать проект',
+    i18nLabel: 'header.nav_support',
     icon: '❤',
     href: 'https://pay.cloudtips.ru/p/b0c3a0aa',
   };
 
   const BOTTOM_NAV = [
-    { id: 'home',     label: 'Главная', icon: '♚', href: '/' },
-    { id: 'lobby',    label: 'Играть',  icon: '⚔️', href: '/lobby' },
-    { id: 'puzzles',  label: 'Задачи',  icon: '🧩', href: '/puzzles' },
-    { id: 'stats',    label: 'Анализ',    icon: '🔍', href: '/analysis', spa: false },
-    { id: 'more',     label: 'Ещё',     icon: '☰',  href: null, action: 'drawer' },
+    { id: 'home',     i18nLabel: 'header.nav_home', icon: '♚', href: '/' },
+    { id: 'lobby',    i18nLabel: 'header.nav_play',  icon: '⚔️', href: '/lobby' },
+    { id: 'puzzles',  i18nLabel: 'header.nav_puzzles',  icon: '🧩', href: '/puzzles' },
+    { id: 'stats',    i18nLabel: 'header.nav_analysis',    icon: '🔍', href: '/analysis', spa: false },
+    { id: 'more',     i18nLabel: 'header.nav_more',     icon: '☰',  href: null, action: 'drawer' },
   ];
 
   // ─── STATE ────────────────────────────────────────────────────────────────
@@ -159,7 +189,7 @@
   // Значок VIP приходит с сервера уже посчитанным (u.vip) — сам гаснет через месяц,
   // здесь просто рисуем картинку, если он активен.
   function vipBadgeHTML(u) {
-    return (u && u.vip) ? `<img src="/img/vip.png" class="ch-vip-badge" alt="VIP" title="VIP-игрок">` : '';
+    return (u && u.vip) ? `<img src="/img/vip.png" class="ch-vip-badge" alt="VIP" title="${esc(t('header.vip_player'))}">` : '';
   }
   function avatarHTML(u) {
     if (u.avatar) return `<img src="${esc(u.avatar)}" alt="">`;
@@ -186,17 +216,17 @@
         const active = _s.activePage === item.id ? ' active' : '';
         return `<a href="${esc(item.href)}" class="${active}"
           onclick="event.preventDefault();(window.showPage&&${item.spa!==false}?showPage('${item.id}'):location.href='${esc(item.href)}')">
-          <span class="ch-drop-icon">${item.icon}</span>${esc(item.label)}
+          <span class="ch-drop-icon">${item.icon}</span>${esc(t(item.i18nLabel))}
         </a>`;
       }).join('');
       return `<li class="ch-sec">
-        <span class="ch-sec-btn">${esc(sec.label)}<span class="ch-arr">▾</span></span>
+        <span class="ch-sec-btn">${esc(t(sec.i18nLabel))}<span class="ch-arr">▾</span></span>
         <div class="ch-drop">${links}</div>
       </li>`;
     }).join('');
     const supportLink = `<li class="ch-sec ch-sec-plain">
       <a href="${esc(SUPPORT_LINK.href)}" class="ch-support-link" target="_blank" rel="noopener">
-        <span class="ch-support-icon">${SUPPORT_LINK.icon}</span>${esc(SUPPORT_LINK.label)}
+        <span class="ch-support-icon">${SUPPORT_LINK.icon}</span>${esc(t(SUPPORT_LINK.i18nLabel))}
       </a>
     </li>`;
     return sections + supportLink;
@@ -204,24 +234,24 @@
   function _buildDrawerLinks() {
     let h = '';
     NAV.forEach((sec, i) => {
-      h += `<div class="ch-dr-section">${esc(sec.label)}</div>`;
+      h += `<div class="ch-dr-section">${esc(t(sec.i18nLabel))}</div>`;
       sec.items.forEach(item => {
         const active = _s.activePage === item.id ? ' active' : '';
         h += `<a href="${esc(item.href)}" class="ch-dl-item${active}"
           onclick="event.preventDefault();(window.showPage&&${item.spa!==false}?showPage('${item.id}'):location.href='${esc(item.href)}');CH.closeMobileNav()">
-          <span class="ch-dl-icon">${item.icon}</span>${esc(item.label)}
+          <span class="ch-dl-icon">${item.icon}</span>${esc(t(item.i18nLabel))}
         </a>`;
       });
       if (i < NAV.length - 1) h += `<div class="ch-dr-sep"></div>`;
     });
     h += `<div class="ch-dr-sep"></div>
       <a href="${esc(SUPPORT_LINK.href)}" class="ch-dl-item ch-support-link" target="_blank" rel="noopener">
-        <span class="ch-dl-icon">${SUPPORT_LINK.icon}</span>${esc(SUPPORT_LINK.label)}
+        <span class="ch-dl-icon">${SUPPORT_LINK.icon}</span>${esc(t(SUPPORT_LINK.i18nLabel))}
       </a>`;
     h += `<div class="ch-dr-sep"></div>
       <a href="/settings" class="ch-dl-item"
         onclick="event.preventDefault();(window.showPage?showPage('settings'):location.href='/settings');CH.closeMobileNav()">
-        <span class="ch-dl-icon">⚙️</span>Настройки
+        <span class="ch-dl-icon">⚙️</span>${esc(t('header.nav_settings'))}
       </a>`;
     return h;
   }
@@ -722,12 +752,12 @@
       const active = _s.activePage === item.id ? ' active' : '';
       if (item.action === 'drawer') {
         return `<button class="ch-bn-item${active}" id="ch-bn-more" onclick="CH.openMobileNav()">
-          <span class="ch-bn-icon">${item.icon}</span><span>${esc(item.label)}</span>
+          <span class="ch-bn-icon">${item.icon}</span><span>${esc(t(item.i18nLabel))}</span>
         </button>`;
       }
       return `<a href="${esc(item.href)}" class="ch-bn-item${active}" id="ch-bn-${item.id}"
         onclick="event.preventDefault();(window.showPage&&${item.spa!==false}?showPage('${item.id}'):location.href='${esc(item.href)}')">
-        <span class="ch-bn-icon">${item.icon}</span><span>${esc(item.label)}</span>
+        <span class="ch-bn-icon">${item.icon}</span><span>${esc(t(item.i18nLabel))}</span>
       </a>`;
     }).join('');
   }
@@ -735,8 +765,8 @@
   // ─── ФУНКЦИЯ ПОКАЗА ДРУЗЕЙ ОНЛАЙН ─────────────────────────────────────────
   async function showOnlineFriends() {
     if (!_s.currentUser) {
-      if (typeof toast === 'function') toast('Войдите, чтобы видеть друзей', 'info');
-      else console.log('Необходимо войти');
+      if (typeof toast === 'function') toast(t('header.toast_login_to_see_friends'), 'info');
+      else console.log(t('header.console_need_login'));
       return;
     }
     try {
@@ -745,8 +775,8 @@
       });
       const data = await res.json();
       if (!data.length) {
-        if (typeof toast === 'function') toast('Нет друзей онлайн', 'info');
-        else console.log('Нет друзей онлайн');
+        if (typeof toast === 'function') toast(t('header.toast_no_friends_online'), 'info');
+        else console.log(t('header.toast_no_friends_online'));
         return;
       }
       let modal = document.getElementById('modal-online-friends');
@@ -760,7 +790,7 @@
       modal.innerHTML = `
         <div class="modal" style="max-width:320px;text-align:center">
           <button class="modal-close" onclick="document.getElementById('modal-online-friends').classList.remove('open')">✕</button>
-          <h2>👥 Друзья онлайн</h2>
+          <h2>👥 ${esc(t('header.friends_online_label'))}</h2>
           <div id="friends-list" style="max-height:300px;overflow-y:auto"></div>
         </div>`;
       const listDiv = modal.querySelector('#friends-list');
@@ -774,7 +804,7 @@
       document.body.appendChild(modal);
       modal.classList.add('open');
     } catch(e) {
-      if (typeof toast === 'function') toast('Ошибка загрузки друзей', 'error');
+      if (typeof toast === 'function') toast(t('header.toast_error_loading_friends'), 'error');
       console.error(e);
     }
   }
@@ -799,12 +829,12 @@
       </a>
       <ul id="ch-nav">${_buildDesktopNav()}</ul>
       <div id="ch-header-right"></div>
-      <button id="ch-hamburger" aria-label="Меню">
+      <button id="ch-hamburger" aria-label="${esc(t('header.menu_aria'))}">
         <span></span><span></span><span></span>
       </button>
       <div id="ch-online-badge">
         <div class="ch-dot online-dot"></div>
-        <span id="ch-online-count">${_s.onlineCount}</span>&nbsp;онлайн
+        <span id="ch-online-count">${_s.onlineCount}</span>&nbsp;${esc(t('header.online_suffix'))}
       </div>
     `;
 
@@ -827,7 +857,7 @@
       <div class="ch-dr-foot">
         <div class="ch-dr-online">
           <div class="ch-dot"></div>
-          <span id="ch-drawer-online-count">${_s.onlineCount}</span>&nbsp;игроков онлайн
+          <span id="ch-drawer-online-count">${_s.onlineCount}</span>&nbsp;${esc(t('header.players_online_suffix'))}
         </div>
         <div id="ch-drawer-user-area" style="margin-top:9px"></div>
       </div>
@@ -853,7 +883,7 @@
     // Плавающая кнопка "Друзья онлайн"
     const friendsFloat = document.createElement('div');
     friendsFloat.id = 'ch-friends-float';
-    friendsFloat.innerHTML = '👥 Друзья онлайн';
+    friendsFloat.innerHTML = '👥 ' + esc(t('header.friends_online_label'));
     friendsFloat.addEventListener('click', showOnlineFriends);
     root.appendChild(friendsFloat);
 
@@ -864,6 +894,16 @@
     document.getElementById('ch-hamburger')
       .addEventListener('click', () => CH.openMobileNav());
 
+    _bindGlobalListenersOnce();
+  }
+
+  // Глобальные обработчики (клик вне юзер-меню, Escape) должны быть навешаны
+  // ровно один раз за всё время жизни страницы — иначе при пересборке хедера
+  // (например, при смене языка) они бы задваивались.
+  let _globalListenersBound = false;
+  function _bindGlobalListenersOnce() {
+    if (_globalListenersBound) return;
+    _globalListenersBound = true;
     document.addEventListener('click', e => {
       if (!e.target.closest('#ch-user-wrap')) {
         document.getElementById('ch-udrop')?.classList.remove('open');
@@ -885,12 +925,12 @@
 
     if (!u) {
       el.innerHTML = `<div class="ch-auth-buttons">
-        <button class="ch-btn-ghost" onclick="CH.openAuthModal('login')">Войти</button>
-        <button class="ch-btn-primary" onclick="CH.openAuthModal('register')">Регистрация</button>
+        <button class="ch-btn-ghost" onclick="CH.openAuthModal('login')">${esc(t('header.login'))}</button>
+        <button class="ch-btn-primary" onclick="CH.openAuthModal('register')">${esc(t('header.register'))}</button>
       </div>`;
       const da = document.getElementById('ch-drawer-user-area');
       if (da) da.innerHTML = `<button class="ch-btn-primary" style="width:100%"
-        onclick="CH.openAuthModal('login');CH.closeMobileNav()">Войти</button>`;
+        onclick="CH.openAuthModal('login');CH.closeMobileNav()">${esc(t('header.login'))}</button>`;
       return;
     }
 
@@ -908,27 +948,27 @@
           <div class="ch-udrop-head">
             <div class="ch-udrop-name">${esc(u.username)}${vipBadgeHTML(u)}</div>
             <div class="ch-udrop-stats">
-              <div class="ch-udrop-stat"><strong>${u.rating || 1200}</strong>рейтинг</div>
-              <div class="ch-udrop-stat"><strong>${u.wins || 0}</strong>побед</div>
-              <div class="ch-udrop-stat"><strong>${u.gamesPlayed || 0}</strong>игр</div>
+              <div class="ch-udrop-stat"><strong>${u.rating || 1200}</strong>${esc(t('header.rating'))}</div>
+              <div class="ch-udrop-stat"><strong>${u.wins || 0}</strong>${esc(t('header.wins'))}</div>
+              <div class="ch-udrop-stat"><strong>${u.gamesPlayed || 0}</strong>${esc(t('header.games'))}</div>
             </div>
           </div>
           <a href="/profile" onclick="event.preventDefault();window._profileTarget=null;(window.showPage?showPage('profile'):location.href='/profile')">
-            <span class="ch-di-icon">👤</span>Мой профиль
+            <span class="ch-di-icon">👤</span>${esc(t('header.my_profile'))}
           </a>
           <a href="/inbox" onclick="event.preventDefault();location.href='/inbox'">
-            <span class="ch-di-icon">✉️</span>Сообщения
+            <span class="ch-di-icon">✉️</span>${esc(t('header.messages'))}
             ${_s.unreadCount > 0 ? `<span class="ch-di-badge" id="ch-unread-badge">${_s.unreadCount}</span>` : ''}
           </a>
           <a href="/settings" onclick="event.preventDefault();(window.showPage?showPage('settings'):location.href='/settings')">
-            <span class="ch-di-icon">⚙️</span>Настройки
+            <span class="ch-di-icon">⚙️</span>${esc(t('header.nav_settings'))}
           </a>
           ${admin ? `<a href="/admin" onclick="event.preventDefault();(window.showPage?showPage('admin'):location.href='/admin')">
-            <span class="ch-di-icon">🛡️</span>Панель Admin
+            <span class="ch-di-icon">🛡️</span>${esc(t('header.admin_panel'))}
           </a>` : ''}
           <div class="ch-udrop-sep"></div>
           <button class="ch-udrop-logout" id="ch-logout-btn">
-            <span class="ch-di-icon">🚪</span>Выйти
+            <span class="ch-di-icon">🚪</span>${esc(t('header.logout'))}
           </button>
         </div>
       </div>`;
@@ -951,8 +991,9 @@
   // ─── PUBLIC API ────────────────────────────────────────────────────────────
   const CH = {
 
-    initHeader(options = {}) {
+    async initHeader(options = {}) {
       if (options?.activePage) _s.activePage = options.activePage;
+      await _ensureI18nReady();
       _mount();
       _renderHeaderRight();
       CH.fetchOnlineCount();
@@ -1157,5 +1198,14 @@
   } else {
     CH.initHeader();
   }
+
+  // При смене языка (кнопка в настройках) хедер не отслеживает data-i18n —
+  // его текст собирается через innerHTML-шаблоны, поэтому проще и надёжнее
+  // просто пересобрать шапку/меню/бургер целиком с уже новым словарём.
+  document.addEventListener('ch-lang-changed', () => {
+    if (!document.getElementById('ch-root')) return; // хедер ещё не смонтирован
+    _mount();
+    _renderHeaderRight();
+  });
 
 })();

@@ -1,0 +1,524 @@
+{
+  "common": {
+    "close": "Close",
+    "save": "Save",
+    "search": "Search",
+    "error": "Error",
+    "login_required": "Please sign in"
+  },
+  "nav": {
+    "home": "Home",
+    "play": "Play",
+    "puzzles": "Puzzles",
+    "storm": "Puzzle Storm",
+    "analysis": "Game Analysis",
+    "editor": "Position Editor",
+    "tournaments": "Tournaments",
+    "clubs": "Clubs",
+    "blog": "Blog",
+    "forum": "Forums",
+    "settings": "Settings",
+    "profile": "My Profile",
+    "appeal": "Contact Support",
+    "faq": "FAQ",
+    "about": "About",
+    "privacy": "Privacy",
+    "terms": "Terms"
+  },
+  "settings": {
+    "title": "⚙️ Settings",
+    "page_title": "Settings — Chess Home",
+
+    "lang_title": "🌐 Language",
+    "lang_desc": "Interface language",
+    "lang_ru": "Русский",
+    "lang_en": "English",
+
+    "emoji_section_title": "😀 Profile Emoji",
+    "emoji_name": "Your emoji",
+    "emoji_desc": "Shown in chat and on your profile",
+    "emoji_remove": "✕ Remove",
+    "emoji_hint": "Click the preview to choose one. If none is selected, nothing is shown.",
+    "emoji_pick_title": "Click to choose an emoji",
+    "emoji_change_title": "Click to change your emoji",
+    "emoji_modal_title": "Choose an emoji",
+    "emoji_modal_remove": "✕ Remove emoji",
+
+    "game_section_title": "🎮 Gameplay",
+    "sounds_name": "Sound effects",
+    "sounds_desc": "Move, capture, and check sounds",
+    "hints_name": "Move hints",
+    "hints_desc": "Show legal moves",
+    "coords_name": "Board coordinates",
+    "coords_desc": "Letters and numbers around the edges",
+    "animation_name": "Move animation",
+    "animation_desc": "Smooth piece movement",
+
+    "board_section_title": "🎨 Board",
+    "board_theme_name": "Board theme",
+    "board_theme_classic": "Classic",
+    "board_theme_blue": "Blue",
+    "board_theme_green": "Green",
+    "board_theme_orange": "Orange",
+
+    "account_section_title": "👤 Account",
+    "account_not_logged_in": "Sign in to manage your profile",
+    "account_my_profile": "👤 My Profile",
+    "twofa_name": "Email sign-in verification (2FA)",
+    "twofa_desc": "You'll be asked for a code sent to your email when signing in",
+
+    "info_section_title": "🔗 Information",
+    "info_about": "About",
+    "info_privacy": "Privacy",
+    "info_terms": "Terms",
+    "info_footer": "Chess Home v1.0.0 · Made with ♥ in Russia",
+
+    "toast_saved": "Saved",
+    "toast_board_theme_saved": "Board theme saved",
+    "toast_emoji_saved": "Emoji saved!",
+    "toast_emoji_removed": "Emoji removed",
+    "toast_2fa_on": "2FA enabled",
+    "toast_2fa_off": "2FA disabled"
+  },
+
+  "header": {
+    "menu_aria": "Menu",
+    "online_suffix": "online",
+    "players_online_suffix": "players online",
+
+    "sec_play": "Play",
+    "sec_puzzles": "Puzzles",
+    "sec_community": "Community",
+    "sec_tools": "Tools",
+    "sec_other": "Other",
+
+    "nav_home": "Home",
+    "nav_play": "Play",
+    "nav_tournaments": "Tournaments",
+    "nav_club_tournaments": "Inter-club Tournaments",
+    "nav_puzzles": "Puzzles",
+    "nav_storm": "Puzzle Storm",
+    "nav_clubs": "Clubs",
+    "nav_blog": "Blog",
+    "nav_news": "News",
+    "nav_forum": "Forums",
+    "nav_analysis": "Analysis",
+    "nav_editor": "Editor",
+    "nav_stats": "Site Stats",
+    "nav_age": "Site Age",
+    "nav_dev_diary": "Dev Diary",
+    "nav_report": "Report",
+    "nav_support": "Support the project",
+    "nav_settings": "Settings",
+    "nav_more": "More",
+
+    "login": "Sign in",
+    "register": "Sign up",
+    "my_profile": "My Profile",
+    "messages": "Messages",
+    "admin_panel": "Admin Panel",
+    "logout": "Log out",
+
+    "rating": "rating",
+    "wins": "wins",
+    "games": "games",
+
+    "friends_online_label": "Friends online",
+    "toast_login_to_see_friends": "Sign in to see friends",
+    "toast_no_friends_online": "No friends online",
+    "toast_error_loading_friends": "Failed to load friends",
+    "console_need_login": "Sign-in required",
+    "vip_player": "VIP player"
+  },
+
+  "blog": {
+    "page_title": "Blog — Chess Home",
+    "title": "📰 Chess Home Blog",
+    "write_article": "✏️ Write an article",
+    "tab_official": "👑 Official",
+    "tab_community": "🌍 Community",
+    "filter_published": "Published",
+    "filter_my_drafts": "My drafts",
+    "filter_hidden": "🙈 Hidden",
+    "community_login_hint": "<a href=\"/\">Sign in</a> to write articles in the community blog",
+    "loading": "Loading...",
+    "loading_comments": "Loading comments...",
+
+    "disclaimer": {
+      "intro": "<b>Community Blog</b> — articles are written by Chess Home members.",
+      "short": " Opinions expressed by authors may not reflect the position of the administration.",
+      "full": "The Chess Home administration is not responsible for the content of posts by community members. The opinions, assessments, and judgments of authors are their own personal views and may not reflect the position of the platform's editors and administration. If you notice a rule violation, please use the \"Report\" button or contact an administrator.",
+      "more": "Details",
+      "less": "Hide",
+      "all_hidden_notice": "All hidden articles from both sections are shown here, regardless of the tab above.",
+      "all_drafts_notice": "All drafts from both sections are shown here, regardless of the tab above.",
+      "post_body": "<span class=\"vd-icon\">ℹ️</span><div>This post is from the <b style=\"color:var(--blue)\">community blog</b>. The author's opinion is their own and may not reflect the position of the Chess Home administration. The administration is not responsible for the content of member posts.</div>"
+    },
+
+    "back_to_list": "← All articles",
+    "back_to_post": "← Back to article",
+    "draft_badge": "DRAFT",
+    "likes_suffix": "likes",
+    "like_login_hint": "<a href=\"/\" style=\"color:var(--accent)\">Sign in</a> to like",
+    "manage_label": "⚙️ Manage",
+    "manage_article_label": "⚙️ Manage article",
+    "admin_panel_label": "⚙️ Admin panel",
+    "edit_link": "✏️ Edit",
+    "hide_btn": "🙈 Hide",
+    "delete_btn": "🗑 Delete",
+    "restore_btn": "↩️ Restore",
+    "delete_forever_btn": "🗑 Delete forever",
+    "to_draft_btn": "📦 To draft",
+    "publish_btn": "🚀 Publish",
+    "comments_label": "Comments",
+    "comment_login_hint": "<a href=\"/\">Sign in</a> to leave a comment",
+
+    "empty": {
+      "no_drafts": "No drafts",
+      "no_hidden": "No hidden articles",
+      "no_community": "There are no community articles yet. Be the first!",
+      "no_official": "There are no official articles yet.",
+      "no_comments": "Be the first to leave a comment!"
+    },
+
+    "badge_hidden": "🙈 HIDDEN",
+
+    "write_tab": "✏️ Write",
+    "preview_tab": "👁 Preview",
+    "editor_tab": "✏️ Editor",
+    "comment_placeholder": "Write a comment (Markdown supported)...\n**bold** *italic* `code` > quote",
+    "preview_empty_short": "Preview...",
+    "preview_empty_long": "Preview will appear here...",
+    "send_btn": "💬 Send",
+    "cancel_plain": "Cancel",
+    "cancel_btn": "✕ Cancel",
+
+    "new_article_title": "✏️ New article",
+    "edit_article_title": "✏️ Edit article",
+    "title_placeholder": "Article title...",
+    "toolbar": {
+      "bullet_list": "• list",
+      "numbered_list": "1. list",
+      "quote": "❝ quote",
+      "code": "&lt;/&gt; code",
+      "code_block": "``` block",
+      "link": "🔗 link",
+      "divider": "— divider",
+      "link_text": "text"
+    },
+    "editor_placeholder": "Write your article in Markdown...\n\n## Heading\n**bold** *italic* ~~strikethrough~~\n> quote\n\n- item\n- another item\n\n```\ncode\n```",
+    "editor_hint": "**bold** · *italic* · ## Heading · > quote · `code` · [link](url)",
+    "chars_suffix": "characters",
+    "save_draft_btn": "💾 Save draft",
+    "default_code_placeholder": "code here",
+
+    "edit_btn": "✏️ Edit",
+    "moderation_btn": "🛡 Moderate",
+    "deleted": "🗑 Deleted",
+    "deleted_by_admin": "🗑 Deleted by administrator",
+    "edited_tooltip": "Edited",
+    "edited_label": "✏️ edited",
+    "edits_left": "(edits left: {n})",
+    "mod_panel_title": "🛡 Moderator panel — {author}",
+    "mod": {
+      "mute_post": "🔇 Mute 1h (this post)",
+      "mute_global": "🔇 Mute 1h (everywhere)",
+      "ban_post": "🚫 Ban (this post)",
+      "ban_global": "🚫 Global ban",
+      "unban": "✅ Unban",
+      "action_mute": "Mute",
+      "action_ban": "Ban",
+      "action_unban": "Unban",
+      "scope_global": "globally (entire blog)",
+      "scope_post": "on this post"
+    },
+
+    "ban": {
+      "blocked": "🚫 You are blocked from commenting on this blog.",
+      "muted": "🔇 You're muted. You can post again in {mins} min."
+    },
+
+    "comment_count": {
+      "one": "{n} comment",
+      "other": "{n} comments"
+    },
+    "no_comments_yet": "No comments yet",
+
+    "confirm": {
+      "delete_post": "Delete this article? This cannot be undone.",
+      "delete_comment": "Delete this comment?",
+      "delete_forever": "Delete this article forever? This cannot be undone.",
+      "hide_post": "Hide this article? It will no longer be visible to anyone, but you can restore it from the \"Hidden\" tab.",
+      "mod_action": "{action} user {username} {scope}?"
+    },
+
+    "toast": {
+      "login_to_like": "Sign in to like",
+      "login_to_react": "Sign in to react",
+      "restored_to_draft": "Article restored to drafts",
+      "article_deleted": "Article deleted",
+      "published": "🚀 Published!",
+      "draft_saved": "💾 Draft saved",
+      "publish_toggle_on": "✅ Published!",
+      "publish_toggle_off": "📦 Moved to draft",
+      "hidden_done": "Article hidden. You can restore it from the \"Hidden\" tab",
+      "enter_title": "Enter a title",
+      "enter_body": "Write the article text",
+      "login_to_write": "Sign in to write articles",
+      "write_comment": "Write a comment",
+      "max_chars": "Maximum 4000 characters",
+      "empty_text": "Text cannot be empty",
+      "comment_added": "Comment added ✓",
+      "comment_updated": "Comment updated ✓",
+      "comment_deleted": "Comment deleted",
+      "mod_applied": "{action} applied to {username}"
+    },
+
+    "error": {
+      "bad_response": "The server returned an invalid response",
+      "server_error": "Server error ({status}). Try again or shorten the text"
+    }
+  },
+
+  "forum": {
+    "page_title": "Forum — Chess Home",
+    "title": "💬 Chess Home Forum",
+    "new_thread_btn": "✏️ New discussion",
+    "create_thread_title": "✏️ Create a discussion",
+    "title_label": "Title",
+    "title_placeholder": "A short summary…",
+    "description_label": "Description",
+    "cancel_btn": "Cancel",
+    "publish_btn": "📨 Post",
+    "publishing": "Publishing…",
+    "sending": "Sending…",
+    "limit_threads_hint": "⚠️ No more than 3 discussions per day",
+    "loading_forum": "Loading the forum…",
+    "loading_short": "Loading…",
+    "back_to_list": "← All discussions",
+    "search_replies_btn": "🔍 Search replies",
+    "your_reply": "💬 Your reply",
+    "reply_btn": "📨 Reply",
+    "reply_placeholder": "Your reply… (Markdown supported)",
+    "new_thread_placeholder": "Describe the topic in more detail. **Markdown** is supported…",
+    "limit_replies_hint": "⚠️ No more than 10 replies per day",
+    "auth_required_html": "To reply, you need to <a href=\"#\" style=\"color:var(--accent)\" onclick=\"openModal('modal-login');return false\">sign in</a>",
+
+    "login_modal_title": "♚ Sign in",
+    "username_label": "Username",
+    "username_placeholder": "Your nickname",
+    "password_label": "Password",
+    "password_placeholder": "Password",
+    "no_account_btn": "No account?",
+
+    "search_modal_title": "🔍 Search this discussion",
+    "search_placeholder": "A word or phrase...",
+
+    "author_label": "author:",
+    "last_reply_label": "last reply:",
+    "replies_label": "replies",
+    "views_label": "views",
+    "replies_abbrev": "replies",
+    "delete_thread_btn": "🗑 Delete discussion",
+    "empty_threads": "There are no discussions yet. Be the first!",
+    "empty_replies": "There are no replies yet. Be the first!",
+
+    "editor": {
+      "default_placeholder": "Write here…",
+      "empty_preview": "Enter some text…",
+      "tab_write": "Editor",
+      "tab_preview": "Preview",
+      "hint": "<b>**bold**</b> &nbsp; <i>*italic*</i> &nbsp; <code>`code`</code> &nbsp; &gt; quote",
+      "tooltip_bold": "Bold",
+      "tooltip_italic": "Italic",
+      "tooltip_strike": "Strikethrough",
+      "tooltip_h2": "Heading 2",
+      "tooltip_h3": "Heading 3",
+      "tooltip_quote": "Quote",
+      "tooltip_code": "Code",
+      "tooltip_codeblock": "Code block",
+      "tooltip_list": "List",
+      "tooltip_numbered": "Numbering",
+      "tooltip_hr": "Line",
+      "default_bold": "bold",
+      "default_italic": "italic",
+      "default_strike": "text",
+      "default_heading": "Heading",
+      "default_quote": "quote",
+      "default_code": "code",
+      "default_list_item": "item"
+    },
+
+    "time": {
+      "just_now": "just now",
+      "minutes_ago": "{n} min ago",
+      "hours_ago": "{n} h ago",
+      "days_ago": "{n} d ago"
+    },
+
+    "error_status": "Error {status}",
+    "error": {
+      "enter_title": "Enter a title",
+      "enter_description": "Enter a description",
+      "enter_reply": "Enter your reply text"
+    },
+
+    "confirm": {
+      "delete_thread": "Delete this discussion and all its replies?",
+      "delete_reply": "Delete this reply?"
+    },
+
+    "search": {
+      "enter_query": "Enter a search term...",
+      "no_results": "😕 No results found",
+      "found_count": "Found: {n}",
+      "page_label": "p. {page}"
+    },
+
+    "toast": {
+      "thread_created": "Discussion created ✅",
+      "reply_posted": "Reply posted ✅",
+      "deleted": "Deleted",
+      "no_thread_selected": "No discussion selected",
+      "welcome": "Welcome, {username}! ♟️"
+    }
+  },
+
+  "clubs": {
+    "page_title": "Clubs — Chess Home",
+    "title": "Clubs",
+    "subtitle": "Join chess clubs, chat and compete together",
+    "limit_member_prefix": "👤 You're in clubs: ",
+    "limit_created_prefix": "✏️ Created by you: ",
+    "tab_all": "🌍 All clubs",
+    "tab_my": "🛡️ My clubs",
+    "search_placeholder": "Search clubs...",
+    "create_btn": "+ Create a club",
+    "loading": "Loading...",
+    "back_to_list": "← All clubs",
+    "tab_home": "🏠 Home",
+    "tab_roster": "👥 Roster",
+    "tab_tournaments": "🏆 Tournaments",
+    "tab_stats": "📊 Statistics",
+    "cancel_btn": "Cancel",
+
+    "chat_title": "Club chat",
+    "chat_rules_tooltip": "Chat rules",
+    "chat_rules_title": "Chat rules",
+    "chat_rules_body": "Opinions expressed in messages may not reflect the position of the club or Chess Home administration.\nThe administration is not responsible for statements made by members.<br><br>Forbidden: insults, profanity, spam, advertising, links to third-party resources.\nViolators may be muted or banned from the chat.",
+    "chat_join_prompt": "Join the club to write in the chat",
+    "chat_input_placeholder": "Write a message...",
+    "chat_send_btn": "Send",
+    "chat_loading": "Loading chat...",
+
+    "tournaments_title": "🏆 Club tournaments",
+    "create_tournament_btn": "✚ Create a club tournament",
+
+    "create_modal_title": "🛡️ Create a club",
+    "name_label": "Club name *",
+    "name_placeholder": "For example: Russian Gambit",
+    "description_label": "Description",
+    "description_placeholder": "Tell us about your club...",
+    "create_hint": "⚠️ The name cannot contain \"ChessHome\" · Maximum 5 created clubs · Maximum 10 memberships",
+    "create_submit_btn": "Create",
+
+    "error": {
+      "bad_response": "The server returned an invalid response",
+      "try_again": "Please try again.",
+      "load_failed": "Failed to load clubs",
+      "load_club_failed": "Failed to load the club",
+      "load_tournaments_failed": "Failed to load tournaments",
+      "enter_name": "Enter a name"
+    },
+
+    "not_found_title": "No clubs found",
+    "not_found_my": "Join a club or create your own",
+    "not_found_search": "Try a different search",
+    "login_required_desc": "To see your clubs",
+    "badge_member": "✓ Member",
+
+    "members_label": "members",
+    "admins_label": "admins",
+    "created_label": "Created ",
+    "leave_btn": "🚪 Leave",
+    "join_btn": "+ Join",
+    "max_clubs_notice": "You're in 10 clubs (maximum)",
+    "delete_btn": "🗑️ Delete",
+    "no_description": "No description has been added yet",
+    "edit_btn": "✏️ Edit",
+    "role_creator": "♛ Creator",
+    "role_admin": "🛡 Administrator",
+    "role_member": "Member",
+    "tooltip_promote": "Make administrator",
+    "tooltip_demote": "Remove from role",
+    "tooltip_kick": "Remove",
+    "members_heading": "👥 Members ({n})",
+    "no_members": "No members",
+
+    "no_tournaments_title": "There are no tournaments yet",
+    "no_tournaments_desc": "Club administrators can create the first one",
+    "club_only_badge": "🔒 Club only",
+    "status": {
+      "active": "In progress",
+      "upcoming": "Soon",
+      "finished": "Finished"
+    },
+
+    "stat": {
+      "members": "Members",
+      "admins": "Administrators",
+      "total_tournaments": "Total tournaments",
+      "active_now": "Active now",
+      "upcoming": "Upcoming",
+      "finished": "Finished"
+    },
+
+    "confirm": {
+      "leave": "Leave the club?",
+      "kick": "Remove {username} from the club?",
+      "promote": "Make {username} an administrator?",
+      "demote": "Remove {username} from the administrator role?",
+      "delete_club": "Delete the club? This action cannot be undone."
+    },
+
+    "toast": {
+      "desc_updated": "Description updated",
+      "joined": "You've joined the club!",
+      "left": "You left the club",
+      "kicked": "{username} removed",
+      "promoted": "{username} appointed administrator",
+      "demoted": "{username} removed from the role",
+      "club_deleted": "Club deleted",
+      "club_created": "Club created!",
+      "muted": "{username} muted for 15 min.",
+      "banned": "{username} blocked from the club chat",
+      "report_sent": "Report sent to administrators"
+    },
+
+    "chat": {
+      "banned_permanent": "🚫 You are blocked from this club's chat",
+      "muted": "🔇 You're muted for {mins} more min.",
+      "error_prefix": "Error: ",
+      "forbidden_words": "The message contains forbidden words"
+    },
+
+    "badge_club_admin": "Club admin",
+    "mention_tooltip": "Mention ",
+    "tooltip_ban_mute": "Ban / Mute",
+    "tooltip_report": "Report",
+
+    "ban_modal": {
+      "title": "🚫 Action on {username}",
+      "subtitle": "Choose an action:",
+      "mute_btn": "🔇 Mute for 15 minutes — mute + delete all messages",
+      "ban_btn": "🚫 Ban — block permanently from this chat + delete all messages",
+      "report_btn": "🚩 Report only — notify the administration"
+    },
+
+    "report": {
+      "reason_prompt": "Reason for the report{forUser}:",
+      "for_user": " on {forUser}",
+      "reason_default": "Rule violation"
+    }
+  }
+}
