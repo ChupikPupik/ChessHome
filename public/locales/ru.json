@@ -28,12 +28,10 @@
   "settings": {
     "title": "⚙️ Настройки",
     "page_title": "Настройки — Chess Home",
-
     "lang_title": "🌐 Язык",
     "lang_desc": "Язык интерфейса сайта",
     "lang_ru": "Русский",
     "lang_en": "English",
-
     "emoji_section_title": "😀 Эмодзи профиля",
     "emoji_name": "Ваш эмодзи",
     "emoji_desc": "Отображается в чате и профиле",
@@ -43,7 +41,6 @@
     "emoji_change_title": "Кликните, чтобы сменить эмодзи",
     "emoji_modal_title": "Выберите эмодзи",
     "emoji_modal_remove": "✕ Убрать эмодзи",
-
     "game_section_title": "🎮 Игра",
     "sounds_name": "Звуковые эффекты",
     "sounds_desc": "Звуки ходов, взятий, шаха",
@@ -53,26 +50,22 @@
     "coords_desc": "Буквы и цифры по краям",
     "animation_name": "Анимация ходов",
     "animation_desc": "Плавное перемещение фигур",
-
     "board_section_title": "🎨 Доска",
     "board_theme_name": "Тема доски",
     "board_theme_classic": "Классическая",
     "board_theme_blue": "Синяя",
     "board_theme_green": "Зелёная",
     "board_theme_orange": "Оранжевая",
-
     "account_section_title": "👤 Аккаунт",
     "account_not_logged_in": "Войдите в аккаунт для управления профилем",
     "account_my_profile": "👤 Мой профиль",
     "twofa_name": "Подтверждение входа по email (2FA)",
     "twofa_desc": "При входе будет запрашиваться код, отправленный на вашу почту",
-
     "info_section_title": "🔗 Информация",
     "info_about": "О сайте",
     "info_privacy": "Конфиденциальность",
     "info_terms": "Соглашение",
     "info_footer": "Chess Home v1.0.0 · Сделано с ♥ в России",
-
     "toast_saved": "Сохранено",
     "toast_board_theme_saved": "Тема доски сохранена",
     "toast_emoji_saved": "Эмодзи сохранён!",
@@ -80,18 +73,15 @@
     "toast_2fa_on": "2FA включена",
     "toast_2fa_off": "2FA выключена"
   },
-
   "header": {
     "menu_aria": "Меню",
     "online_suffix": "онлайн",
     "players_online_suffix": "игроков онлайн",
-
     "sec_play": "Игра",
     "sec_puzzles": "Задачи",
     "sec_community": "Сообщество",
     "sec_tools": "Инструменты",
     "sec_other": "Другое",
-
     "nav_home": "Главная",
     "nav_play": "Играть",
     "nav_tournaments": "Турниры",
@@ -111,18 +101,15 @@
     "nav_support": "Поддержать проект",
     "nav_settings": "Настройки",
     "nav_more": "Ещё",
-
     "login": "Войти",
     "register": "Регистрация",
     "my_profile": "Мой профиль",
     "messages": "Сообщения",
     "admin_panel": "Панель Admin",
     "logout": "Выйти",
-
     "rating": "рейтинг",
     "wins": "побед",
     "games": "игр",
-
     "friends_online_label": "Друзья онлайн",
     "toast_login_to_see_friends": "Войдите, чтобы видеть друзей",
     "toast_no_friends_online": "Нет друзей онлайн",
@@ -130,7 +117,6 @@
     "console_need_login": "Необходимо войти",
     "vip_player": "VIP-игрок"
   },
-
   "blog": {
     "page_title": "Блог — Chess Home",
     "title": "📰 Блог Chess Home",
@@ -143,7 +129,6 @@
     "community_login_hint": "<a href=\"/\">Войдите</a>, чтобы писать статьи в блоге сообщества",
     "loading": "Загрузка...",
     "loading_comments": "Загрузка комментариев...",
-
     "disclaimer": {
       "intro": "<b>Блог сообщества</b> — статьи написаны участниками Chess Home.",
       "short": " Мнения авторов могут не совпадать с позицией администрации.",
@@ -154,7 +139,6 @@
       "all_drafts_notice": "Здесь показаны все черновики — из обоих разделов сразу, независимо от переключателя выше.",
       "post_body": "<span class=\"vd-icon\">ℹ️</span><div>Это публикация из <b style=\"color:var(--blue)\">блога сообщества</b>. Мнение автора является его личной позицией и может не совпадать с позицией администрации Chess Home. Администрация не несёт ответственности за содержание публикаций участников.</div>"
     },
-
     "back_to_list": "← Все статьи",
     "back_to_post": "← К статье",
     "draft_badge": "ЧЕРНОВИК",
@@ -172,7 +156,6 @@
     "publish_btn": "🚀 Опубликовать",
     "comments_label": "Комментарии",
     "comment_login_hint": "<a href=\"/\">Войдите</a>, чтобы оставить комментарий",
-
     "empty": {
       "no_drafts": "Черновиков нет",
       "no_hidden": "Скрытых статей нет",
@@ -180,9 +163,7 @@
       "no_official": "Официальных статей пока нет.",
       "no_comments": "Будьте первым, кто оставит комментарий!"
     },
-
     "badge_hidden": "🙈 ПРИКРЫТА",
-
     "write_tab": "✏️ Писать",
     "preview_tab": "👁 Предпросмотр",
     "editor_tab": "✏️ Редактор",
@@ -192,7 +173,6 @@
     "send_btn": "💬 Отправить",
     "cancel_plain": "Отмена",
     "cancel_btn": "✕ Отмена",
-
     "new_article_title": "✏️ Новая статья",
     "edit_article_title": "✏️ Редактировать статью",
     "title_placeholder": "Заголовок статьи...",
@@ -211,7 +191,6 @@
     "chars_suffix": "символов",
     "save_draft_btn": "💾 Сохранить черновик",
     "default_code_placeholder": "код здесь",
-
     "edit_btn": "✏️ Изменить",
     "moderation_btn": "🛡 Модерация",
     "deleted": "🗑 Удалено",
@@ -232,19 +211,16 @@
       "scope_global": "глобально (весь блог)",
       "scope_post": "на этом посте"
     },
-
     "ban": {
       "blocked": "🚫 Вы заблокированы в комментариях этого блога.",
       "muted": "🔇 Вы замьючены. Писать можно через {mins} мин."
     },
-
     "comment_count": {
       "one": "{n} комментарий",
       "few": "{n} комментария",
       "many": "{n} комментариев"
     },
     "no_comments_yet": "Комментариев пока нет",
-
     "confirm": {
       "delete_post": "Удалить эту статью? Отменить нельзя.",
       "delete_comment": "Удалить этот комментарий?",
@@ -252,7 +228,6 @@
       "hide_post": "Прикрыть эту статью? Она перестанет быть видна всем, но её можно будет вернуть во вкладке «Скрытые».",
       "mod_action": "{action} пользователя {username} {scope}?"
     },
-
     "toast": {
       "login_to_like": "Войдите, чтобы поставить лайк",
       "login_to_react": "Войдите, чтобы реагировать",
@@ -274,13 +249,11 @@
       "comment_deleted": "Комментарий удалён",
       "mod_applied": "{action} применён к {username}"
     },
-
     "error": {
       "bad_response": "Сервер вернул некорректный ответ",
       "server_error": "Ошибка сервера ({status}). Попробуйте ещё раз или сократите текст"
     }
   },
-
   "forum": {
     "page_title": "Форум — Chess Home",
     "title": "💬 Форум Chess Home",
@@ -304,17 +277,14 @@
     "new_thread_placeholder": "Опишите тему подробнее. Поддерживается **Markdown**…",
     "limit_replies_hint": "⚠️ Не более 10 ответов в сутки",
     "auth_required_html": "Чтобы отвечать, нужно <a href=\"#\" style=\"color:var(--accent)\" onclick=\"openModal('modal-login');return false\">войти в аккаунт</a>",
-
     "login_modal_title": "♚ Вход",
     "username_label": "Имя пользователя",
     "username_placeholder": "Ваш ник",
     "password_label": "Пароль",
     "password_placeholder": "Пароль",
     "no_account_btn": "Нет аккаунта?",
-
     "search_modal_title": "🔍 Поиск в теме",
     "search_placeholder": "Слово или фраза...",
-
     "author_label": "автор:",
     "last_reply_label": "посл. ответ:",
     "replies_label": "ответов",
@@ -323,7 +293,6 @@
     "delete_thread_btn": "🗑 Удалить тему",
     "empty_threads": "Обсуждений пока нет. Будьте первым!",
     "empty_replies": "Ответов пока нет. Будьте первым!",
-
     "editor": {
       "default_placeholder": "Напишите здесь…",
       "empty_preview": "Введите текст…",
@@ -349,33 +318,28 @@
       "default_code": "код",
       "default_list_item": "пункт"
     },
-
     "time": {
       "just_now": "только что",
       "minutes_ago": "{n} мин. назад",
       "hours_ago": "{n} ч. назад",
       "days_ago": "{n} дн. назад"
     },
-
     "error_status": "Ошибка {status}",
     "error": {
       "enter_title": "Введите заголовок",
       "enter_description": "Введите описание",
       "enter_reply": "Введите текст ответа"
     },
-
     "confirm": {
       "delete_thread": "Удалить обсуждение и все ответы?",
       "delete_reply": "Удалить ответ?"
     },
-
     "search": {
       "enter_query": "Введите запрос...",
       "no_results": "😕 Ничего не найдено",
       "found_count": "Найдено: {n}",
       "page_label": "стр. {page}"
     },
-
     "toast": {
       "thread_created": "Обсуждение создано ✅",
       "reply_posted": "Ответ опубликован ✅",
@@ -384,7 +348,6 @@
       "welcome": "Добро пожаловать, {username}! ♟️"
     }
   },
-
   "clubs": {
     "page_title": "Клубы — Chess Home",
     "title": "Клубы",
@@ -402,7 +365,6 @@
     "tab_tournaments": "🏆 Турниры",
     "tab_stats": "📊 Статистика",
     "cancel_btn": "Отмена",
-
     "chat_title": "Чат клуба",
     "chat_rules_tooltip": "Правила чата",
     "chat_rules_title": "Правила чата",
@@ -411,10 +373,8 @@
     "chat_input_placeholder": "Написать сообщение...",
     "chat_send_btn": "Отправить",
     "chat_loading": "Загрузка чата...",
-
     "tournaments_title": "🏆 Турниры клуба",
     "create_tournament_btn": "✚ Создать клубный турнир",
-
     "create_modal_title": "🛡️ Создать клуб",
     "name_label": "Название клуба *",
     "name_placeholder": "Например: Русский гамбит",
@@ -422,7 +382,6 @@
     "description_placeholder": "Расскажите о вашем клубе...",
     "create_hint": "⚠️ Название не может содержать «ChessHome» · Максимум 5 созданных клубов · Максимум 10 членств",
     "create_submit_btn": "Создать",
-
     "error": {
       "bad_response": "Сервер вернул некорректный ответ",
       "try_again": "Попробуйте ещё раз.",
@@ -431,13 +390,11 @@
       "load_tournaments_failed": "Не удалось загрузить турниры",
       "enter_name": "Введите название"
     },
-
     "not_found_title": "Клубов не найдено",
     "not_found_my": "Вступите в клуб или создайте свой",
     "not_found_search": "Попробуйте другой запрос",
     "login_required_desc": "Чтобы видеть свои клубы",
     "badge_member": "✓ В клубе",
-
     "members_label": "участников",
     "admins_label": "админов",
     "created_label": "Создан ",
@@ -455,7 +412,6 @@
     "tooltip_kick": "Исключить",
     "members_heading": "👥 Участники ({n})",
     "no_members": "Нет участников",
-
     "no_tournaments_title": "Турниров пока нет",
     "no_tournaments_desc": "Администраторы клуба могут создать первый",
     "club_only_badge": "🔒 Только клуб",
@@ -464,7 +420,6 @@
       "upcoming": "Скоро",
       "finished": "Завершён"
     },
-
     "stat": {
       "members": "Участников",
       "admins": "Администраторов",
@@ -473,7 +428,6 @@
       "upcoming": "Предстоят",
       "finished": "Завершено"
     },
-
     "confirm": {
       "leave": "Выйти из клуба?",
       "kick": "Исключить {username} из клуба?",
@@ -481,7 +435,6 @@
       "demote": "Снять {username} с должности администратора?",
       "delete_club": "Удалить клуб? Это действие необратимо."
     },
-
     "toast": {
       "desc_updated": "Описание обновлено",
       "joined": "Вы вступили в клуб!",
@@ -495,19 +448,16 @@
       "banned": "{username} заблокирован в чате клуба",
       "report_sent": "Репорт отправлен администраторам"
     },
-
     "chat": {
       "banned_permanent": "🚫 Вы заблокированы в чате этого клуба",
       "muted": "🔇 Вы заглушены ещё {mins} мин.",
       "error_prefix": "Ошибка: ",
       "forbidden_words": "Сообщение содержит запрещённые слова"
     },
-
     "badge_club_admin": "Админ клуба",
     "mention_tooltip": "Обратиться к ",
     "tooltip_ban_mute": "Бан / Мут",
     "tooltip_report": "Репорт",
-
     "ban_modal": {
       "title": "🚫 Действие над {username}",
       "subtitle": "Выберите действие:",
@@ -515,11 +465,263 @@
       "ban_btn": "🚫 Бан — заблокировать навсегда в этом чате + удалить все сообщения",
       "report_btn": "🚩 Только репорт — уведомить администрацию"
     },
-
     "report": {
       "reason_prompt": "Причина репорта{forUser}:",
       "for_user": " на {forUser}",
       "reason_default": "Нарушение правил"
+    }
+  },
+  "tournaments": {
+    "page_title": "Турниры — Chess Home",
+    "hero_title": "Арена <span>Турниры</span>",
+    "hero_subtitle": "Рейтинговые шахматные арены — поиск соперников в реальном времени",
+    "tab_active": "Идут сейчас",
+    "tab_upcoming": "Предстоят",
+    "tab_finished": "Завершены",
+    "create_btn": "✚ Создать турнир",
+    "creating_btn": "Создаём...",
+    "popular_title": "🔥 Самые популярные арены",
+    "modal_title": "🏆 Новый турнир",
+    "name_label": "Название турнира *",
+    "name_placeholder": "Воскресная арена · Блиц · и т.д.",
+    "description_label": "Описание",
+    "description_placeholder": "Краткое описание турнира...",
+    "time_control_label": "Контроль времени *",
+    "tc": {
+      "bullet_15s": "15 сек (Пуля)",
+      "bullet_1_0": "1+0 (Пуля)",
+      "bullet_1_1": "1+1 (Пуля)",
+      "bullet_2_1": "2+1 (Пуля)",
+      "blitz_3_0": "3+0 (Блиц)",
+      "blitz_3_2": "3+2 (Блиц)",
+      "blitz_5_0": "5+0 (Блиц)",
+      "blitz_5_3": "5+3 (Блиц)",
+      "rapid_10_0": "10+0 (Рапид)",
+      "rapid_10_5": "10+5 (Рапид)",
+      "rapid_15_10": "15+10 (Рапид)"
+    },
+    "duration_label": "Длительность *",
+    "duration_options": {
+      "d20": "20 минут",
+      "d30": "30 минут",
+      "d45": "45 минут",
+      "d60": "1 час",
+      "d90": "1.5 часа",
+      "d120": "2 часа"
+    },
+    "starts_at_label": "Дата и время начала *",
+    "max_participants_label": "Макс. участников",
+    "max_participants_hint": "0 — без ограничений",
+    "no_limit_placeholder": "0 = без лимита",
+    "min_rating_label": "Мин. рейтинг",
+    "max_rating_label": "Макс. рейтинг",
+    "club_section_label": "🛡️ Клубный турнир",
+    "club_select_default": "— Обычный турнир (без привязки к клубу) —",
+    "club_only_toggle_label": "Только для участников выбранного клуба",
+    "club_only_hint": "Доступно только администраторам клуба. Если галочка снята — турнир будет виден в клубе, но участвовать сможет любой.",
+    "blacklist_label": "⛔ Blacklist — кому закрыт вход",
+    "blacklist_placeholder": "Ник игрока...",
+    "blacklist_add_btn": "Добавить",
+    "blacklist_hint": "Эти игроки не смогут войти в турнир",
+    "cancel_btn": "Отмена",
+    "submit_btn": "🏆 Создать турнир",
+    "empty": {
+      "active": {
+        "title": "Активных турниров нет",
+        "sub": "Дождитесь начала запланированных арен"
+      },
+      "upcoming": {
+        "title": "Нет запланированных турниров",
+        "sub": "Скоро будут объявлены новые арены"
+      },
+      "finished": {
+        "title": "Нет завершённых турниров",
+        "sub": "Результаты турниров будут здесь"
+      }
+    },
+    "status": {
+      "active": "Идёт",
+      "upcoming": "Скоро",
+      "finished": "Завершён"
+    },
+    "time_left_prefix": "Осталось ",
+    "starts_in_prefix": "Начало через ",
+    "any_rating": "Любой рейтинг",
+    "participants_suffix": "уч.",
+    "minutes_abbr": "мин",
+    "user_created_badge": "От игрока",
+    "user_created_tooltip": "Турнир создан пользователем. ChessHome не несёт ответственности за выплату призов, если они заявлены в этом турнире.",
+    "club_badge_restricted": "Только для клуба",
+    "club_badge_open": "Турнир клуба",
+    "club_badge_tooltip_restricted": "Участвовать могут только члены клуба",
+    "club_badge_tooltip_open": "Турнир клуба, открыт для всех",
+    "duration": {
+      "zero": "0 сек",
+      "hours": "ч ",
+      "minutes": "м",
+      "seconds": "с"
+    },
+    "error": {
+      "bad_response": "Сервер вернул некорректный ответ",
+      "try_again": "Попробуйте ещё раз.",
+      "enter_name": "Введите название",
+      "pick_start_date": "Укажите дату начала",
+      "generic": "Ошибка"
+    },
+    "success": {
+      "created": "Турнир создан! 🏆"
+    },
+    "detail": {
+      "page_title": "Турнир — Chess Home",
+      "back_link": "← Все турниры",
+      "loading": "Загружаем турнир...",
+      "not_found": "Турнир не найден",
+      "winner_modal_title": "Победитель турнира!",
+      "winner_modal_btn": "🎉 Отлично!",
+      "anticheat_banned_suffix": "— заблокирован за читерство",
+      "status_banner": {
+        "playing_title": "Вы сейчас играете",
+        "playing_sub": "Партия идёт",
+        "go_to_game_btn": "Перейти",
+        "next_game_in_prefix": "Следующая партия через ",
+        "next_game_in_suffix": "с...",
+        "next_game_hint": "Успеете поставить паузу, если не готовы играть",
+        "pause_btn": "Пауза",
+        "searching_opponent": "Ищем соперника...",
+        "searching_hint": "Ожидаем подходящего игрока",
+        "paused_title": "На паузе",
+        "paused_hint": "Нажмите чтобы возобновить поиск",
+        "finished_title": "Партия завершена",
+        "finished_hint": "Нажмите ▶ Играть когда будете готовы",
+        "play_btn": "Играть"
+      },
+      "organizer": {
+        "chesshome_title": "Турнир организован администрацией ChessHome",
+        "label": "Организатор:",
+        "chesshome_name": "Администрация ChessHome",
+        "creator_title": "Кто создал этот турнир"
+      },
+      "starts_at": {
+        "title": "Дата и время начала турнира",
+        "started_label": "Начался",
+        "starts_label": "Начало"
+      },
+      "club": {
+        "title": "Турнир привязан к клубу",
+        "label": "Клуб:",
+        "fallback_name": "клуб",
+        "only_notice_prefix": "Участвовать могут только участники клуба "
+      },
+      "user_created_disclaimer": "Этот турнир создан пользователем, а не администрацией. Если в описании турнира заявлены призы — ChessHome не организует и не несёт ответственности за их выплату. Все договорённости о призах — личная ответственность организатора турнира.",
+      "stats": {
+        "time_control_title": "Контроль времени: минуты на партию + добавление секунд за ход",
+        "time_control_label": "Контроль",
+        "participants_title": "Сколько игроков сейчас в турнире (из максимума, если задан)",
+        "participants_label": "Участников",
+        "games_played_title": "Всего партий сыграно в этом турнире",
+        "games_played_label": "Партий сыграно",
+        "rating_title": "Ограничение по рейтингу для участия",
+        "rating_label": "Рейтинг",
+        "winner_title": "Победитель турнира",
+        "winner_label": "Победитель"
+      },
+      "actions": {
+        "join_btn": "Участвовать",
+        "leave_btn": "Покинуть",
+        "go_to_game_btn": "Перейти к партии"
+      },
+      "countdown": {
+        "time_left": "Осталось времени",
+        "starts_in": "Начало через"
+      },
+      "admin": {
+        "panel_title": "Управление турниром",
+        "delete_btn": "Удалить",
+        "edit_btn": "Редактировать",
+        "full_manage_btn": "Полное управление"
+      },
+      "tabs": {
+        "leaderboard": "Таблица лидеров",
+        "games": "Партии ({count})",
+        "chat": "Чат"
+      },
+      "leaderboard": {
+        "no_participants": "Участников пока нет",
+        "status": {
+          "playing": "Играет",
+          "waiting": "Ждёт",
+          "left": "Покинул",
+          "paused": "Пауза"
+        },
+        "ban_btn_title": "Забанить в турнире",
+        "you_badge": "ВЫ",
+        "header": {
+          "player": "Игрок",
+          "score": "Очки",
+          "wins": "Победы",
+          "draws": "Ничьи",
+          "losses": "Поражения",
+          "status": "Статус"
+        },
+        "scoring_note": "Победа = 2 очка · Ничья = 1 очко · Поражение = 0 очков"
+      },
+      "games": {
+        "none": "Партии ещё не начались",
+        "in_progress": "Идёт партия",
+        "watch_btn": "Наблюдать →",
+        "anticheat_flag": "Античит"
+      },
+      "join": {
+        "login_required": "Войдите в аккаунт",
+        "success": "Вы в турнире! 🎉 Ждите начала"
+      },
+      "leave": {
+        "confirm": "Покинуть турнир?",
+        "success": "Вы покинули турнир"
+      },
+      "chat": {
+        "empty": "Сообщений пока нет — начните обсуждение!",
+        "mute_btn_title": "Замутить",
+        "mute_btn": "мут",
+        "unmute_btn_title": "Снять мут",
+        "unmute_btn": "размутить",
+        "muted_tag": "Замучен",
+        "you_muted": "Вы замучены в чате турнира",
+        "you_unmuted": "С вас снят мут в чате турнира",
+        "login_required": "Войдите в аккаунт, чтобы писать в чат турнира",
+        "closed": "Чат турнира закрыт для новых сообщений — доступна только история",
+        "muted_until_prefix": "Вы замучены в чате этого турнира до ",
+        "input_placeholder": "Написать в чат турнира...",
+        "send_btn": "Отправить",
+        "send_failed": "Не удалось отправить сообщение",
+        "network_error": "Ошибка сети",
+        "mute_prompt": "На сколько минут замутить {username}? (1–1440)",
+        "invalid_value": "Некорректное значение",
+        "muted_success": "{username} замучен на {mins} мин.",
+        "unmuted_success": "{username} размучен"
+      },
+      "admin_actions": {
+        "delete_confirm": "Удалить турнир безвозвратно?",
+        "deleted": "Турнир удалён",
+        "ban_confirm": "Забанить {username} в этом турнире? Все их партии будут аннулированы.",
+        "banned_success": "{username} забанен в турнире",
+        "saving_btn": "Сохранение...",
+        "name_required": "Название обязательно",
+        "update_error": "Ошибка обновления",
+        "updated_success": "Турнир обновлён ✅"
+      },
+      "edit_modal": {
+        "title": "✏️ Редактировать турнир",
+        "name_label": "Название *",
+        "time_control_label": "Контроль времени",
+        "tc_15s": "15 сек",
+        "duration_label": "Длительность (мин)",
+        "starts_at_label": "Дата начала *",
+        "max_rating_placeholder": "0 = ∞",
+        "blacklist_label": "⛔ Blacklist",
+        "blacklist_placeholder": "Ник...",
+        "save_btn": "💾 Сохранить"
+      }
     }
   }
 }

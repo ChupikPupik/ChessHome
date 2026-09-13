@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Турнир — Chess Home</title>
+  <title data-i18n="tournaments.detail.page_title">Турнир — Chess Home</title>
   <link rel="stylesheet" href="/css/main.css">
 <link rel="icon" type="image/png" href="../img/logo/favicon.png">
   <style>
@@ -699,7 +699,7 @@
 <div class="t-page">
 
   <!-- BACK -->
-  <a href="/tournaments" class="t-back-link">
+  <a href="/tournaments" class="t-back-link" data-i18n="tournaments.detail.back_link">
     ← Все турниры
   </a>
 
@@ -707,7 +707,7 @@
     <!-- Loading -->
     <div id="t-loading" style="text-align:center;padding:80px 0;color:var(--text-muted)">
       <div style="font-size:48px;margin-bottom:16px">⏳</div>
-      <div>Загружаем турнир...</div>
+      <div data-i18n="tournaments.detail.loading">Загружаем турнир...</div>
     </div>
   </div>
 </div>
@@ -716,9 +716,9 @@
 <div class="winner-overlay" id="winner-overlay">
   <div class="winner-box">
     <span class="winner-trophy">🏆</span>
-    <div class="winner-title">Победитель турнира!</div>
+    <div class="winner-title" data-i18n="tournaments.detail.winner_modal_title">Победитель турнира!</div>
     <div class="winner-name" id="winner-name-display">—</div>
-    <button class="btn btn-primary" onclick="document.getElementById('winner-overlay').classList.remove('show')">
+    <button class="btn btn-primary" onclick="document.getElementById('winner-overlay').classList.remove('show')" data-i18n="tournaments.detail.winner_modal_btn">
       🎉 Отлично!
     </button>
   </div>
@@ -741,7 +741,7 @@ async function safeJson(res) {
   try {
     return await res.json();
   } catch (e) {
-    throw new Error('Сервер вернул некорректный ответ' + (res.status ? ` (${res.status})` : '') + '. Попробуйте ещё раз.');
+    throw new Error(CH_I18N.t('tournaments.error.bad_response') + (res.status ? ` (${res.status})` : '') + '. ' + CH_I18N.t('tournaments.error.try_again'));
   }
 }
 
@@ -782,7 +782,7 @@ async function loadTournament() {
   try {
     const r = await fetch(API + '/tournaments/' + tId);
     if (!r.ok) {
-      document.getElementById('t-content').innerHTML = '<div style="text-align:center;padding:80px 0;color:var(--text-muted)"><div style="font-size:48px">🔍</div><div style="margin-top:12px">Турнир не найден</div></div>';
+      document.getElementById('t-content').innerHTML = '<div style="text-align:center;padding:80px 0;color:var(--text-muted)"><div style="font-size:48px">🔍</div><div style="margin-top:12px">' + CH_I18N.t('tournaments.detail.not_found') + '</div></div>';
       return;
     }
     tData = await safeJson(r);
@@ -847,24 +847,24 @@ function updateMyStatusBanner() {
 
   if (isReallyPlaying) {
     banner.style.cssText = BASE + 'rgba(76,175,114,0.35);background:rgba(76,175,114,0.08)';
-    banner.innerHTML = '<span style="font-size:22px">⚡</span><div style="flex:1"><div style="color:var(--green)">Вы сейчас играете</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Партия идёт</div></div><a href="/game/' + myPart.currentGameId + '" class="btn btn-primary" style="font-size:12px;padding:7px 14px">♟ Перейти</a>';
+    banner.innerHTML = '<span style="font-size:22px">⚡</span><div style="flex:1"><div style="color:var(--green)">' + CH_I18N.t('tournaments.detail.status_banner.playing_title') + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">' + CH_I18N.t('tournaments.detail.status_banner.playing_sub') + '</div></div><a href="/game/' + myPart.currentGameId + '" class="btn btn-primary" style="font-size:12px;padding:7px 14px">' + CH_I18N.t('tournaments.detail.status_banner.go_to_game_btn') + '</a>';
   } else if (myPart.waiting && graceLeft > 0) {
     banner.style.cssText = BASE + 'rgba(201,168,76,0.3);background:rgba(201,168,76,0.07)';
     const secs = Math.ceil(graceLeft / 1000);
-    banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">Следующая партия через ' + secs + 'с...</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Успеете поставить паузу, если не готовы играть</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">⏸ Пауза</button>';
+    banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">' + CH_I18N.t('tournaments.detail.status_banner.next_game_in_prefix') + secs + CH_I18N.t('tournaments.detail.status_banner.next_game_in_suffix') + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">' + CH_I18N.t('tournaments.detail.status_banner.next_game_hint') + '</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">' + CH_I18N.t('tournaments.detail.status_banner.pause_btn') + '</button>';
     // Перерисовываем раз в секунду, пока идёт отсчёт — свежего tournament_update от сервера в это время не будет
     _graceBannerTimer = setTimeout(updateMyStatusBanner, 1000);
   } else if (myPart.waiting) {
     banner.style.cssText = BASE + 'rgba(201,168,76,0.3);background:rgba(201,168,76,0.07)';
-    banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">Ищем соперника...</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Ожидаем подходящего игрока</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">⏸ Пауза</button>';
+    banner.innerHTML = '<div style="width:18px;height:18px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--accent);border-radius:50%;animation:tSpin 0.8s linear infinite;flex-shrink:0"></div><div style="flex:1"><div style="color:var(--accent)">' + CH_I18N.t('tournaments.detail.status_banner.searching_opponent') + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">' + CH_I18N.t('tournaments.detail.status_banner.searching_hint') + '</div></div><button onclick="pauseTournament()" class="btn btn-secondary" style="font-size:12px;padding:7px 14px">' + CH_I18N.t('tournaments.detail.status_banner.pause_btn') + '</button>';
   } else {
     banner.style.cssText = BASE + 'var(--border);background:var(--bg-secondary)';
     // БАГ: подписи были перепутаны местами — при paused === true (реальная пауза)
     // показывался текст "Партия завершена", а не "На паузе", и наоборот.
     const pauseLabel = myPart.paused
-      ? '<div style="color:var(--text-secondary)">На паузе</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите чтобы возобновить поиск</div>'
-      : '<div style="color:var(--text-secondary)">Партия завершена</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">Нажмите ▶ Играть когда будете готовы</div>';
-    banner.innerHTML = '<span style="font-size:22px">⏸</span><div style="flex:1">' + pauseLabel + '</div><button onclick="resumeTournament()" class="btn btn-primary" style="font-size:12px;padding:7px 14px">▶ Играть</button>';
+      ? '<div style="color:var(--text-secondary)">' + CH_I18N.t('tournaments.detail.status_banner.paused_title') + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">' + CH_I18N.t('tournaments.detail.status_banner.paused_hint') + '</div>'
+      : '<div style="color:var(--text-secondary)">' + CH_I18N.t('tournaments.detail.status_banner.finished_title') + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400">' + CH_I18N.t('tournaments.detail.status_banner.finished_hint') + '</div>';
+    banner.innerHTML = '<span style="font-size:22px">⏸</span><div style="flex:1">' + pauseLabel + '</div><button onclick="resumeTournament()" class="btn btn-primary" style="font-size:12px;padding:7px 14px">' + CH_I18N.t('tournaments.detail.status_banner.play_btn') + '</button>';
   }
   banner.style.display = 'flex';
 }
@@ -969,7 +969,7 @@ function connectSocket() {
   });
 
   socket.on('anticheat_ban', function (data) {
-    toast('⚠️ ' + data.username + ' — заблокирован за читерство', 'error');
+    toast('⚠️ ' + data.username + ' ' + CH_I18N.t('tournaments.detail.anticheat_banned_suffix'), 'error');
     loadTournament();
   });
 
@@ -985,7 +985,7 @@ function connectSocket() {
     if (!data || data.tournamentId !== tId) return;
     const wipedIds = new Set(data.mutedIds || []);
     chatMessages.forEach(function (m) {
-      if (wipedIds.has(m.id)) { m.message = '[Замучен]'; m.muted = true; }
+      if (wipedIds.has(m.id)) { m.message = '[' + CH_I18N.t('tournaments.detail.chat.muted_tag') + ']'; m.muted = true; }
     });
     if (data.sysMsg) {
       chatMessages.push(data.sysMsg);
@@ -995,7 +995,7 @@ function connectSocket() {
     if (me && data.username && me.toLowerCase() === data.username.toLowerCase()) {
       chatMyMuteUntil = data.until;
       renderChatComposer();
-      toast('🔇 Вы замучены в чате турнира', 'error');
+      toast('🔇 ' + CH_I18N.t('tournaments.detail.chat.you_muted'), 'error');
     }
     renderChatMessages();
   });
@@ -1006,7 +1006,7 @@ function connectSocket() {
     if (me && data.username && me.toLowerCase() === data.username.toLowerCase()) {
       chatMyMuteUntil = 0;
       renderChatComposer();
-      toast('🔊 С вас снят мут в чате турнира', 'success');
+      toast('🔊 ' + CH_I18N.t('tournaments.detail.chat.you_unmuted'), 'success');
     }
   });
 }
@@ -1067,7 +1067,7 @@ function render() {
 }
 
 function buildHTML(status, isAdmin, myPart, canJoin) {
-  const statusLabel = { active:'Идёт', upcoming:'Скоро', finished:'Завершён' }[status] || status;
+  const statusLabel = { active:CH_I18N.t('tournaments.status.active'), upcoming:CH_I18N.t('tournaments.status.upcoming'), finished:CH_I18N.t('tournaments.status.finished') }[status] || status;
   const statusIcon  = { active:'⚡', upcoming:'🕐', finished:'🏁' }[status];
   const parts = tData.participants || [];
   const activeParts = parts.filter(p => !p.anticheatBanned);
@@ -1078,35 +1078,36 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
   // берём первое, что есть.
   const creatorName = tData.createdBy || tData.creatorUsername || tData.organizer || tData.ownerUsername;
   const organizerHtml = tData.createdByIsAdmin
-    ? `<div class="t-hero-meta-item" title="Турнир организован администрацией ChessHome">
-         <span class="t-hero-meta-icon">🛡</span>Организатор: <b class="admin-name">Администрация ChessHome</b>
+    ? `<div class="t-hero-meta-item" title="${CH_I18N.t('tournaments.detail.organizer.chesshome_title')}">
+         <span class="t-hero-meta-icon">🛡</span>${CH_I18N.t('tournaments.detail.organizer.label')} <b class="admin-name">${CH_I18N.t('tournaments.detail.organizer.chesshome_name')}</b>
        </div>`
     : creatorName
-      ? `<div class="t-hero-meta-item" title="Кто создал этот турнир">
-           <span class="t-hero-meta-icon">👤</span>Организатор:
+      ? `<div class="t-hero-meta-item" title="${CH_I18N.t('tournaments.detail.organizer.creator_title')}">
+           <span class="t-hero-meta-icon">👤</span>${CH_I18N.t('tournaments.detail.organizer.label')}
            <a href="/profile/${encodeURIComponent(creatorName)}">${escHtml(creatorName)}</a>
          </div>`
       : '';
 
-  const startsAtStr = tData.startsAt ? new Date(tData.startsAt).toLocaleString('ru-RU', {
+  const dtLocale = CH_I18N.getLang() === 'ru' ? 'ru-RU' : 'en-US';
+  const startsAtStr = tData.startsAt ? new Date(tData.startsAt).toLocaleString(dtLocale, {
     day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
   }) : '';
   const startsAtHtml = startsAtStr
-    ? `<div class="t-hero-meta-item" title="Дата и время начала турнира">
-         <span class="t-hero-meta-icon">📅</span>${status === 'finished' ? 'Начался' : 'Начало'}: <b>${escHtml(startsAtStr)}</b>
+    ? `<div class="t-hero-meta-item" title="${CH_I18N.t('tournaments.detail.starts_at.title')}">
+         <span class="t-hero-meta-icon">📅</span>${status === 'finished' ? CH_I18N.t('tournaments.detail.starts_at.started_label') : CH_I18N.t('tournaments.detail.starts_at.starts_label')}: <b>${escHtml(startsAtStr)}</b>
        </div>`
     : '';
 
   // ── Клубный турнир ──
   const clubHtml = tData.clubId
-    ? `<div class="t-hero-meta-item" title="Турнир привязан к клубу">
-         <span class="t-hero-meta-icon">🛡</span>Клуб:
-         <a href="/clubs/${escHtml(tData.clubId)}">${escHtml(tClubData ? tClubData.name : 'клуб')}</a>
+    ? `<div class="t-hero-meta-item" title="${CH_I18N.t('tournaments.detail.club.title')}">
+         <span class="t-hero-meta-icon">🛡</span>${CH_I18N.t('tournaments.detail.club.label')}
+         <a href="/clubs/${escHtml(tData.clubId)}">${escHtml(tClubData ? tClubData.name : CH_I18N.t('tournaments.detail.club.fallback_name'))}</a>
        </div>`
     : '';
   const clubOnlyNotice = (tData.clubOnly && tData.clubId)
     ? `<div class="t-hero-disclaimer" style="border-color:rgba(93,173,226,0.35);background:rgba(93,173,226,0.08);color:#5dade2">
-         🔒 Участвовать могут только участники клуба «${escHtml(tClubData ? tClubData.name : '')}»
+         🔒 ${CH_I18N.t('tournaments.detail.club.only_notice_prefix')}«${escHtml(tClubData ? tClubData.name : '')}»
        </div>`
     : '';
 
@@ -1125,46 +1126,46 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
           ${(organizerHtml || startsAtHtml || clubHtml) ? `<div class="t-hero-meta">${organizerHtml}${organizerHtml && (startsAtHtml||clubHtml) ? '<span class="t-hero-meta-sep">·</span>' : ''}${startsAtHtml}${startsAtHtml && clubHtml ? '<span class="t-hero-meta-sep">·</span>' : ''}${clubHtml}</div>` : ''}
           ${tData.description ? `<div class="t-hero-desc">${escHtml(tData.description)}</div>` : ''}
           ${clubOnlyNotice}
-          ${!tData.createdByIsAdmin ? `<div class="t-hero-disclaimer">⚠ Этот турнир создан пользователем, а не администрацией. Если в описании турнира заявлены призы — ChessHome не организует и не несёт ответственности за их выплату. Все договорённости о призах — личная ответственность организатора турнира.</div>` : ''}
+          ${!tData.createdByIsAdmin ? `<div class="t-hero-disclaimer">⚠ ${CH_I18N.t('tournaments.detail.user_created_disclaimer')}</div>` : ''}
         </div>
       </div>
 
       <div class="t-hero-stats">
-        <div class="t-stat" title="Контроль времени: минуты на партию + добавление секунд за ход">
-          <div class="t-stat-label"><span class="t-stat-icon">⏱</span>Контроль</div>
+        <div class="t-stat" title="${CH_I18N.t('tournaments.detail.stats.time_control_title')}">
+          <div class="t-stat-label"><span class="t-stat-icon">⏱</span>${CH_I18N.t('tournaments.detail.stats.time_control_label')}</div>
           <div class="t-stat-value accent" style="font-family:var(--font-mono)">${escHtml(tData.timeControl)}</div>
         </div>
-        <div class="t-stat" title="Сколько игроков сейчас в турнире (из максимума, если задан)">
-          <div class="t-stat-label"><span class="t-stat-icon">👥</span>Участников</div>
+        <div class="t-stat" title="${CH_I18N.t('tournaments.detail.stats.participants_title')}">
+          <div class="t-stat-label"><span class="t-stat-icon">👥</span>${CH_I18N.t('tournaments.detail.stats.participants_label')}</div>
           <div class="t-stat-value" id="stat-participants">${activeParts.length}${tData.maxParticipants ? '/' + tData.maxParticipants : ''}</div>
         </div>
-        <div class="t-stat" title="Всего партий сыграно в этом турнире">
-          <div class="t-stat-label"><span class="t-stat-icon">♟</span>Партий сыграно</div>
+        <div class="t-stat" title="${CH_I18N.t('tournaments.detail.stats.games_played_title')}">
+          <div class="t-stat-label"><span class="t-stat-icon">♟</span>${CH_I18N.t('tournaments.detail.stats.games_played_label')}</div>
           <div class="t-stat-value" id="stat-games">${(tData.games||[]).length}</div>
         </div>
         ${tData.minRating || (tData.maxRating && tData.maxRating < 9999) ? `
-        <div class="t-stat" title="Ограничение по рейтингу для участия">
-          <div class="t-stat-label"><span class="t-stat-icon">⭐</span>Рейтинг</div>
+        <div class="t-stat" title="${CH_I18N.t('tournaments.detail.stats.rating_title')}">
+          <div class="t-stat-label"><span class="t-stat-icon">⭐</span>${CH_I18N.t('tournaments.detail.stats.rating_label')}</div>
           <div class="t-stat-value">${tData.minRating||0}–${tData.maxRating>=9999?'∞':tData.maxRating}</div>
         </div>` : ''}
         ${tData.winner ? `
-        <div class="t-stat" title="Победитель турнира">
-          <div class="t-stat-label"><span class="t-stat-icon">🏆</span>Победитель</div>
+        <div class="t-stat" title="${CH_I18N.t('tournaments.detail.stats.winner_title')}">
+          <div class="t-stat-label"><span class="t-stat-icon">🏆</span>${CH_I18N.t('tournaments.detail.stats.winner_label')}</div>
           <div class="t-stat-value" style="color:var(--accent)">🥇 ${escHtml(tData.winner)}</div>
         </div>` : ''}
       </div>
 
       <div class="t-hero-actions">
-        ${canJoin && status !== 'finished' ? `<button class="btn btn-primary" id="btn-join" onclick="joinTournament()">⚡ Участвовать</button>` : ''}
-        ${myPart && !myPart.left && status !== 'finished' ? `<button class="btn btn-danger" id="btn-leave" onclick="leaveTournament()">↩ Покинуть</button>` : ''}
-        ${myPart?.currentGameId ? `<a class="btn btn-primary" href="/game/${myPart.currentGameId}">♟ Перейти к партии</a>` : ''}
+        ${canJoin && status !== 'finished' ? `<button class="btn btn-primary" id="btn-join" onclick="joinTournament()">⚡ ${CH_I18N.t('tournaments.detail.actions.join_btn')}</button>` : ''}
+        ${myPart && !myPart.left && status !== 'finished' ? `<button class="btn btn-danger" id="btn-leave" onclick="leaveTournament()">↩ ${CH_I18N.t('tournaments.detail.actions.leave_btn')}</button>` : ''}
+        ${myPart?.currentGameId ? `<a class="btn btn-primary" href="/game/${myPart.currentGameId}">♟ ${CH_I18N.t('tournaments.detail.actions.go_to_game_btn')}</a>` : ''}
       </div>
     </div>
 
     <!-- COUNTDOWN -->
     ${status !== 'finished' ? `
     <div class="countdown-block" id="countdown-block">
-      <span class="countdown-label">${status === 'active' ? 'Осталось времени' : 'Начало через'}</span>
+      <span class="countdown-label">${status === 'active' ? CH_I18N.t('tournaments.detail.countdown.time_left') : CH_I18N.t('tournaments.detail.countdown.starts_in')}</span>
       <span class="countdown-timer" id="countdown-timer">--:--:--</span>
       ${status === 'active' ? `
       <div class="progress-bar-wrap">
@@ -1175,19 +1176,19 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
     <!-- ADMIN PANEL -->
     ${isAdmin ? `
     <div class="admin-panel">
-      <div class="admin-panel-title">🛡 Управление турниром</div>
+      <div class="admin-panel-title">🛡 ${CH_I18N.t('tournaments.detail.admin.panel_title')}</div>
       <div class="admin-panel-row">
-        ${status === 'upcoming' ? `<button class="btn btn-secondary" onclick="adminDeleteTournament()">🗑 Удалить</button>` : ''}
-        ${status !== 'finished' ? `<button class="btn btn-secondary" onclick="adminEditTournament()">✏️ Редактировать</button>` : ''}
-        <a class="btn btn-secondary" href="/admin-tournament?id=${tId}">⚙️ Полное управление</a>
+        ${status === 'upcoming' ? `<button class="btn btn-secondary" onclick="adminDeleteTournament()">🗑 ${CH_I18N.t('tournaments.detail.admin.delete_btn')}</button>` : ''}
+        ${status !== 'finished' ? `<button class="btn btn-secondary" onclick="adminEditTournament()">✏️ ${CH_I18N.t('tournaments.detail.admin.edit_btn')}</button>` : ''}
+        <a class="btn btn-secondary" href="/admin-tournament?id=${tId}">⚙️ ${CH_I18N.t('tournaments.detail.admin.full_manage_btn')}</a>
       </div>
     </div>` : ''}
 
     <!-- SECTION TABS -->
     <div class="section-tabs">
-      <button class="section-tab active" data-section="leaderboard">🏅 Таблица лидеров</button>
-      <button class="section-tab" data-section="games">♟ Партии (${(tData.games||[]).length})</button>
-      <button class="section-tab" data-section="chat">💬 Чат</button>
+      <button class="section-tab active" data-section="leaderboard">🏅 ${CH_I18N.t('tournaments.detail.tabs.leaderboard')}</button>
+      <button class="section-tab" data-section="games">♟ ${CH_I18N.t('tournaments.detail.tabs.games', { count: (tData.games||[]).length })}</button>
+      <button class="section-tab" data-section="chat">💬 ${CH_I18N.t('tournaments.detail.tabs.chat')}</button>
     </div>
 
     <!-- LEADERBOARD -->
@@ -1212,7 +1213,7 @@ function buildLeaderboard() {
   if (!parts.length) {
     return `<div style="text-align:center;padding:48px;color:var(--text-muted)">
       <div style="font-size:40px;margin-bottom:12px">👥</div>
-      <div>Участников пока нет</div>
+      <div>${CH_I18N.t('tournaments.detail.leaderboard.no_participants')}</div>
     </div>`;
   }
   parts.sort((a,b) => b.score - a.score || b.wins - a.wins || a.losses - b.losses);
@@ -1229,17 +1230,17 @@ function buildLeaderboard() {
     ].filter(Boolean).join(' ');
 
     const statusHtml = p.currentGameId
-      ? `<span class="lb-status playing">⚡ Играет</span>`
+      ? `<span class="lb-status playing">⚡ ${CH_I18N.t('tournaments.detail.leaderboard.status.playing')}</span>`
       : p.waiting
-        ? `<span class="lb-status waiting">⏳ Ждёт</span>`
+        ? `<span class="lb-status waiting">⏳ ${CH_I18N.t('tournaments.detail.leaderboard.status.waiting')}</span>`
         : p.left
-          ? `<span class="lb-status idle">Покинул</span>`
+          ? `<span class="lb-status idle">${CH_I18N.t('tournaments.detail.leaderboard.status.left')}</span>`
           : p.paused
-            ? `<span class="lb-status idle">⏸ Пауза</span>`
+            ? `<span class="lb-status idle">⏸ ${CH_I18N.t('tournaments.detail.leaderboard.status.paused')}</span>`
             : `<span class="lb-status idle">—</span>`;
 
     const adminBanBtn = isAdmin && p.username !== me
-      ? `<button onclick="adminBanFromTournament('${escHtml(p.username)}')" class="btn btn-danger" style="font-size:10px;padding:2px 7px;margin-left:6px;border-radius:6px" title="Забанить в турнире">🚫</button>`
+      ? `<button onclick="adminBanFromTournament('${escHtml(p.username)}')" class="btn btn-danger" style="font-size:10px;padding:2px 7px;margin-left:6px;border-radius:6px" title="${CH_I18N.t('tournaments.detail.leaderboard.ban_btn_title')}">🚫</button>`
       : '';
 
     return `
@@ -1251,7 +1252,7 @@ function buildLeaderboard() {
             <div class="lb-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
               <a href="/profile/${encodeURIComponent(p.username)}">${escHtml(p.username)}</a>
               ${p.flame ? '<span class="flame-badge">🔥</span>' : ''}
-              ${p.username === me ? '<span style="font-size:10px;color:var(--accent)">ВЫ</span>' : ''}
+              ${p.username === me ? '<span style="font-size:10px;color:var(--accent)">' + CH_I18N.t('tournaments.detail.leaderboard.you_badge') + '</span>' : ''}
               ${adminBanBtn}
             </div>
             <div class="lb-rating">★ ${p.rating || '?'}</div>
@@ -1269,17 +1270,17 @@ function buildLeaderboard() {
     <div class="leaderboard">
       <div class="lb-row header">
         <div style="text-align:center">#</div>
-        <div>Игрок</div>
-        <div style="text-align:center">Очки</div>
-        <div style="text-align:center">Победы</div>
-        <div style="text-align:center">Ничьи</div>
-        <div style="text-align:center">Поражения</div>
-        <div>Статус</div>
+        <div>${CH_I18N.t('tournaments.detail.leaderboard.header.player')}</div>
+        <div style="text-align:center">${CH_I18N.t('tournaments.detail.leaderboard.header.score')}</div>
+        <div style="text-align:center">${CH_I18N.t('tournaments.detail.leaderboard.header.wins')}</div>
+        <div style="text-align:center">${CH_I18N.t('tournaments.detail.leaderboard.header.draws')}</div>
+        <div style="text-align:center">${CH_I18N.t('tournaments.detail.leaderboard.header.losses')}</div>
+        <div>${CH_I18N.t('tournaments.detail.leaderboard.header.status')}</div>
       </div>
       ${rows}
     </div>
     <div style="margin-top:12px;font-size:12px;color:var(--text-muted);text-align:center">
-      Победа = 2 очка · Ничья = 1 очко · Поражение = 0 очков
+      ${CH_I18N.t('tournaments.detail.leaderboard.scoring_note')}
     </div>`;
 }
 
@@ -1293,7 +1294,7 @@ function buildGames() {
   if (!games.length && !liveGames.length) {
     return `<div style="text-align:center;padding:48px;color:var(--text-muted)">
       <div style="font-size:40px;margin-bottom:12px">♟</div>
-      <div>Партии ещё не начались</div>
+      <div>${CH_I18N.t('tournaments.detail.games.none')}</div>
     </div>`;
   }
 
@@ -1301,8 +1302,8 @@ function buildGames() {
   const liveHTML = liveGames.map(g => `
     <a class="game-item live" href="/game/${g.id}">
       <span class="live-badge"><span class="live-dot"></span> LIVE</span>
-      <span class="game-player">Идёт партия</span>
-      <span style="font-size:12px;color:var(--green)">Наблюдать →</span>
+      <span class="game-player">${CH_I18N.t('tournaments.detail.games.in_progress')}</span>
+      <span style="font-size:12px;color:var(--green)">${CH_I18N.t('tournaments.detail.games.watch_btn')}</span>
     </a>`).join('');
 
   const gamesHTML = games.slice(0, 50).map(g => {
@@ -1319,7 +1320,7 @@ function buildGames() {
           <span class="${res[2]}">${g.result==='black'?'1':g.result==='draw'?'½':'0'}</span>
         </span>
         <span class="game-player ${res[2]}" style="text-align:right">${escHtml(g.black)}</span>
-        ${banned ? '<span style="color:var(--red);font-size:11px">⚠️ Античит</span>' : ''}
+        ${banned ? '<span style="color:var(--red);font-size:11px">⚠️ ' + CH_I18N.t('tournaments.detail.games.anticheat_flag') + '</span>' : ''}
       </a>`;
   }).join('');
 
@@ -1349,7 +1350,7 @@ function chatAuthorClass(m) {
 
 function buildChatMessagesHtml() {
   if (!chatMessages.length) {
-    return `<div class="t-chat-empty">💬 Сообщений пока нет — начните обсуждение!</div>`;
+    return `<div class="t-chat-empty">💬 ${CH_I18N.t('tournaments.detail.chat.empty')}</div>`;
   }
   return chatMessages.map(m => {
     if (m.system) {
@@ -1358,8 +1359,8 @@ function buildChatMessagesHtml() {
     const time = new Date(m.timestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const modActions = chatCanModerate
       ? `<span class="t-chat-mod-actions">
-           <button class="t-chat-mod-btn" title="Замутить" onclick="promptMuteTournamentUser('${escHtml(m.username)}')">🔇 мут</button>
-           ${m.muted ? `<button class="t-chat-mod-btn" title="Снять мут" onclick="unmuteTournamentUser('${escHtml(m.username)}')">🔓 размутить</button>` : ''}
+           <button class="t-chat-mod-btn" title="${CH_I18N.t('tournaments.detail.chat.mute_btn_title')}" onclick="promptMuteTournamentUser('${escHtml(m.username)}')">🔇 ${CH_I18N.t('tournaments.detail.chat.mute_btn')}</button>
+           ${m.muted ? `<button class="t-chat-mod-btn" title="${CH_I18N.t('tournaments.detail.chat.unmute_btn_title')}" onclick="unmuteTournamentUser('${escHtml(m.username)}')">🔓 ${CH_I18N.t('tournaments.detail.chat.unmute_btn')}</button>` : ''}
          </span>`
       : '';
     return `
@@ -1376,19 +1377,20 @@ function buildChatMessagesHtml() {
 
 function buildChatComposerHtml() {
   if (!currentUser) {
-    return `<div class="t-chat-closed-banner">Войдите в аккаунт, чтобы писать в чат турнира</div>`;
+    return `<div class="t-chat-closed-banner">${CH_I18N.t('tournaments.detail.chat.login_required')}</div>`;
   }
   if (!isTournamentChatOpenNow()) {
-    return `<div class="t-chat-closed-banner">🔒 Чат турнира закрыт для новых сообщений — доступна только история</div>`;
+    return `<div class="t-chat-closed-banner">🔒 ${CH_I18N.t('tournaments.detail.chat.closed')}</div>`;
   }
   if (chatMyMuteUntil && chatMyMuteUntil > Date.now()) {
-    const until = new Date(chatMyMuteUntil).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-    return `<div class="t-chat-muted-banner">🔇 Вы замучены в чате этого турнира до ${escHtml(until)}</div>`;
+    const dtLocale = CH_I18N.getLang() === 'ru' ? 'ru-RU' : 'en-US';
+    const until = new Date(chatMyMuteUntil).toLocaleString(dtLocale, { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    return `<div class="t-chat-muted-banner">🔇 ${CH_I18N.t('tournaments.detail.chat.muted_until_prefix')}${escHtml(until)}</div>`;
   }
   return `
     <div class="t-chat-composer">
-      <input class="t-chat-input" id="chat-input" type="text" maxlength="300" placeholder="Написать в чат турнира..." onkeydown="if(event.key==='Enter'){event.preventDefault();sendTournamentChatMessage();}">
-      <button class="t-chat-send-btn" id="chat-send-btn" onclick="sendTournamentChatMessage()">Отправить</button>
+      <input class="t-chat-input" id="chat-input" type="text" maxlength="300" placeholder="${CH_I18N.t('tournaments.detail.chat.input_placeholder')}" onkeydown="if(event.key==='Enter'){event.preventDefault();sendTournamentChatMessage();}">
+      <button class="t-chat-send-btn" id="chat-send-btn" onclick="sendTournamentChatMessage()">${CH_I18N.t('tournaments.detail.chat.send_btn')}</button>
     </div>`;
 }
 
@@ -1438,13 +1440,13 @@ async function sendTournamentChatMessage() {
     });
     const data = await safeJson(r);
     if (!r.ok) {
-      toast(data.error || 'Не удалось отправить сообщение', 'error');
+      toast(data.error || CH_I18N.t('tournaments.detail.chat.send_failed'), 'error');
       if (data.until) { chatMyMuteUntil = data.until; renderChatComposer(); return; }
     } else {
       input.value = '';
     }
   } catch (e) {
-    toast('Ошибка сети', 'error');
+    toast(CH_I18N.t('tournaments.detail.chat.network_error'), 'error');
   }
   input.disabled = false;
   if (btn) btn.disabled = false;
@@ -1452,10 +1454,10 @@ async function sendTournamentChatMessage() {
 }
 
 function promptMuteTournamentUser(username) {
-  const minutes = prompt(`На сколько минут замутить ${username}? (1–1440)`, '15');
+  const minutes = prompt(CH_I18N.t('tournaments.detail.chat.mute_prompt', { username }), '15');
   if (minutes === null) return;
   const mins = parseInt(minutes, 10);
-  if (!mins || mins < 1) { toast('Некорректное значение', 'error'); return; }
+  if (!mins || mins < 1) { toast(CH_I18N.t('tournaments.detail.chat.invalid_value'), 'error'); return; }
   fetch(API + '/tournaments/' + tId + '/chat-mute', {
     method: 'POST',
     credentials: 'same-origin',
@@ -1463,8 +1465,8 @@ function promptMuteTournamentUser(username) {
     body: JSON.stringify({ username, minutes: mins })
   }).then(safeJson).then(data => {
     if (data.error) toast(data.error, 'error');
-    else toast(`🔇 ${username} замучен на ${mins} мин.`, 'success');
-  }).catch(() => toast('Ошибка сети', 'error'));
+    else toast('🔇 ' + CH_I18N.t('tournaments.detail.chat.muted_success', { username, mins }), 'success');
+  }).catch(() => toast(CH_I18N.t('tournaments.detail.chat.network_error'), 'error'));
 }
 
 function unmuteTournamentUser(username) {
@@ -1475,8 +1477,8 @@ function unmuteTournamentUser(username) {
     body: JSON.stringify({ username })
   }).then(safeJson).then(data => {
     if (data.error) toast(data.error, 'error');
-    else toast(`🔊 ${username} размучен`, 'success');
-  }).catch(() => toast('Ошибка сети', 'error'));
+    else toast('🔊 ' + CH_I18N.t('tournaments.detail.chat.unmuted_success', { username }), 'success');
+  }).catch(() => toast(CH_I18N.t('tournaments.detail.chat.network_error'), 'error'));
 }
 
 // ── UPDATE PARTS (without full re-render) ──
@@ -1490,7 +1492,7 @@ function renderGames() {
   if (el) el.innerHTML = buildGames();
   // update tab count
   const tab = document.querySelector('[data-section="games"]');
-  if (tab) tab.textContent = `♟ Партии (${(tData.games||[]).length})`;
+  if (tab) tab.textContent = '♟ ' + CH_I18N.t('tournaments.detail.tabs.games', { count: (tData.games||[]).length });
 }
 function updateHeroStats() {
   const activeParts = (tData.participants||[]).filter(p=>!p.anticheatBanned);
@@ -1550,7 +1552,7 @@ function formatMs(ms) {
 
 // ── JOIN / LEAVE ──
 async function joinTournament() {
-  if (!currentUser) { toast('Войдите в аккаунт', 'error'); return; }
+  if (!currentUser) { toast(CH_I18N.t('tournaments.detail.join.login_required'), 'error'); return; }
   const btn = document.getElementById('btn-join');
   if (btn) btn.disabled = true;
   try {
@@ -1559,8 +1561,8 @@ async function joinTournament() {
       credentials: 'same-origin'
     });
     const data = await safeJson(r);
-    if (!r.ok) throw new Error(data.error || 'Ошибка');
-    toast('Вы в турнире! 🎉 Ждите начала', 'success');
+    if (!r.ok) throw new Error(data.error || CH_I18N.t('tournaments.error.generic'));
+    toast(CH_I18N.t('tournaments.detail.join.success'), 'success');
     await loadTournament();
   } catch (e) {
     toast(e.message, 'error');
@@ -1569,22 +1571,22 @@ async function joinTournament() {
 }
 
 async function leaveTournament() {
-  if (!confirm('Покинуть турнир?')) return;
+  if (!confirm(CH_I18N.t('tournaments.detail.leave.confirm'))) return;
   try {
     const r = await fetch(API + '/tournaments/' + tId + '/leave', {
       method: 'POST',
       credentials: 'same-origin'
     });
     const data = await safeJson(r);
-    if (!r.ok) throw new Error(data.error || 'Ошибка');
-    toast('Вы покинули турнир', 'success');
+    if (!r.ok) throw new Error(data.error || CH_I18N.t('tournaments.error.generic'));
+    toast(CH_I18N.t('tournaments.detail.leave.success'), 'success');
     await loadTournament();
   } catch (e) { toast(e.message, 'error'); }
 }
 
 // ── ADMIN ──
 async function adminDeleteTournament() {
-  if (!confirm('Удалить турнир безвозвратно?')) return;
+  if (!confirm(CH_I18N.t('tournaments.detail.admin_actions.delete_confirm'))) return;
   try {
     // Некоторые хостинги/прокси режут метод DELETE — шлём POST на /delete,
     // для которого на сервере есть специальный дублёр-обработчик.
@@ -1593,7 +1595,7 @@ async function adminDeleteTournament() {
       credentials: 'same-origin'
     });
     if (!r.ok) throw new Error((await safeJson(r)).error);
-    toast('Турнир удалён', 'success');
+    toast(CH_I18N.t('tournaments.detail.admin_actions.deleted'), 'success');
     setTimeout(() => window.location.href = '/tournaments', 1200);
   } catch (e) { toast(e.message, 'error'); }
 }
@@ -1653,7 +1655,7 @@ function renderEditBlacklist() {
 async function submitEditTournament() {
   const btn = document.getElementById('btn-edit-submit');
   btn.disabled = true;
-  btn.textContent = 'Сохранение...';
+  btn.textContent = CH_I18N.t('tournaments.detail.admin_actions.saving_btn');
 
   const payload = {
     name: document.getElementById('edit-name').value.trim(),
@@ -1667,8 +1669,8 @@ async function submitEditTournament() {
     blacklist: editBlacklist,
   };
 
-  if (!payload.name) { toast('Название обязательно', 'error'); btn.disabled = false; btn.textContent = '💾 Сохранить'; return; }
-  if (!payload.startsAt) { toast('Укажите дату начала', 'error'); btn.disabled = false; btn.textContent = '💾 Сохранить'; return; }
+  if (!payload.name) { toast(CH_I18N.t('tournaments.detail.admin_actions.name_required'), 'error'); btn.disabled = false; btn.textContent = CH_I18N.t('tournaments.detail.edit_modal.save_btn'); return; }
+  if (!payload.startsAt) { toast(CH_I18N.t('tournaments.error.pick_start_date'), 'error'); btn.disabled = false; btn.textContent = CH_I18N.t('tournaments.detail.edit_modal.save_btn'); return; }
 
   try {
     // Некоторые хостинги/прокси режут метод PATCH — шлём POST на /edit,
@@ -1680,20 +1682,20 @@ async function submitEditTournament() {
       body: JSON.stringify(payload)
     });
     const data = await safeJson(res);
-    if (!res.ok) throw new Error(data.error || 'Ошибка обновления');
-    toast('Турнир обновлён ✅', 'success');
+    if (!res.ok) throw new Error(data.error || CH_I18N.t('tournaments.detail.admin_actions.update_error'));
+    toast(CH_I18N.t('tournaments.detail.admin_actions.updated_success'), 'success');
     closeEditModal();
     await loadTournament(); // перезагружаем данные
   } catch (e) {
     toast(e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = '💾 Сохранить';
+    btn.textContent = CH_I18N.t('tournaments.detail.edit_modal.save_btn');
   }
 }
 
 async function adminBanFromTournament(username) {
-  if (!confirm(`Забанить ${username} в этом турнире? Все их партии будут аннулированы.`)) return;
+  if (!confirm(CH_I18N.t('tournaments.detail.admin_actions.ban_confirm', { username }))) return;
   try {
     const r = await fetch(API + '/tournaments/' + tId + '/anticheat-ban', {
       method: 'POST',
@@ -1702,8 +1704,8 @@ async function adminBanFromTournament(username) {
       body: JSON.stringify({ username })
     });
     const data = await safeJson(r);
-    if (!r.ok) throw new Error(data.error || 'Ошибка');
-    toast(`${username} забанен в турнире`, 'success');
+    if (!r.ok) throw new Error(data.error || CH_I18N.t('tournaments.error.generic'));
+    toast(CH_I18N.t('tournaments.detail.admin_actions.banned_success', { username }), 'success');
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -1729,6 +1731,8 @@ document.getElementById('edit-modal')?.addEventListener('click', function(e) {
   if (e.target === this) closeEditModal();
 });
 
+document.addEventListener('ch-lang-changed', () => { if (tData) render(); });
+
 init();
 </script>
 <script src="/js/ping-widget.js"></script>
@@ -1737,22 +1741,22 @@ init();
 <div class="modal-overlay" id="edit-modal">
   <div class="modal-box" style="max-width: 600px;">
     <div class="modal-header">
-      <div class="modal-title">✏️ Редактировать турнир</div>
+      <div class="modal-title" data-i18n="tournaments.detail.edit_modal.title">✏️ Редактировать турнир</div>
       <button class="modal-close" onclick="closeEditModal()">✕</button>
     </div>
     <div class="form-grid">
       <div class="form-group full">
-        <label class="form-label">Название *</label>
+        <label class="form-label" data-i18n="tournaments.detail.edit_modal.name_label">Название *</label>
         <input type="text" class="form-input" id="edit-name" maxlength="60">
       </div>
       <div class="form-group full">
-        <label class="form-label">Описание</label>
+        <label class="form-label" data-i18n="tournaments.description_label">Описание</label>
         <textarea class="form-textarea" id="edit-desc" maxlength="1000" style="min-height:80px;"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">Контроль времени</label>
+        <label class="form-label" data-i18n="tournaments.detail.edit_modal.time_control_label">Контроль времени</label>
         <select class="form-select" id="edit-tc">
-          <option value="15s+0">15 сек</option>
+          <option value="15s+0" data-i18n="tournaments.detail.edit_modal.tc_15s">15 сек</option>
           <option value="1+0">1+0</option><option value="1+1">1+1</option>
           <option value="2+1">2+1</option><option value="3+0">3+0</option>
           <option value="3+2">3+2</option><option value="5+0">5+0</option>
@@ -1761,7 +1765,7 @@ init();
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Длительность (мин)</label>
+        <label class="form-label" data-i18n="tournaments.detail.edit_modal.duration_label">Длительность (мин)</label>
         <select class="form-select" id="edit-duration">
           <option value="20">20</option><option value="30">30</option>
           <option value="45">45</option><option value="60">60</option>
@@ -1769,33 +1773,33 @@ init();
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Дата начала *</label>
+        <label class="form-label" data-i18n="tournaments.detail.edit_modal.starts_at_label">Дата начала *</label>
         <input type="datetime-local" class="form-input" id="edit-starts-at">
       </div>
       <div class="form-group">
-        <label class="form-label">Макс. участников</label>
-        <input type="number" class="form-input" id="edit-max" min="0" max="500" placeholder="0 = без лимита">
+        <label class="form-label" data-i18n="tournaments.max_participants_label">Макс. участников</label>
+        <input type="number" class="form-input" id="edit-max" min="0" max="500" placeholder="0 = без лимита" data-i18n-placeholder="tournaments.no_limit_placeholder">
       </div>
       <div class="form-group">
-        <label class="form-label">Мин. рейтинг</label>
+        <label class="form-label" data-i18n="tournaments.min_rating_label">Мин. рейтинг</label>
         <input type="number" class="form-input" id="edit-min-rating" min="0" max="3000" placeholder="0">
       </div>
       <div class="form-group">
-        <label class="form-label">Макс. рейтинг</label>
-        <input type="number" class="form-input" id="edit-max-rating" min="0" max="3000" placeholder="0 = ∞">
+        <label class="form-label" data-i18n="tournaments.max_rating_label">Макс. рейтинг</label>
+        <input type="number" class="form-input" id="edit-max-rating" min="0" max="3000" placeholder="0 = ∞" data-i18n-placeholder="tournaments.detail.edit_modal.max_rating_placeholder">
       </div>
       <div class="form-group full">
-        <label class="form-label">⛔ Blacklist</label>
+        <label class="form-label" data-i18n="tournaments.detail.edit_modal.blacklist_label">⛔ Blacklist</label>
         <div class="blacklist-input-row">
-          <input type="text" class="form-input" id="edit-bl-input" placeholder="Ник..." onkeydown="if(event.key==='Enter')addEditBlacklist()">
-          <button class="btn-add-bl" onclick="addEditBlacklist()">Добавить</button>
+          <input type="text" class="form-input" id="edit-bl-input" placeholder="Ник..." onkeydown="if(event.key==='Enter')addEditBlacklist()" data-i18n-placeholder="tournaments.detail.edit_modal.blacklist_placeholder">
+          <button class="btn-add-bl" onclick="addEditBlacklist()" data-i18n="tournaments.blacklist_add_btn">Добавить</button>
         </div>
         <div class="blacklist-tags" id="edit-bl-tags"></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeEditModal()">Отмена</button>
-      <button class="btn-submit" id="btn-edit-submit" onclick="submitEditTournament()">💾 Сохранить</button>
+      <button class="btn-cancel" onclick="closeEditModal()" data-i18n="tournaments.cancel_btn">Отмена</button>
+      <button class="btn-submit" id="btn-edit-submit" onclick="submitEditTournament()" data-i18n="tournaments.detail.edit_modal.save_btn">💾 Сохранить</button>
     </div>
   </div>
 </div>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Турниры — Chess Home</title>
+  <title data-i18n="tournaments.page_title">Турниры — Chess Home</title>
   <link rel="stylesheet" href="/css/main.css">
   <script src="/js/header.js"></script>
 <link rel="icon" type="image/png" href="../img/logo/favicon.png">
@@ -588,8 +588,8 @@
     <!-- HERO -->
     <div class="page-hero">
       <div class="page-hero-badge">🏆</div>
-      <h1>Арена <span>Турниры</span></h1>
-      <p>Рейтинговые шахматные арены — поиск соперников в реальном времени</p>
+      <h1 data-i18n-html="tournaments.hero_title">Арена <span>Турниры</span></h1>
+      <p data-i18n="tournaments.hero_subtitle">Рейтинговые шахматные арены — поиск соперников в реальном времени</p>
     </div>
 
     <!-- TOP BAR -->
@@ -597,18 +597,18 @@
       <!-- TABS -->
       <div class="tabs-bar">
         <button class="tab-btn active" data-tab="active" onclick="switchTab('active')">
-          <span>🟢</span> Идут сейчас <span class="tab-count" id="cnt-active">0</span>
+          <span>🟢</span> <span data-i18n="tournaments.tab_active">Идут сейчас</span> <span class="tab-count" id="cnt-active">0</span>
         </button>
         <button class="tab-btn" data-tab="upcoming" onclick="switchTab('upcoming')">
-          <span>🕐</span> Предстоят <span class="tab-count" id="cnt-upcoming">0</span>
+          <span>🕐</span> <span data-i18n="tournaments.tab_upcoming">Предстоят</span> <span class="tab-count" id="cnt-upcoming">0</span>
         </button>
         <button class="tab-btn" data-tab="finished" onclick="switchTab('finished')">
-          <span>🏁</span> Завершены <span class="tab-count" id="cnt-finished">0</span>
+          <span>🏁</span> <span data-i18n="tournaments.tab_finished">Завершены</span> <span class="tab-count" id="cnt-finished">0</span>
         </button>
       </div>
 
       <!-- ADMIN: CREATE -->
-      <button class="btn-create" id="btn-create-tournament" style="display:none" onclick="openCreateModal()">
+      <button class="btn-create" id="btn-create-tournament" style="display:none" onclick="openCreateModal()" data-i18n="tournaments.create_btn">
         ✚ Создать турнир
       </button>
     </div>
@@ -622,7 +622,7 @@
 
     <!-- TOP-10 POPULAR -->
     <div id="popular-section" style="margin-top:40px;padding-top:32px;border-top:1px solid var(--border);display:none">
-      <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:16px;display:flex;align-items:center;gap:8px">🔥 Самые популярные арены</h2>
+      <h2 style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:16px;display:flex;align-items:center;gap:8px" data-i18n="tournaments.popular_title">🔥 Самые популярные арены</h2>
       <div class="tournaments-grid" id="popular-list"></div>
     </div>
   </div>
@@ -631,99 +631,99 @@
   <div class="modal-overlay" id="create-modal">
     <div class="modal-box">
       <div class="modal-header">
-        <div class="modal-title">🏆 Новый турнир</div>
+        <div class="modal-title" data-i18n="tournaments.modal_title">🏆 Новый турнир</div>
         <button class="modal-close" onclick="closeCreateModal()">✕</button>
       </div>
 
       <div class="form-grid">
         <div class="form-group full">
-          <label class="form-label">Название турнира *</label>
-          <input type="text" class="form-input" id="t-name" maxlength="60" placeholder="Воскресная арена · Блиц · и т.д.">
+          <label class="form-label" data-i18n="tournaments.name_label">Название турнира *</label>
+          <input type="text" class="form-input" id="t-name" maxlength="60" placeholder="Воскресная арена · Блиц · и т.д." data-i18n-placeholder="tournaments.name_placeholder">
         </div>
 
         <div class="form-group full">
-          <label class="form-label">Описание</label>
-          <textarea class="form-textarea" id="t-desc" maxlength="1000" placeholder="Краткое описание турнира..."></textarea>
+          <label class="form-label" data-i18n="tournaments.description_label">Описание</label>
+          <textarea class="form-textarea" id="t-desc" maxlength="1000" placeholder="Краткое описание турнира..." data-i18n-placeholder="tournaments.description_placeholder"></textarea>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Контроль времени *</label>
+          <label class="form-label" data-i18n="tournaments.time_control_label">Контроль времени *</label>
           <select class="form-select" id="t-tc">
-            <option value="15s+0">15 сек (Пуля)</option>
-            <option value="1+0">1+0 (Пуля)</option>
-            <option value="1+1">1+1 (Пуля)</option>
-            <option value="2+1">2+1 (Пуля)</option>
-            <option value="3+0">3+0 (Блиц)</option>
-            <option value="3+2" selected>3+2 (Блиц)</option>
-            <option value="5+0">5+0 (Блиц)</option>
-            <option value="5+3">5+3 (Блиц)</option>
-            <option value="10+0">10+0 (Рапид)</option>
-            <option value="10+5">10+5 (Рапид)</option>
-            <option value="15+10">15+10 (Рапид)</option>
+            <option value="15s+0" data-i18n="tournaments.tc.bullet_15s">15 сек (Пуля)</option>
+            <option value="1+0" data-i18n="tournaments.tc.bullet_1_0">1+0 (Пуля)</option>
+            <option value="1+1" data-i18n="tournaments.tc.bullet_1_1">1+1 (Пуля)</option>
+            <option value="2+1" data-i18n="tournaments.tc.bullet_2_1">2+1 (Пуля)</option>
+            <option value="3+0" data-i18n="tournaments.tc.blitz_3_0">3+0 (Блиц)</option>
+            <option value="3+2" selected data-i18n="tournaments.tc.blitz_3_2">3+2 (Блиц)</option>
+            <option value="5+0" data-i18n="tournaments.tc.blitz_5_0">5+0 (Блиц)</option>
+            <option value="5+3" data-i18n="tournaments.tc.blitz_5_3">5+3 (Блиц)</option>
+            <option value="10+0" data-i18n="tournaments.tc.rapid_10_0">10+0 (Рапид)</option>
+            <option value="10+5" data-i18n="tournaments.tc.rapid_10_5">10+5 (Рапид)</option>
+            <option value="15+10" data-i18n="tournaments.tc.rapid_15_10">15+10 (Рапид)</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Длительность *</label>
+          <label class="form-label" data-i18n="tournaments.duration_label">Длительность *</label>
           <select class="form-select" id="t-duration">
-            <option value="20">20 минут</option>
-            <option value="30" selected>30 минут</option>
-            <option value="45">45 минут</option>
-            <option value="60">1 час</option>
-            <option value="90">1.5 часа</option>
-            <option value="120">2 часа</option>
+            <option value="20" data-i18n="tournaments.duration_options.d20">20 минут</option>
+            <option value="30" selected data-i18n="tournaments.duration_options.d30">30 минут</option>
+            <option value="45" data-i18n="tournaments.duration_options.d45">45 минут</option>
+            <option value="60" data-i18n="tournaments.duration_options.d60">1 час</option>
+            <option value="90" data-i18n="tournaments.duration_options.d90">1.5 часа</option>
+            <option value="120" data-i18n="tournaments.duration_options.d120">2 часа</option>
           </select>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Дата и время начала *</label>
+          <label class="form-label" data-i18n="tournaments.starts_at_label">Дата и время начала *</label>
           <input type="datetime-local" class="form-input" id="t-starts-at">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Макс. участников</label>
-          <input type="number" class="form-input" id="t-max" min="0" max="500" placeholder="0 = без лимита">
-          <span class="form-hint">0 — без ограничений</span>
+          <label class="form-label" data-i18n="tournaments.max_participants_label">Макс. участников</label>
+          <input type="number" class="form-input" id="t-max" min="0" max="500" placeholder="0 = без лимита" data-i18n-placeholder="tournaments.no_limit_placeholder">
+          <span class="form-hint" data-i18n="tournaments.max_participants_hint">0 — без ограничений</span>
         </div>
 
         <div class="form-group">
-          <label class="form-label">Мин. рейтинг</label>
-          <input type="number" class="form-input" id="t-min-rating" min="0" max="3000" placeholder="0 = без лимита">
+          <label class="form-label" data-i18n="tournaments.min_rating_label">Мин. рейтинг</label>
+          <input type="number" class="form-input" id="t-min-rating" min="0" max="3000" placeholder="0 = без лимита" data-i18n-placeholder="tournaments.no_limit_placeholder">
         </div>
 
         <div class="form-group">
-          <label class="form-label">Макс. рейтинг</label>
-          <input type="number" class="form-input" id="t-max-rating" min="0" max="3000" placeholder="0 = без лимита">
+          <label class="form-label" data-i18n="tournaments.max_rating_label">Макс. рейтинг</label>
+          <input type="number" class="form-input" id="t-max-rating" min="0" max="3000" placeholder="0 = без лимита" data-i18n-placeholder="tournaments.no_limit_placeholder">
         </div>
 
         <div class="form-group full" id="club-only-group" style="display:none">
-          <label class="form-label">🛡️ Клубный турнир</label>
+          <label class="form-label" data-i18n="tournaments.club_section_label">🛡️ Клубный турнир</label>
           <div class="club-only-box">
             <select class="form-select" id="t-club-select" onchange="onClubSelectChange()">
-              <option value="">— Обычный турнир (без привязки к клубу) —</option>
+              <option value="" data-i18n="tournaments.club_select_default">— Обычный турнир (без привязки к клубу) —</option>
             </select>
             <label class="club-only-toggle" id="club-only-toggle-row" style="display:none">
               <input type="checkbox" id="t-club-only" checked>
-              Только для участников выбранного клуба
+              <span data-i18n="tournaments.club_only_toggle_label">Только для участников выбранного клуба</span>
             </label>
-            <span class="form-hint">Доступно только администраторам клуба. Если галочка снята — турнир будет виден в клубе, но участвовать сможет любой.</span>
+            <span class="form-hint" data-i18n="tournaments.club_only_hint">Доступно только администраторам клуба. Если галочка снята — турнир будет виден в клубе, но участвовать сможет любой.</span>
           </div>
         </div>
 
         <div class="form-group full">
-          <label class="form-label">⛔ Blacklist — кому закрыт вход</label>
+          <label class="form-label" data-i18n="tournaments.blacklist_label">⛔ Blacklist — кому закрыт вход</label>
           <div class="blacklist-input-row">
-            <input type="text" class="form-input" id="t-bl-input" placeholder="Ник игрока..." onkeydown="if(event.key==='Enter')addToBlacklist()">
-            <button class="btn-add-bl" onclick="addToBlacklist()">Добавить</button>
+            <input type="text" class="form-input" id="t-bl-input" placeholder="Ник игрока..." onkeydown="if(event.key==='Enter')addToBlacklist()" data-i18n-placeholder="tournaments.blacklist_placeholder">
+            <button class="btn-add-bl" onclick="addToBlacklist()" data-i18n="tournaments.blacklist_add_btn">Добавить</button>
           </div>
           <div class="blacklist-tags" id="bl-tags"></div>
-          <span class="form-hint">Эти игроки не смогут войти в турнир</span>
+          <span class="form-hint" data-i18n="tournaments.blacklist_hint">Эти игроки не смогут войти в турнир</span>
         </div>
       </div>
 
       <div class="modal-footer">
-        <button class="btn-cancel" onclick="closeCreateModal()">Отмена</button>
-        <button class="btn-submit" id="btn-create-submit" onclick="submitCreateTournament()">🏆 Создать турнир</button>
+        <button class="btn-cancel" onclick="closeCreateModal()" data-i18n="tournaments.cancel_btn">Отмена</button>
+        <button class="btn-submit" id="btn-create-submit" onclick="submitCreateTournament()" data-i18n="tournaments.submit_btn">🏆 Создать турнир</button>
       </div>
     </div>
   </div>
@@ -740,7 +740,7 @@
       try {
         return await res.json();
       } catch (e) {
-        throw new Error('Сервер вернул некорректный ответ' + (res.status ? ` (${res.status})` : '') + '. Попробуйте ещё раз.');
+        throw new Error(CH_I18N.t('tournaments.error.bad_response') + (res.status ? ` (${res.status})` : '') + '. ' + CH_I18N.t('tournaments.error.try_again'));
       }
     }
     // Токен живёт только в HttpOnly-cookie ch_token — браузер шлёт её сам,
@@ -841,7 +841,7 @@
       const sel = document.getElementById('t-club-select');
       if (!myAdminClubs.length) { group.style.display = 'none'; return; }
       group.style.display = '';
-      sel.innerHTML = '<option value="">— Обычный турнир (без привязки к клубу) —</option>' +
+      sel.innerHTML = `<option value="">${CH_I18N.t('tournaments.club_select_default')}</option>` +
         myAdminClubs.map(c => `<option value="${escHtmlAttr(c.id)}">🛡️ ${escHtmlAttr(c.name)}</option>`).join('');
     }
     function onClubSelectChange() {
@@ -900,9 +900,9 @@
 
       if (!list.length) {
         const msgs = {
-          active:   ['🎯', 'Активных турниров нет', 'Дождитесь начала запланированных арен'],
-          upcoming: ['🕐', 'Нет запланированных турниров', 'Скоро будут объявлены новые арены'],
-          finished: ['🏁', 'Нет завершённых турниров', 'Результаты турниров будут здесь'],
+          active:   ['🎯', CH_I18N.t('tournaments.empty.active.title'), CH_I18N.t('tournaments.empty.active.sub')],
+          upcoming: ['🕐', CH_I18N.t('tournaments.empty.upcoming.title'), CH_I18N.t('tournaments.empty.upcoming.sub')],
+          finished: ['🏁', CH_I18N.t('tournaments.empty.finished.title'), CH_I18N.t('tournaments.empty.finished.sub')],
         };
         const [icon, title, sub] = msgs[currentTab];
         el.innerHTML = `
@@ -924,7 +924,7 @@
     }
 
     function renderCard(t) {
-      const statusLabels = { active: 'Идёт', upcoming: 'Скоро', finished: 'Завершён' };
+      const statusLabels = { active: CH_I18N.t('tournaments.status.active'), upcoming: CH_I18N.t('tournaments.status.upcoming'), finished: CH_I18N.t('tournaments.status.finished') };
       const statusIcons  = { active: '🟢', upcoming: '🕐', finished: '🏁' };
       const cardIcons    = { active: '⚡', upcoming: '🏆', finished: '🎖' };
       const statusClass  = t.status;
@@ -933,30 +933,31 @@
       let timeInfo = '';
       if (t.status === 'active') {
         const left = Math.max(0, t.endsAt - now);
-        timeInfo = '⏱ Осталось ' + formatDuration(left);
+        timeInfo = '⏱ ' + CH_I18N.t('tournaments.time_left_prefix') + formatDuration(left);
       } else if (t.status === 'upcoming') {
         const until = t.startsAt - now;
-        timeInfo = '🕐 Начало через ' + formatDuration(until);
+        timeInfo = '🕐 ' + CH_I18N.t('tournaments.starts_in_prefix') + formatDuration(until);
       } else {
-        timeInfo = '🏁 ' + new Date(t.endsAt).toLocaleDateString('ru', { day:'numeric', month:'short', year:'numeric' });
+        const dateLocale = CH_I18N.getLang() === 'ru' ? 'ru' : 'en';
+        timeInfo = '🏁 ' + new Date(t.endsAt).toLocaleDateString(dateLocale, { day:'numeric', month:'short', year:'numeric' });
       }
 
       const ratingInfo = t.minRating || (t.maxRating && t.maxRating < 9999)
         ? `⭐ ${t.minRating || '0'}–${t.maxRating >= 9999 ? '∞' : t.maxRating}`
-        : '⭐ Любой рейтинг';
+        : '⭐ ' + CH_I18N.t('tournaments.any_rating');
 
       const winnerHtml = t.winner
         ? `<div class="winner-badge">🥇 ${escHtml(t.winner)}</div>`
         : '';
 
-      const participantsHtml = `<span class="t-participants">👥 ${t.participantsCount || 0}${t.maxParticipants ? '/' + t.maxParticipants : ''} уч.</span>`;
+      const participantsHtml = `<span class="t-participants">👥 ${t.participantsCount || 0}${t.maxParticipants ? '/' + t.maxParticipants : ''} ${CH_I18N.t('tournaments.participants_suffix')}</span>`;
 
       const userTournamentBadge = !t.createdByIsAdmin
-        ? `<span class="t-meta-item t-user-badge" title="Турнир создан пользователем. ChessHome не несёт ответственности за выплату призов, если они заявлены в этом турнире.">👤 От игрока</span>`
+        ? `<span class="t-meta-item t-user-badge" title="${CH_I18N.t('tournaments.user_created_tooltip')}">👤 ${CH_I18N.t('tournaments.user_created_badge')}</span>`
         : '';
 
       const clubBadge = t.clubId
-        ? `<span class="t-meta-item t-club-badge" title="${t.clubOnly ? 'Участвовать могут только члены клуба' : 'Турнир клуба, открыт для всех'}">🛡️ ${t.clubOnly ? 'Только для клуба' : 'Турнир клуба'}</span>`
+        ? `<span class="t-meta-item t-club-badge" title="${t.clubOnly ? CH_I18N.t('tournaments.club_badge_tooltip_restricted') : CH_I18N.t('tournaments.club_badge_tooltip_open')}">🛡️ ${t.clubOnly ? CH_I18N.t('tournaments.club_badge_restricted') : CH_I18N.t('tournaments.club_badge_open')}</span>`
         : '';
 
       return `
@@ -967,7 +968,7 @@
             <div class="t-card-meta">
               <span class="t-meta-item">${timeInfo}</span>
               <span class="t-meta-item">${ratingInfo}</span>
-              <span class="t-meta-item">⏱ ${t.durationMinutes} мин</span>
+              <span class="t-meta-item">⏱ ${t.durationMinutes} ${CH_I18N.t('tournaments.minutes_abbr')}</span>
               ${clubBadge}
               ${userTournamentBadge}
               ${t.description ? `<span class="t-meta-item" style="color:var(--text-muted);font-style:italic">${escHtml(t.description.slice(0,50))}${t.description.length>50?'…':''}</span>` : ''}
@@ -1033,11 +1034,11 @@
       const clubId = clubSel ? clubSel.value : '';
       const clubOnly = clubId ? document.getElementById('t-club-only').checked : false;
 
-      if (!name) { toast('Введите название', 'error'); return; }
-      if (!startsAt) { toast('Укажите дату начала', 'error'); return; }
+      if (!name) { toast(CH_I18N.t('tournaments.error.enter_name'), 'error'); return; }
+      if (!startsAt) { toast(CH_I18N.t('tournaments.error.pick_start_date'), 'error'); return; }
 
       btn.disabled = true;
-      btn.textContent = 'Создаём...';
+      btn.textContent = CH_I18N.t('tournaments.creating_btn');
       try {
         const res = await fetch(API + '/tournaments', {
           method: 'POST',
@@ -1055,8 +1056,8 @@
           })
         });
         const data = await safeJson(res);
-        if (!res.ok) throw new Error(data.error || 'Ошибка');
-        toast('Турнир создан! 🏆', 'success');
+        if (!res.ok) throw new Error(data.error || CH_I18N.t('tournaments.error.generic'));
+        toast(CH_I18N.t('tournaments.success.created'), 'success');
         closeCreateModal();
         // Reset form
         ['t-name','t-desc','t-bl-input'].forEach(id => document.getElementById(id).value = '');
@@ -1072,19 +1073,19 @@
         toast(e.message, 'error');
       } finally {
         btn.disabled = false;
-        btn.textContent = '🏆 Создать турнир';
+        btn.textContent = CH_I18N.t('tournaments.submit_btn');
       }
     }
 
     // ── UTILS ──
     function formatDuration(ms) {
-      if (ms <= 0) return '0 сек';
+      if (ms <= 0) return CH_I18N.t('tournaments.duration.zero');
       const s = Math.floor(ms / 1000);
       const m = Math.floor(s / 60);
       const h = Math.floor(m / 60);
-      if (h > 0) return h + 'ч ' + (m % 60) + 'м';
-      if (m > 0) return m + 'м';
-      return s + 'с';
+      if (h > 0) return h + CH_I18N.t('tournaments.duration.hours') + (m % 60) + CH_I18N.t('tournaments.duration.minutes');
+      if (m > 0) return m + CH_I18N.t('tournaments.duration.minutes');
+      return s + CH_I18N.t('tournaments.duration.seconds');
     }
     function escHtml(s) {
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1096,6 +1097,12 @@
       document.getElementById('toast-container').appendChild(el);
       setTimeout(() => el.remove(), 3500);
     }
+
+    document.addEventListener('ch-lang-changed', () => {
+      renderList();
+      const popList = document.getElementById('popular-list');
+      if (popList && popList.innerHTML) renderList(); // счётчики/лейблы уже переведутся applyTranslations, тут перерисовываем только динамические карточки
+    });
 
     init();
   </script>

@@ -28,12 +28,10 @@
   "settings": {
     "title": "⚙️ Settings",
     "page_title": "Settings — Chess Home",
-
     "lang_title": "🌐 Language",
     "lang_desc": "Interface language",
     "lang_ru": "Русский",
     "lang_en": "English",
-
     "emoji_section_title": "😀 Profile Emoji",
     "emoji_name": "Your emoji",
     "emoji_desc": "Shown in chat and on your profile",
@@ -43,7 +41,6 @@
     "emoji_change_title": "Click to change your emoji",
     "emoji_modal_title": "Choose an emoji",
     "emoji_modal_remove": "✕ Remove emoji",
-
     "game_section_title": "🎮 Gameplay",
     "sounds_name": "Sound effects",
     "sounds_desc": "Move, capture, and check sounds",
@@ -53,26 +50,22 @@
     "coords_desc": "Letters and numbers around the edges",
     "animation_name": "Move animation",
     "animation_desc": "Smooth piece movement",
-
     "board_section_title": "🎨 Board",
     "board_theme_name": "Board theme",
     "board_theme_classic": "Classic",
     "board_theme_blue": "Blue",
     "board_theme_green": "Green",
     "board_theme_orange": "Orange",
-
     "account_section_title": "👤 Account",
     "account_not_logged_in": "Sign in to manage your profile",
     "account_my_profile": "👤 My Profile",
     "twofa_name": "Email sign-in verification (2FA)",
     "twofa_desc": "You'll be asked for a code sent to your email when signing in",
-
     "info_section_title": "🔗 Information",
     "info_about": "About",
     "info_privacy": "Privacy",
     "info_terms": "Terms",
     "info_footer": "Chess Home v1.0.0 · Made with ♥ in Russia",
-
     "toast_saved": "Saved",
     "toast_board_theme_saved": "Board theme saved",
     "toast_emoji_saved": "Emoji saved!",
@@ -80,18 +73,15 @@
     "toast_2fa_on": "2FA enabled",
     "toast_2fa_off": "2FA disabled"
   },
-
   "header": {
     "menu_aria": "Menu",
     "online_suffix": "online",
     "players_online_suffix": "players online",
-
     "sec_play": "Play",
     "sec_puzzles": "Puzzles",
     "sec_community": "Community",
     "sec_tools": "Tools",
     "sec_other": "Other",
-
     "nav_home": "Home",
     "nav_play": "Play",
     "nav_tournaments": "Tournaments",
@@ -111,18 +101,15 @@
     "nav_support": "Support the project",
     "nav_settings": "Settings",
     "nav_more": "More",
-
     "login": "Sign in",
     "register": "Sign up",
     "my_profile": "My Profile",
     "messages": "Messages",
     "admin_panel": "Admin Panel",
     "logout": "Log out",
-
     "rating": "rating",
     "wins": "wins",
     "games": "games",
-
     "friends_online_label": "Friends online",
     "toast_login_to_see_friends": "Sign in to see friends",
     "toast_no_friends_online": "No friends online",
@@ -130,7 +117,6 @@
     "console_need_login": "Sign-in required",
     "vip_player": "VIP player"
   },
-
   "blog": {
     "page_title": "Blog — Chess Home",
     "title": "📰 Chess Home Blog",
@@ -143,7 +129,6 @@
     "community_login_hint": "<a href=\"/\">Sign in</a> to write articles in the community blog",
     "loading": "Loading...",
     "loading_comments": "Loading comments...",
-
     "disclaimer": {
       "intro": "<b>Community Blog</b> — articles are written by Chess Home members.",
       "short": " Opinions expressed by authors may not reflect the position of the administration.",
@@ -154,7 +139,6 @@
       "all_drafts_notice": "All drafts from both sections are shown here, regardless of the tab above.",
       "post_body": "<span class=\"vd-icon\">ℹ️</span><div>This post is from the <b style=\"color:var(--blue)\">community blog</b>. The author's opinion is their own and may not reflect the position of the Chess Home administration. The administration is not responsible for the content of member posts.</div>"
     },
-
     "back_to_list": "← All articles",
     "back_to_post": "← Back to article",
     "draft_badge": "DRAFT",
@@ -172,7 +156,6 @@
     "publish_btn": "🚀 Publish",
     "comments_label": "Comments",
     "comment_login_hint": "<a href=\"/\">Sign in</a> to leave a comment",
-
     "empty": {
       "no_drafts": "No drafts",
       "no_hidden": "No hidden articles",
@@ -180,9 +163,7 @@
       "no_official": "There are no official articles yet.",
       "no_comments": "Be the first to leave a comment!"
     },
-
     "badge_hidden": "🙈 HIDDEN",
-
     "write_tab": "✏️ Write",
     "preview_tab": "👁 Preview",
     "editor_tab": "✏️ Editor",
@@ -192,7 +173,6 @@
     "send_btn": "💬 Send",
     "cancel_plain": "Cancel",
     "cancel_btn": "✕ Cancel",
-
     "new_article_title": "✏️ New article",
     "edit_article_title": "✏️ Edit article",
     "title_placeholder": "Article title...",
@@ -211,7 +191,6 @@
     "chars_suffix": "characters",
     "save_draft_btn": "💾 Save draft",
     "default_code_placeholder": "code here",
-
     "edit_btn": "✏️ Edit",
     "moderation_btn": "🛡 Moderate",
     "deleted": "🗑 Deleted",
@@ -232,18 +211,15 @@
       "scope_global": "globally (entire blog)",
       "scope_post": "on this post"
     },
-
     "ban": {
       "blocked": "🚫 You are blocked from commenting on this blog.",
       "muted": "🔇 You're muted. You can post again in {mins} min."
     },
-
     "comment_count": {
       "one": "{n} comment",
       "other": "{n} comments"
     },
     "no_comments_yet": "No comments yet",
-
     "confirm": {
       "delete_post": "Delete this article? This cannot be undone.",
       "delete_comment": "Delete this comment?",
@@ -251,7 +227,6 @@
       "hide_post": "Hide this article? It will no longer be visible to anyone, but you can restore it from the \"Hidden\" tab.",
       "mod_action": "{action} user {username} {scope}?"
     },
-
     "toast": {
       "login_to_like": "Sign in to like",
       "login_to_react": "Sign in to react",
@@ -273,13 +248,11 @@
       "comment_deleted": "Comment deleted",
       "mod_applied": "{action} applied to {username}"
     },
-
     "error": {
       "bad_response": "The server returned an invalid response",
       "server_error": "Server error ({status}). Try again or shorten the text"
     }
   },
-
   "forum": {
     "page_title": "Forum — Chess Home",
     "title": "💬 Chess Home Forum",
@@ -303,17 +276,14 @@
     "new_thread_placeholder": "Describe the topic in more detail. **Markdown** is supported…",
     "limit_replies_hint": "⚠️ No more than 10 replies per day",
     "auth_required_html": "To reply, you need to <a href=\"#\" style=\"color:var(--accent)\" onclick=\"openModal('modal-login');return false\">sign in</a>",
-
     "login_modal_title": "♚ Sign in",
     "username_label": "Username",
     "username_placeholder": "Your nickname",
     "password_label": "Password",
     "password_placeholder": "Password",
     "no_account_btn": "No account?",
-
     "search_modal_title": "🔍 Search this discussion",
     "search_placeholder": "A word or phrase...",
-
     "author_label": "author:",
     "last_reply_label": "last reply:",
     "replies_label": "replies",
@@ -322,7 +292,6 @@
     "delete_thread_btn": "🗑 Delete discussion",
     "empty_threads": "There are no discussions yet. Be the first!",
     "empty_replies": "There are no replies yet. Be the first!",
-
     "editor": {
       "default_placeholder": "Write here…",
       "empty_preview": "Enter some text…",
@@ -348,33 +317,28 @@
       "default_code": "code",
       "default_list_item": "item"
     },
-
     "time": {
       "just_now": "just now",
       "minutes_ago": "{n} min ago",
       "hours_ago": "{n} h ago",
       "days_ago": "{n} d ago"
     },
-
     "error_status": "Error {status}",
     "error": {
       "enter_title": "Enter a title",
       "enter_description": "Enter a description",
       "enter_reply": "Enter your reply text"
     },
-
     "confirm": {
       "delete_thread": "Delete this discussion and all its replies?",
       "delete_reply": "Delete this reply?"
     },
-
     "search": {
       "enter_query": "Enter a search term...",
       "no_results": "😕 No results found",
       "found_count": "Found: {n}",
       "page_label": "p. {page}"
     },
-
     "toast": {
       "thread_created": "Discussion created ✅",
       "reply_posted": "Reply posted ✅",
@@ -383,7 +347,6 @@
       "welcome": "Welcome, {username}! ♟️"
     }
   },
-
   "clubs": {
     "page_title": "Clubs — Chess Home",
     "title": "Clubs",
@@ -401,7 +364,6 @@
     "tab_tournaments": "🏆 Tournaments",
     "tab_stats": "📊 Statistics",
     "cancel_btn": "Cancel",
-
     "chat_title": "Club chat",
     "chat_rules_tooltip": "Chat rules",
     "chat_rules_title": "Chat rules",
@@ -410,10 +372,8 @@
     "chat_input_placeholder": "Write a message...",
     "chat_send_btn": "Send",
     "chat_loading": "Loading chat...",
-
     "tournaments_title": "🏆 Club tournaments",
     "create_tournament_btn": "✚ Create a club tournament",
-
     "create_modal_title": "🛡️ Create a club",
     "name_label": "Club name *",
     "name_placeholder": "For example: Russian Gambit",
@@ -421,7 +381,6 @@
     "description_placeholder": "Tell us about your club...",
     "create_hint": "⚠️ The name cannot contain \"ChessHome\" · Maximum 5 created clubs · Maximum 10 memberships",
     "create_submit_btn": "Create",
-
     "error": {
       "bad_response": "The server returned an invalid response",
       "try_again": "Please try again.",
@@ -430,13 +389,11 @@
       "load_tournaments_failed": "Failed to load tournaments",
       "enter_name": "Enter a name"
     },
-
     "not_found_title": "No clubs found",
     "not_found_my": "Join a club or create your own",
     "not_found_search": "Try a different search",
     "login_required_desc": "To see your clubs",
     "badge_member": "✓ Member",
-
     "members_label": "members",
     "admins_label": "admins",
     "created_label": "Created ",
@@ -454,7 +411,6 @@
     "tooltip_kick": "Remove",
     "members_heading": "👥 Members ({n})",
     "no_members": "No members",
-
     "no_tournaments_title": "There are no tournaments yet",
     "no_tournaments_desc": "Club administrators can create the first one",
     "club_only_badge": "🔒 Club only",
@@ -463,7 +419,6 @@
       "upcoming": "Soon",
       "finished": "Finished"
     },
-
     "stat": {
       "members": "Members",
       "admins": "Administrators",
@@ -472,7 +427,6 @@
       "upcoming": "Upcoming",
       "finished": "Finished"
     },
-
     "confirm": {
       "leave": "Leave the club?",
       "kick": "Remove {username} from the club?",
@@ -480,7 +434,6 @@
       "demote": "Remove {username} from the administrator role?",
       "delete_club": "Delete the club? This action cannot be undone."
     },
-
     "toast": {
       "desc_updated": "Description updated",
       "joined": "You've joined the club!",
@@ -494,19 +447,16 @@
       "banned": "{username} blocked from the club chat",
       "report_sent": "Report sent to administrators"
     },
-
     "chat": {
       "banned_permanent": "🚫 You are blocked from this club's chat",
       "muted": "🔇 You're muted for {mins} more min.",
       "error_prefix": "Error: ",
       "forbidden_words": "The message contains forbidden words"
     },
-
     "badge_club_admin": "Club admin",
     "mention_tooltip": "Mention ",
     "tooltip_ban_mute": "Ban / Mute",
     "tooltip_report": "Report",
-
     "ban_modal": {
       "title": "🚫 Action on {username}",
       "subtitle": "Choose an action:",
@@ -514,11 +464,263 @@
       "ban_btn": "🚫 Ban — block permanently from this chat + delete all messages",
       "report_btn": "🚩 Report only — notify the administration"
     },
-
     "report": {
       "reason_prompt": "Reason for the report{forUser}:",
       "for_user": " on {forUser}",
       "reason_default": "Rule violation"
+    }
+  },
+  "tournaments": {
+    "page_title": "Tournaments — Chess Home",
+    "hero_title": "Tournament <span>Arena</span>",
+    "hero_subtitle": "Rated chess arenas — find opponents in real time",
+    "tab_active": "Live now",
+    "tab_upcoming": "Upcoming",
+    "tab_finished": "Finished",
+    "create_btn": "✚ Create tournament",
+    "creating_btn": "Creating...",
+    "popular_title": "🔥 Most popular arenas",
+    "modal_title": "🏆 New tournament",
+    "name_label": "Tournament name *",
+    "name_placeholder": "Sunday arena · Blitz · etc.",
+    "description_label": "Description",
+    "description_placeholder": "Short tournament description...",
+    "time_control_label": "Time control *",
+    "tc": {
+      "bullet_15s": "15 sec (Bullet)",
+      "bullet_1_0": "1+0 (Bullet)",
+      "bullet_1_1": "1+1 (Bullet)",
+      "bullet_2_1": "2+1 (Bullet)",
+      "blitz_3_0": "3+0 (Blitz)",
+      "blitz_3_2": "3+2 (Blitz)",
+      "blitz_5_0": "5+0 (Blitz)",
+      "blitz_5_3": "5+3 (Blitz)",
+      "rapid_10_0": "10+0 (Rapid)",
+      "rapid_10_5": "10+5 (Rapid)",
+      "rapid_15_10": "15+10 (Rapid)"
+    },
+    "duration_label": "Duration *",
+    "duration_options": {
+      "d20": "20 minutes",
+      "d30": "30 minutes",
+      "d45": "45 minutes",
+      "d60": "1 hour",
+      "d90": "1.5 hours",
+      "d120": "2 hours"
+    },
+    "starts_at_label": "Start date and time *",
+    "max_participants_label": "Max participants",
+    "max_participants_hint": "0 — no limit",
+    "no_limit_placeholder": "0 = no limit",
+    "min_rating_label": "Min rating",
+    "max_rating_label": "Max rating",
+    "club_section_label": "🛡️ Club tournament",
+    "club_select_default": "— Regular tournament (not tied to a club) —",
+    "club_only_toggle_label": "Only members of the selected club",
+    "club_only_hint": "Available only to club admins. If unchecked, the tournament will be visible in the club, but anyone can join.",
+    "blacklist_label": "⛔ Blacklist — who's not allowed in",
+    "blacklist_placeholder": "Player's username...",
+    "blacklist_add_btn": "Add",
+    "blacklist_hint": "These players won't be able to join the tournament",
+    "cancel_btn": "Cancel",
+    "submit_btn": "🏆 Create tournament",
+    "empty": {
+      "active": {
+        "title": "No active tournaments",
+        "sub": "Wait for scheduled arenas to begin"
+      },
+      "upcoming": {
+        "title": "No upcoming tournaments",
+        "sub": "New arenas will be announced soon"
+      },
+      "finished": {
+        "title": "No finished tournaments",
+        "sub": "Tournament results will appear here"
+      }
+    },
+    "status": {
+      "active": "Live",
+      "upcoming": "Soon",
+      "finished": "Finished"
+    },
+    "time_left_prefix": "Ends in ",
+    "starts_in_prefix": "Starts in ",
+    "any_rating": "Any rating",
+    "participants_suffix": "players",
+    "minutes_abbr": "min",
+    "user_created_badge": "Player-made",
+    "user_created_tooltip": "This tournament was created by a user. ChessHome is not responsible for prize payouts, if any are claimed for this tournament.",
+    "club_badge_restricted": "Club members only",
+    "club_badge_open": "Club tournament",
+    "club_badge_tooltip_restricted": "Only club members can join",
+    "club_badge_tooltip_open": "Club tournament, open to everyone",
+    "duration": {
+      "zero": "0 sec",
+      "hours": "h ",
+      "minutes": "m",
+      "seconds": "s"
+    },
+    "error": {
+      "bad_response": "The server returned an invalid response",
+      "try_again": "Please try again.",
+      "enter_name": "Enter a name",
+      "pick_start_date": "Pick a start date",
+      "generic": "Error"
+    },
+    "success": {
+      "created": "Tournament created! 🏆"
+    },
+    "detail": {
+      "page_title": "Tournament — Chess Home",
+      "back_link": "← All tournaments",
+      "loading": "Loading tournament...",
+      "not_found": "Tournament not found",
+      "winner_modal_title": "Tournament winner!",
+      "winner_modal_btn": "🎉 Great!",
+      "anticheat_banned_suffix": "— banned for cheating",
+      "status_banner": {
+        "playing_title": "You're playing right now",
+        "playing_sub": "Game in progress",
+        "go_to_game_btn": "Go",
+        "next_game_in_prefix": "Next game in ",
+        "next_game_in_suffix": "s...",
+        "next_game_hint": "You'll have time to pause if you're not ready to play",
+        "pause_btn": "Pause",
+        "searching_opponent": "Looking for an opponent...",
+        "searching_hint": "Waiting for a suitable player",
+        "paused_title": "Paused",
+        "paused_hint": "Click to resume searching",
+        "finished_title": "Game finished",
+        "finished_hint": "Click ▶ Play when you're ready",
+        "play_btn": "Play"
+      },
+      "organizer": {
+        "chesshome_title": "This tournament is organized by ChessHome staff",
+        "label": "Organizer:",
+        "chesshome_name": "ChessHome Staff",
+        "creator_title": "Who created this tournament"
+      },
+      "starts_at": {
+        "title": "Tournament start date and time",
+        "started_label": "Started",
+        "starts_label": "Starts"
+      },
+      "club": {
+        "title": "This tournament is tied to a club",
+        "label": "Club:",
+        "fallback_name": "club",
+        "only_notice_prefix": "Only members of the club "
+      },
+      "user_created_disclaimer": "This tournament was created by a user, not by staff. If prizes are mentioned in the description, ChessHome does not organize or take responsibility for paying them out. Any prize arrangements are solely the organizer's responsibility.",
+      "stats": {
+        "time_control_title": "Time control: minutes per game + seconds added per move",
+        "time_control_label": "Control",
+        "participants_title": "How many players are currently in the tournament (of the maximum, if set)",
+        "participants_label": "Participants",
+        "games_played_title": "Total games played in this tournament",
+        "games_played_label": "Games played",
+        "rating_title": "Rating restriction for entry",
+        "rating_label": "Rating",
+        "winner_title": "Tournament winner",
+        "winner_label": "Winner"
+      },
+      "actions": {
+        "join_btn": "Join",
+        "leave_btn": "Leave",
+        "go_to_game_btn": "Go to game"
+      },
+      "countdown": {
+        "time_left": "Time left",
+        "starts_in": "Starts in"
+      },
+      "admin": {
+        "panel_title": "Manage tournament",
+        "delete_btn": "Delete",
+        "edit_btn": "Edit",
+        "full_manage_btn": "Full management"
+      },
+      "tabs": {
+        "leaderboard": "Leaderboard",
+        "games": "Games ({count})",
+        "chat": "Chat"
+      },
+      "leaderboard": {
+        "no_participants": "No participants yet",
+        "status": {
+          "playing": "Playing",
+          "waiting": "Waiting",
+          "left": "Left",
+          "paused": "Paused"
+        },
+        "ban_btn_title": "Ban from tournament",
+        "you_badge": "YOU",
+        "header": {
+          "player": "Player",
+          "score": "Score",
+          "wins": "Wins",
+          "draws": "Draws",
+          "losses": "Losses",
+          "status": "Status"
+        },
+        "scoring_note": "Win = 2 points · Draw = 1 point · Loss = 0 points"
+      },
+      "games": {
+        "none": "No games started yet",
+        "in_progress": "Game in progress",
+        "watch_btn": "Watch →",
+        "anticheat_flag": "Anti-cheat"
+      },
+      "join": {
+        "login_required": "Log in to your account",
+        "success": "You're in! 🎉 Wait for it to begin"
+      },
+      "leave": {
+        "confirm": "Leave the tournament?",
+        "success": "You left the tournament"
+      },
+      "chat": {
+        "empty": "No messages yet — start the discussion!",
+        "mute_btn_title": "Mute",
+        "mute_btn": "mute",
+        "unmute_btn_title": "Unmute",
+        "unmute_btn": "unmute",
+        "muted_tag": "Muted",
+        "you_muted": "You've been muted in the tournament chat",
+        "you_unmuted": "Your mute has been lifted in the tournament chat",
+        "login_required": "Log in to your account to chat in the tournament",
+        "closed": "Tournament chat is closed for new messages — history only",
+        "muted_until_prefix": "You're muted in this tournament's chat until ",
+        "input_placeholder": "Write in the tournament chat...",
+        "send_btn": "Send",
+        "send_failed": "Failed to send message",
+        "network_error": "Network error",
+        "mute_prompt": "Mute {username} for how many minutes? (1–1440)",
+        "invalid_value": "Invalid value",
+        "muted_success": "{username} muted for {mins} min.",
+        "unmuted_success": "{username} unmuted"
+      },
+      "admin_actions": {
+        "delete_confirm": "Delete this tournament permanently?",
+        "deleted": "Tournament deleted",
+        "ban_confirm": "Ban {username} from this tournament? All their games will be voided.",
+        "banned_success": "{username} banned from the tournament",
+        "saving_btn": "Saving...",
+        "name_required": "Name is required",
+        "update_error": "Update failed",
+        "updated_success": "Tournament updated ✅"
+      },
+      "edit_modal": {
+        "title": "✏️ Edit tournament",
+        "name_label": "Name *",
+        "time_control_label": "Time control",
+        "tc_15s": "15 sec",
+        "duration_label": "Duration (min)",
+        "starts_at_label": "Start date *",
+        "max_rating_placeholder": "0 = ∞",
+        "blacklist_label": "⛔ Blacklist",
+        "blacklist_placeholder": "Username...",
+        "save_btn": "💾 Save"
+      }
     }
   }
 }
