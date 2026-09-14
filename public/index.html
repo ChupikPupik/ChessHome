@@ -7,6 +7,7 @@
   <meta name="description" content="Chess Home — современная шахматная платформа с анализом, редактором и онлайн-игрой">
   <link rel="stylesheet" href="/css/main.css">
 <link rel="icon" type="image/png" href="../img/logo/favicon.png">
+<script src="/js/i18n.js"></script>
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
     (function(m,e,t,r,i,k,a){
@@ -1632,22 +1633,22 @@
   <div id="page-home" class="page">
     <div class="hero">
       <div class="hero-text">
-        <div class="hero-eyebrow">♟ Шахматная платформа нового поколения</div>
+        <div class="hero-eyebrow" data-i18n="home.hero_eyebrow">♟ Шахматная платформа нового поколения</div>
         <h1 class="hero-title">
-          Играй.<br>
-          Анализируй.<br>
-          <span class="accent">Побеждай.</span>
+          <span data-i18n="home.hero_title_line1">Играй.</span><br>
+          <span data-i18n="home.hero_title_line2">Анализируй.</span><br>
+          <span class="accent" data-i18n="home.hero_title_accent">Побеждай.</span>
         </h1>
-        <p class="hero-subtitle">
+        <p class="hero-subtitle" data-i18n="home.hero_subtitle">
           Chess Home — это шахматная платформа с интеллектуальным анализом Stockfish, 
           удобным редактором позиций и онлайн-игрой в реальном времени.
           Только на русском, только для лучших.
         </p>
         <div class="hero-actions">
-          <button class="btn btn-primary btn-lg" onclick="showPage('lobby')">
+          <button class="btn btn-primary btn-lg" onclick="showPage('lobby')" data-i18n="home.hero_cta_play">
             Начать игру!
           </button>
-          <button class="btn btn-secondary btn-lg" onclick="showPage('analysis')">
+          <button class="btn btn-secondary btn-lg" onclick="showPage('analysis')" data-i18n="home.hero_cta_analyze">
             🔍 Анализировать
           </button>
         </div>
@@ -1661,61 +1662,61 @@
     </div>
 
     <div class="features" style="padding-top:0">
-      <h2 class="section-title">Почему <span>Chess Home</span>?</h2>
+      <h2 class="section-title" data-i18n-html="home.features_title">Почему <span>Chess Home</span>?</h2>
       <div class="features-grid">
         <div class="feature-card">
           <span class="feature-icon">⚡</span>
-          <h3>Анализ Stockfish</h3>
-          <p>Движок мирового класса анализирует каждый ход прямо в браузере. Оценка позиции, лучший ход, линии на 20+ ходов.</p>
+          <h3 data-i18n="home.feature_engine_title">Анализ Stockfish</h3>
+          <p data-i18n="home.feature_engine_desc">Движок мирового класса анализирует каждый ход прямо в браузере. Оценка позиции, лучший ход, линии на 20+ ходов.</p>
         </div>
         <div class="feature-card">
           <span class="feature-icon">🎮</span>
-          <h3>Онлайн-игра</h3>
-          <p>Играй с живыми соперниками в реальном времени. Система рейтинга Эло, разные контроли времени.</p>
+          <h3 data-i18n="home.feature_online_title">Онлайн-игра</h3>
+          <p data-i18n="home.feature_online_desc">Играй с живыми соперниками в реальном времени. Система рейтинга Эло, разные контроли времени.</p>
         </div>
         <div class="feature-card">
           <span class="feature-icon">✏️</span>
-          <h3>Редактор позиций</h3>
-          <p>Создай любую позицию с нуля, загрузи через FEN и немедленно анализируй с движком.</p>
+          <h3 data-i18n="home.feature_editor_title">Редактор позиций</h3>
+          <p data-i18n="home.feature_editor_desc">Создай любую позицию с нуля, загрузи через FEN и немедленно анализируй с движком.</p>
         </div>
         <div class="feature-card">
           <span class="feature-icon">📚</span>
-          <h3>История партий</h3>
-          <p>Полная запись ходов в формате PGN с навигацией по дереву ходов. Прокручивай любую позицию.</p>
+          <h3 data-i18n="home.feature_history_title">История партий</h3>
+          <p data-i18n="home.feature_history_desc">Полная запись ходов в формате PGN с навигацией по дереву ходов. Прокручивай любую позицию.</p>
         </div>
         <div class="feature-card">
           <span class="feature-icon">🏆</span>
-          <h3>Рейтинг Эло</h3>
-          <p>Честная система рейтинга. Побеждай, улучшай своё место. Ищи соперников своего уровня.</p>
+          <h3 data-i18n="home.feature_rating_title">Рейтинг Эло</h3>
+          <p data-i18n="home.feature_rating_desc">Честная система рейтинга. Побеждай, улучшай своё место. Ищи соперников своего уровня.</p>
         </div>
         <div class="feature-card">
           <span class="feature-icon">🇷🇺</span>
-          <h3>Полностью на русском</h3>
-          <p>Первый шахматный сайт, разработанный изначально для русскоязычного сообщества.</p>
+          <h3 data-i18n="home.feature_russian_title">Полностью на русском</h3>
+          <p data-i18n="home.feature_russian_desc">Первый шахматный сайт, разработанный изначально для русскоязычного сообщества.</p>
         </div>
       </div>
     </div>
 
     <div style="width:100%;max-width:1200px;margin:0 auto;padding:0 24px 60px">
-      <h2 class="section-title">Живой <span>чат</span></h2>
+      <h2 class="section-title" data-i18n-html="home.chat_title">Живой <span>чат</span></h2>
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)">
 
         <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
           <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite"></div>
-          <span style="font-weight:700;font-size:14px">Общий чат</span>
+          <span style="font-weight:700;font-size:14px" data-i18n="home.chat_label">Общий чат</span>
           <span id="chat-online-count" style="font-size:12px;color:var(--text-muted)"></span>
         </div>
 
         <div id="global-chat-messages" style="height:320px;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:1px"></div>
 
         <div style="border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;align-items:center">
-          <div id="chat-not-logged" style="display:none;font-size:13px;color:var(--text-muted);flex:1">
+          <div id="chat-not-logged" style="display:none;font-size:13px;color:var(--text-muted);flex:1" data-i18n-html="home.chat_login_hint">
             <a href="/" style="color:var(--accent)">Войдите</a>, чтобы писать в чат
           </div>
-          <input class="form-input" id="global-chat-input" placeholder="Написать сообщение..." maxlength="300"
+          <input class="form-input" id="global-chat-input" placeholder="Написать сообщение..." data-i18n-placeholder="home.chat_placeholder" maxlength="300"
             onkeydown="if(event.key==='Enter')sendGlobalChatMsg()"
             style="flex:1;padding:8px 14px;font-size:14px;display:none">
-          <button class="btn btn-primary btn-sm" id="chat-send-btn" onclick="sendGlobalChatMsg()" style="display:none">
+          <button class="btn btn-primary btn-sm" id="chat-send-btn" onclick="sendGlobalChatMsg()" style="display:none" data-i18n="home.chat_send_btn">
             Отправить
           </button>
         </div>
@@ -1724,27 +1725,27 @@
     </div>
 
     <div class="game-modes">
-      <h2 class="section-title">Выбери <span>режим</span></h2>
+      <h2 class="section-title" data-i18n-html="home.modes_title">Выбери <span>режим</span></h2>
       <div class="modes-grid">
         <div class="mode-card" onclick="showPage('lobby')">
           <div class="mode-icon">⚔️</div>
-          <h3>Онлайн</h3>
-          <p>Против живого соперника</p>
+          <h3 data-i18n="home.mode_online_title">Онлайн</h3>
+          <p data-i18n="home.mode_online_desc">Против живого соперника</p>
         </div>
         <div class="mode-card" onclick="showPage('game'); chessBoard.newLocalGame()">
           <div class="mode-icon">👤</div>
-          <h3>Локальная игра</h3>
-          <p>На одном устройстве</p>
+          <h3 data-i18n="home.mode_local_title">Локальная игра</h3>
+          <p data-i18n="home.mode_local_desc">На одном устройстве</p>
         </div>
         <div class="mode-card" onclick="showPage('analysis')">
           <div class="mode-icon">🔭</div>
-          <h3>Анализ партии</h3>
-          <p>Разбор со Stockfish</p>
+          <h3 data-i18n="home.mode_analysis_title">Анализ партии</h3>
+          <p data-i18n="home.mode_analysis_desc">Разбор со Stockfish</p>
         </div>
         <div class="mode-card" onclick="showPage('editor')">
           <div class="mode-icon">🎨</div>
-          <h3>Редактор доски</h3>
-          <p>Своя позиция</p>
+          <h3 data-i18n="home.mode_editor_title">Редактор доски</h3>
+          <p data-i18n="home.mode_editor_desc">Своя позиция</p>
         </div>
       </div>
     </div>
@@ -1753,13 +1754,13 @@
   <div id="page-lobby" class="page">
     <div style="padding:24px;max-width:1100px;margin:0 auto">
       <div class="page-header">
-        <h1>🏆 Игровой зал</h1>
-        <p>Брось вызов или прими чужой — и начни партию</p>
+        <h1 data-i18n="lobby.title">🏆 Игровой зал</h1>
+        <p data-i18n="lobby.subtitle">Брось вызов или прими чужой — и начни партию</p>
       </div>
 
       <div style="position:relative;max-width:400px;margin-bottom:20px">
         <input class="form-input" id="player-search" type="text"
-          placeholder="🔍 Найти игрока по нику..."
+          placeholder="🔍 Найти игрока по нику..." data-i18n-placeholder="lobby.search_placeholder"
           oninput="searchUsers(this.value)"
           autocomplete="off">
         <div id="search-results" class="search-results" style="display:none"></div>
@@ -1768,12 +1769,12 @@
       <div class="lobby-layout">
         <div>
           <div class="lobby-panel">
-            <div class="panel-title">⚡ Создать вызов</div>
+            <div class="panel-title" data-i18n="lobby.create_title">⚡ Создать вызов</div>
 
             <div class="form-group">
-              <div class="form-label">Контроль времени</div>
+              <div class="form-label" data-i18n="lobby.time_control_label">Контроль времени</div>
               <div class="time-control-select">
-                <button class="tc-btn" data-tc="15s+0" onclick="selectTC('15s+0')">15 сек</button>
+                <button class="tc-btn" data-tc="15s+0" onclick="selectTC('15s+0')" data-i18n="lobby.tc_15s">15 сек</button>
                 <button class="tc-btn" data-tc="1+0" onclick="selectTC('1+0')">1+0</button>
                 <button class="tc-btn" data-tc="3+0" onclick="selectTC('3+0')">3+0</button>
                 <button class="tc-btn" data-tc="5+0" onclick="selectTC('5+0')">5+0</button>
@@ -1784,43 +1785,43 @@
             </div>
 
             <div class="form-group">
-              <div class="form-label">Цвет</div>
+              <div class="form-label" data-i18n="lobby.color_label">Цвет</div>
               <div class="time-control-select">
-                <button class="tc-btn color-btn selected" data-color="random" onclick="selectColor('random')">🎲 Случайный</button>
-                <button class="tc-btn color-btn" data-color="white" onclick="selectColor('white')">⬜ Белые</button>
-                <button class="tc-btn color-btn" data-color="black" onclick="selectColor('black')">⬛ Чёрные</button>
+                <button class="tc-btn color-btn selected" data-color="random" onclick="selectColor('random')" data-i18n="lobby.color_random">🎲 Случайный</button>
+                <button class="tc-btn color-btn" data-color="white" onclick="selectColor('white')" data-i18n="lobby.color_white">⬜ Белые</button>
+                <button class="tc-btn color-btn" data-color="black" onclick="selectColor('black')" data-i18n="lobby.color_black">⬛ Чёрные</button>
               </div>
             </div>
 
             <div class="form-group">
-              <div class="form-label">Тип партии</div>
+              <div class="form-label" data-i18n="lobby.type_label">Тип партии</div>
               <div class="time-control-select">
-                <button class="tc-btn rated-btn selected" data-rated="true" onclick="selectRated(true)">🏅 Рейтинговая</button>
-                <button class="tc-btn rated-btn" data-rated="false" onclick="selectRated(false)">🤝 Товарищеская</button>
+                <button class="tc-btn rated-btn selected" data-rated="true" onclick="selectRated(true)" data-i18n="lobby.type_rated">🏅 Рейтинговая</button>
+                <button class="tc-btn rated-btn" data-rated="false" onclick="selectRated(false)" data-i18n="lobby.type_casual">🤝 Товарищеская</button>
               </div>
-              <div style="font-size:12px;color:var(--text-muted);margin-top:6px">
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px" data-i18n="lobby.casual_note">
                 В товарищеской партии рейтинг не меняется
               </div>
             </div>
 
-            <button class="btn btn-primary" style="width:100%" onclick="postChallenge()">
+            <button class="btn btn-primary" style="width:100%" onclick="postChallenge()" data-i18n="lobby.post_challenge_btn">
               🚀 Бросить вызов в зал
             </button>
 
             <div class="divider"></div>
 
-            <div style="font-size:13px;color:var(--text-secondary)">
+            <div style="font-size:13px;color:var(--text-secondary)" data-i18n-html="lobby.or_local_html">
               Или <a href="#" onclick="showPage('game');chessBoard.newLocalGame()">сыграй локально</a> прямо сейчас
             </div>
           </div>
         </div>
 
         <div class="lobby-panel">
-          <div class="panel-title">📋 Открытые вызовы <span id="challenges-count" style="color:var(--text-muted);font-weight:400"></span></div>
+          <div class="panel-title"><span data-i18n="lobby.open_challenges_title">📋 Открытые вызовы</span> <span id="challenges-count" style="color:var(--text-muted);font-weight:400"></span></div>
           <div class="challenge-list" id="challenge-list">
             <div class="empty-state">
               <div class="empty-state-icon">🏰</div>
-              <p>Нет открытых вызовов.<br>Создай первый!</p>
+              <p data-i18n-html="lobby.empty_text_html">Нет открытых вызовов.<br>Создай первый!</p>
             </div>
           </div>
         </div>
