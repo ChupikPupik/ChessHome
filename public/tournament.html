@@ -1090,8 +1090,8 @@ function buildHTML(status, isAdmin, myPart, canJoin) {
 
   const dtLocale = CH_I18N.getLang() === 'ru' ? 'ru-RU' : 'en-US';
   const startsAtStr = tData.startsAt ? new Date(tData.startsAt).toLocaleString(dtLocale, {
-    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
-  }) : '';
+    day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Moscow'
+  }) + ' МСК' : '';
   const startsAtHtml = startsAtStr
     ? `<div class="t-hero-meta-item" title="${CH_I18N.t('tournaments.detail.starts_at.title')}">
          <span class="t-hero-meta-icon">📅</span>${status === 'finished' ? CH_I18N.t('tournaments.detail.starts_at.started_label') : CH_I18N.t('tournaments.detail.starts_at.starts_label')}: <b>${escHtml(startsAtStr)}</b>
@@ -1608,11 +1608,16 @@ function adminEditTournament() {
   document.getElementById('edit-desc').value = tData.description || '';
   document.getElementById('edit-tc').value = tData.timeControl || '3+2';
   document.getElementById('edit-duration').value = tData.durationMinutes || 30;
-  // Дата начала — преобразуем в формат datetime-local
+  // Дата начала — преобразуем в формат datetime-local, ПОКАЗЫВАЕМ ИМЕННО МСК
+  // (а не локальное время браузера того, кто открыл форму редактирования).
+  // Россия не переходит на летнее/зимнее время с 2014 года, поэтому смещение
+  // МСК = UTC+3 можно считать постоянным.
   if (tData.startsAt) {
-    const d = new Date(tData.startsAt);
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-    document.getElementById('edit-starts-at').value = local.toISOString().slice(0, 16);
+    const MSK_OFFSET_MS = 3 * 60 * 60 * 1000;
+    const d = new Date(tData.startsAt + MSK_OFFSET_MS);
+    const pad = n => String(n).padStart(2, '0');
+    const mskLocalValue = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+    document.getElementById('edit-starts-at').value = mskLocalValue;
   }
   document.getElementById('edit-max').value = tData.maxParticipants || 0;
   document.getElementById('edit-min-rating').value = tData.minRating || 0;
@@ -1662,7 +1667,13 @@ async function submitEditTournament() {
     description: document.getElementById('edit-desc').value.trim(),
     timeControl: document.getElementById('edit-tc').value,
     durationMinutes: parseInt(document.getElementById('edit-duration').value),
-    startsAt: document.getElementById('edit-starts-at').value,
+    // Значение datetime-local — это "голые" цифры без часового пояса.
+    // Мы трактуем их как МСК и явно добавляем смещение +03:00, чтобы
+    // new Date(...) на сервере (в любом его часовом поясе) распарсил
+    // время однозначно и без сюрпризов.
+    startsAt: document.getElementById('edit-starts-at').value
+      ? document.getElementById('edit-starts-at').value + ':00+03:00'
+      : '',
     maxParticipants: parseInt(document.getElementById('edit-max').value) || 0,
     minRating: parseInt(document.getElementById('edit-min-rating').value) || 0,
     maxRating: parseInt(document.getElementById('edit-max-rating').value) || 9999,
@@ -1773,7 +1784,7 @@ init();
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label" data-i18n="tournaments.detail.edit_modal.starts_at_label">Дата начала *</label>
+        <label class="form-label" data-i18n="tournaments.detail.edit_modal.starts_at_label">Дата начала * (МСК)</label>
         <input type="datetime-local" class="form-input" id="edit-starts-at">
       </div>
       <div class="form-group">
