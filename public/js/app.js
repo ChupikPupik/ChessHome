@@ -371,11 +371,21 @@ async function refreshCurrentUser() {
 }
 
 // ─── SOCKET ───────────────────────────────────────────────────
+let _socketAuthed = false;
+let _pendingGlobalMsgs = [];
+
 function connectSocket() {
   if (!currentUser) return;
   socket = io();
-  socket.on('connect', () => socket.emit('auth')); // токен сервер берёт из HttpOnly cookie в handshake
-  socket.on('auth_ok', () => {});
+  socket.on('connect', () => {
+    _socketAuthed = false; // на реконнекте ждём новое auth_ok заново
+    socket.emit('auth'); // токен сервер берёт из HttpOnly cookie в handshake
+  });
+  socket.on('disconnect', () => { _socketAuthed = false; });
+  socket.on('auth_ok', () => {
+    _socketAuthed = true;
+    flushPendingGlobalMsgs();
+  });
   socket.on('online_count', count => {
   const el = document.getElementById('online-count');
   if (el) el.textContent = count;
@@ -1475,16 +1485,35 @@ function sendGlobalChatMsg() {
     return;
   }
 
+  input.value = '';
+  input.focus();
+  // Закрываем автодополнение
+  closeMentionSuggestions();
+
   // Как и в игровом чате — не блокируем отправку по socket.connected:
   // Socket.IO сам поставит сообщение в очередь на долю секунды обрыва
   // связи и отправит его сразу после переподключения. Раньше именно
   // эта проверка иногда показывала "нет соединения" при фактически
   // рабочем интернете.
+  //
+  // НО: помимо транспортного connected, у нас есть свой шаг аутентификации
+  // (connect -> emit('auth') -> сервер асинхронно проверяет cookie -> auth_ok).
+  // Если отправить global_chat до auth_ok, сервер ещё не знает, какому
+  // пользователю принадлежит сокет, и сообщение молча терялось — это и
+  // была причина "отправляется только с N-й попытки". Теперь до auth_ok
+  // сообщение ставится в очередь и уходит сразу после подтверждения.
+  if (!_socketAuthed) {
+    _pendingGlobalMsgs.push(msg);
+    return;
+  }
   socket.emit('global_chat', { message: msg });
-  input.value = '';
-  input.focus();
-  // Закрываем автодополнение
-  closeMentionSuggestions();
+}
+
+function flushPendingGlobalMsgs() {
+  if (!socket || !_pendingGlobalMsgs.length) return;
+  while (_pendingGlobalMsgs.length) {
+    socket.emit('global_chat', { message: _pendingGlobalMsgs.shift() });
+  }
 }
 
 // ─── @MENTION HELPERS ─────────────────────────────────────────
