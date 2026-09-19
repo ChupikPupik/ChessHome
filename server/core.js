@@ -2197,6 +2197,34 @@ async function recordGame(game, result, reason) {
 }
 
 
+const RATING_SERVICE_URL = process.env.RATING_SERVICE_URL || 'http://127.0.0.1:8081/api/rating/calculate';
+
+// Считает новые рейтинги через Go-сервис. Если он недоступен, падаем
+// на прежнюю JS-формулу, чтобы партия не зависла из-за отказа Go.
+async function calcNewRatings(wRating, bRating, result) {
+  try {
+    const res = await fetch(RATING_SERVICE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ whiteRating: wRating, blackRating: bRating, result }),
+      signal: AbortSignal.timeout(2000),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return { white: data.whiteRating, black: data.blackRating };
+  } catch (e) {
+    console.error('[Rating] Go-сервис недоступен, считаю на JS:', e.message);
+    const K = 32;
+    const expW = 1 / (1 + Math.pow(10, (bRating - wRating) / 400));
+    const sW = result === 'white' ? 1 : result === 'black' ? 0 : 0.5;
+    return {
+      white: Math.round(wRating + K * (sW - expW)),
+      black: Math.round(bRating + K * ((1 - sW) - (1 - expW))),
+    };
+  }
+}
+
+
 async function updateStats(white, black, result, rated = true) {
   const w = await getUser(white.toLowerCase());
   const b = await getUser(black.toLowerCase());
@@ -2208,13 +2236,9 @@ async function updateStats(white, black, result, rated = true) {
   // Товарищеская партия: счётчики побед/поражений/партий обновляются как
   // обычно, но сам рейтинг (Elo) не пересчитывается.
   if (rated) {
-    const K = 32, expW = 1 / (1 + Math.pow(10, (b.rating - w.rating) / 400)), expB = 1 - expW;
-    let sW, sB;
-    if (result === 'white')      { sW = 1; sB = 0; }
-    else if (result === 'black') { sW = 0; sB = 1; }
-    else                         { sW = 0.5; sB = 0.5; }
-    w.rating = Math.max(100, Math.round(w.rating + K * (sW - expW)));
-    b.rating = Math.max(100, Math.round(b.rating + K * (sB - expB)));
+    const { white: newW, black: newB } = await calcNewRatings(w.rating, b.rating, result);
+    w.rating = Math.max(100, newW);
+    b.rating = Math.max(100, newB);
   }
   await saveUser(w); await saveUser(b);
 }

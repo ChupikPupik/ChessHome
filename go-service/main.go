@@ -5,15 +5,29 @@ import (
 	"encoding/json"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"chesshome-go/ratingsystem"
 )
 
 var db *pgxpool.Pool
+
+type ratingRequest struct {
+	WhiteRating float64 `json:"whiteRating"`
+	BlackRating float64 `json:"blackRating"`
+	Result      string  `json:"result"` // "white" | "black" | "draw"
+}
+
+type ratingResponse struct {
+	WhiteRating int `json:"whiteRating"`
+	BlackRating int `json:"blackRating"`
+}
 
 func testPageHandler(w http.ResponseWriter, r *http.Request) {
 	var clubsCount int
@@ -34,7 +48,6 @@ func testPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, data)
-
 }
 
 func dbTestHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +59,41 @@ func dbTestHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]int{"users_count": count})
+}
+
+func ratingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req ratingRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad json", http.StatusBadRequest)
+		return
+	}
+
+	var whiteScore float64
+	switch req.Result {
+	case "white":
+		whiteScore = 1
+	case "black":
+		whiteScore = 0
+	case "draw":
+		whiteScore = 0.5
+	default:
+		http.Error(w, "bad result", http.StatusBadRequest)
+		return
+	}
+
+	newWhite := ratingsystem.CalculateRating(req.WhiteRating, req.BlackRating, whiteScore)
+	newBlack := ratingsystem.CalculateRating(req.BlackRating, req.WhiteRating, 1-whiteScore)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ratingResponse{
+		WhiteRating: int(math.Round(newWhite)),
+		BlackRating: int(math.Round(newBlack)),
+	})
 }
 
 func main() {
@@ -70,6 +118,7 @@ func main() {
 
 	mux.HandleFunc("/test", testPageHandler)
 	mux.HandleFunc("/dbtest", dbTestHandler)
+	mux.HandleFunc("/api/rating/calculate", ratingHandler)
 
 	nodeURL, _ := url.Parse("http://127.0.0.1:10000")
 	proxy := httputil.NewSingleHostReverseProxy(nodeURL)
