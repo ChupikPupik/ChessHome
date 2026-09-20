@@ -65,6 +65,8 @@ const {
   rowToUser,
   isVip,
   isVipGranter,
+  USER_BADGES,
+  getUserBadges,
   getUser,
   saveUser,
   globalChat,
@@ -1137,6 +1139,56 @@ app.post('/api/admin/vip/revoke', authMiddleware, async (req, res) => {
       res.json({ ok: true });
     } catch (e) {
       console.error('[VIP revoke]', e);
+      res.status(500).json({ error: 'Ошибка снятия значка: ' + e.message });
+    }
+  });
+});
+
+
+// ── Значки профиля (победитель сезона и т.п.) ─────────────────
+// Каталог значков лежит в core.js (USER_BADGES). Здесь только выдача/снятие.
+// Права — любой admin. Если нужно, как у VIP, только chesshome/Marina64 —
+// замените requireAdmin на requireVipGranter.
+app.get('/api/admin/badges/catalog', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    res.json(Object.entries(USER_BADGES).map(([id, b]) => ({ id, title: b.title, img: b.img })));
+  });
+});
+
+
+app.post('/api/admin/badges/grant', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const badge = String(req.body.badge || '');
+      if (!USER_BADGES[badge]) return res.status(400).json({ error: 'Неизвестный значок' });
+      const target = await getUser((req.body.username || '').toLowerCase());
+      if (!target) return res.status(404).json({ error: 'Пользователь не найден' });
+      const list = Array.isArray(target.badges) ? target.badges : [];
+      if (!list.includes(badge)) list.push(badge);
+      target.badges = list;
+      await saveUser(target);
+      await logAdminAction(req.user.username, 'badge_grant', target.username, { badge });
+      res.json({ ok: true, badges: getUserBadges(target) });
+    } catch (e) {
+      console.error('[Badge grant]', e);
+      res.status(500).json({ error: 'Ошибка выдачи значка: ' + e.message });
+    }
+  });
+});
+
+
+app.post('/api/admin/badges/revoke', authMiddleware, async (req, res) => {
+  await requireAdmin(req, res, async () => {
+    try {
+      const badge = String(req.body.badge || '');
+      const target = await getUser((req.body.username || '').toLowerCase());
+      if (!target) return res.status(404).json({ error: 'Пользователь не найден' });
+      target.badges = (Array.isArray(target.badges) ? target.badges : []).filter(b => b !== badge);
+      await saveUser(target);
+      await logAdminAction(req.user.username, 'badge_revoke', target.username, { badge });
+      res.json({ ok: true, badges: getUserBadges(target) });
+    } catch (e) {
+      console.error('[Badge revoke]', e);
       res.status(500).json({ error: 'Ошибка снятия значка: ' + e.message });
     }
   });

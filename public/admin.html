@@ -629,6 +629,57 @@ async function loadAdminUsers() {
   }
 }
 
+// ── Значки профиля: модалка выдачи/снятия ─────────────────────
+let badgeCatalog = null;
+async function openBadgesModal(u) {
+  try {
+    if (!badgeCatalog) badgeCatalog = await apiGet('/admin/badges/catalog');
+  } catch (e) { toast('Ошибка: ' + e.message, 'error'); return; }
+
+  let owned = new Set((u.badges || []).map(b => b.id));
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:440px;max-height:85vh;overflow-y:auto;padding:20px';
+  overlay.appendChild(box);
+
+  function render() {
+    box.innerHTML = '';
+    const h = document.createElement('h2'); h.style.marginBottom = '4px'; h.textContent = '🏅 Значки: ' + u.username; box.appendChild(h);
+    const sub = document.createElement('div'); sub.style.cssText = 'font-size:13px;color:var(--text-muted);margin-bottom:12px';
+    sub.textContent = 'Выдайте или снимите значки — они отображаются в профиле игрока'; box.appendChild(sub);
+    if (!badgeCatalog.length) { const e = document.createElement('p'); e.textContent = 'Каталог значков пуст'; box.appendChild(e); }
+    badgeCatalog.forEach(b => {
+      const has = owned.has(b.id);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)';
+      const img = document.createElement('img'); img.src = b.img; img.alt = b.title; img.style.cssText = 'height:44px;width:44px;object-fit:contain;border-radius:6px';
+      const name = document.createElement('div'); name.style.cssText = 'flex:1;font-weight:600;font-size:14px'; name.textContent = b.title;
+      const btn = document.createElement('button');
+      btn.className = has ? 'btn btn-danger btn-sm' : 'btn btn-primary btn-sm';
+      btn.textContent = has ? 'Снять' : 'Выдать';
+      btn.onclick = async () => {
+        btn.disabled = true;
+        try {
+          const r = await apiPost('/admin/badges/' + (has ? 'revoke' : 'grant'), { username: u.username, badge: b.id });
+          owned = new Set(r.badges.map(x => x.id));
+          u.badges = r.badges;
+          toast(has ? 'Значок снят' : 'Значок выдан', 'success');
+          render();
+          loadAdminUsers();
+        } catch (e) { toast('Ошибка: ' + e.message, 'error'); btn.disabled = false; }
+      };
+      row.appendChild(img); row.appendChild(name); row.appendChild(btn);
+      box.appendChild(row);
+    });
+    const close = document.createElement('button'); close.className = 'btn btn-secondary btn-sm'; close.style.marginTop = '14px'; close.textContent = 'Закрыть';
+    close.onclick = () => overlay.remove(); box.appendChild(close);
+  }
+  render();
+  document.body.appendChild(overlay);
+}
+
 function renderUserList(users, container) {
   if (!users.length) { container.innerHTML = '<p style="color:var(--text-muted);padding:20px">Нет пользователей</p>'; return; }
   container.innerHTML = '';
@@ -645,6 +696,7 @@ function renderUserList(users, container) {
     const nm = document.createElement('div'); nm.style.cssText = 'font-weight:600;font-size:14px'; nm.textContent = u.username;
     if (u.role === 'admin') { const b = document.createElement('span'); b.style.cssText='color:var(--accent);font-size:11px;margin-left:6px'; b.textContent='ADMIN'; nm.appendChild(b); }
     if (u.vip) { const vipImg = document.createElement('img'); vipImg.src='/img/vip.png'; vipImg.alt='VIP'; vipImg.title = u.vipUntil ? ('VIP до ' + new Date(u.vipUntil).toLocaleDateString('ru')) : 'VIP'; vipImg.style.cssText='height:15px;width:auto;vertical-align:middle;margin-left:6px'; nm.appendChild(vipImg); }
+    (u.badges || []).forEach(bd => { const bi = document.createElement('img'); bi.src = bd.img; bi.alt = bd.title; bi.title = bd.title; bi.style.cssText = 'height:18px;width:auto;vertical-align:middle;margin-left:6px;border-radius:3px'; nm.appendChild(bi); });
     if (u.banned) { const b = document.createElement('span'); b.style.cssText='color:var(--red);font-size:11px;margin-left:6px'; b.textContent='БАН'; nm.appendChild(b); }
     if (u.shadowBanned) { const b = document.createElement('span'); b.style.cssText='color:var(--text-muted);font-size:11px;margin-left:6px;border:1px solid var(--text-muted);border-radius:4px;padding:0 4px'; b.title = u.shadowBanReason || ''; b.textContent='ТЕНЬ'; nm.appendChild(b); }
     const st = document.createElement('div'); st.style.cssText = 'font-size:12px;color:var(--text-muted)';
@@ -674,6 +726,9 @@ function renderUserList(users, container) {
         btns.appendChild(gv);
       }
     }
+    const bdgBtn = document.createElement('button'); bdgBtn.className='btn btn-ghost btn-sm'; bdgBtn.title='Значки профиля'; bdgBtn.textContent='🏅 Значки';
+    bdgBtn.onclick = () => openBadgesModal(u);
+    btns.appendChild(bdgBtn);
     const twBtn = document.createElement('button'); twBtn.className='btn btn-ghost btn-sm'; twBtn.title='Показать твинков (по IP/устройству)'; twBtn.textContent='🕵';
     twBtn.onclick = () => { switchTab('tab-twinks'); document.getElementById('twinks-filter').value = u.username; };
     btns.appendChild(twBtn);

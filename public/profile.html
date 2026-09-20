@@ -65,6 +65,7 @@
     .rating-brush-handle { fill: var(--accent); cursor: ew-resize; }
     .rating-brush-hint { text-align: center; font-size: 11px; color: var(--text-muted); margin-top: 6px; }
     .vip-badge-lg { height: 24px; width: auto; vertical-align: -4px; margin-left: 6px; }
+    .user-badge-lg { height: 30px; width: auto; vertical-align: -8px; margin-left: 6px; border-radius: 4px; }
 
     /* ── Обзор от AI ────────────────────────────────────────── */
     .ai-review-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
@@ -800,7 +801,8 @@ async function loadProfile(username){
     const isMe = !!(currentUser && currentUser.username === user.username);
 
     document.getElementById('profile-avatar').innerText = user.username[0].toUpperCase();
-    document.getElementById('profile-name').innerHTML = escapeHtml(user.username) + (user.vip ? ' <img src="/img/vip.png" class="vip-badge-lg" alt="VIP" title="VIP-игрок">' : '');
+    document.getElementById('profile-name').innerHTML = escapeHtml(user.username) + (user.vip ? ' <img src="/img/vip.png" class="vip-badge-lg" alt="VIP" title="VIP-игрок">' : '')
+      + (user.badges || []).map(b => ' <img src="' + escapeHtml(b.img) + '" class="user-badge-lg" alt="' + escapeHtml(b.title) + '" title="' + escapeHtml(b.title) + '">').join('');
     document.getElementById('profile-rating').innerText = '★ ' + user.rating;
     document.getElementById('profile-joined').innerText = 'На сайте с ' + new Date(user.createdAt).toLocaleDateString('ru');
     document.title = user.username + ' — Chess Home';

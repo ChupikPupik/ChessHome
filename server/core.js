@@ -435,6 +435,7 @@ function rowToUser(row) {
     fideRating:       row.fide_rating != null ? row.fide_rating : null,
     twoFactorEnabled: row.two_factor_enabled || false,
     vipUntil:         row.vip_until != null ? Number(row.vip_until) : null,
+    badges:           Array.isArray(row.badges) ? row.badges : [],
   };
 }
 
@@ -447,6 +448,24 @@ function isVip(u) { return !!(u && u.vipUntil && u.vipUntil > Date.now()); }
 
 // Выдавать/снимать значок могут только эти два аккаунта (см. запрос владельца).
 function isVipGranter(username) { return ['chesshome', 'marina64'].includes((username || '').toLowerCase()); }
+
+
+// ── Значки в профиле (сезоны и т.п.) ─────────────────────────
+// В БД у игрока хранится только массив id значков (users.badges), а
+// картинки/названия живут здесь. Чтобы добавить новый значок — положите
+// картинку в public/img/seasons/ и допишите строку в каталог ниже.
+// Удалённый из каталога значок просто перестанет показываться (id в БД
+// останется и вернётся, если строку вернуть).
+const USER_BADGES = {
+  winner: { title: 'Победитель сезона', img: '/img/seasons/winner.png' },
+  // winner_s3: { title: 'Победитель 3 сезона', img: '/img/seasons/winner_s3.png' },
+};
+
+function getUserBadges(u) {
+  return ((u && u.badges) || [])
+    .filter(id => USER_BADGES[id])
+    .map(id => ({ id, title: USER_BADGES[id].title, img: USER_BADGES[id].img }));
+}
 
 
 async function getUser(usernameLow) {
@@ -464,19 +483,20 @@ async function saveUser(u) {
     INSERT INTO users (id, username, username_low, email, password_hash, rating,
       games_played, wins, losses, draws, avatar, role, banned, ban_reason,
       created_at, created_from_ip, created_device_id, emoji, bio, fshr_rating, fide_rating,
-      two_factor_enabled, vip_until, shadow_banned, shadow_ban_reason)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
+      two_factor_enabled, vip_until, shadow_banned, shadow_ban_reason, badges)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26)
     ON CONFLICT (id) DO UPDATE SET
       rating=$6, games_played=$7, wins=$8, losses=$9, draws=$10,
       avatar=$11, role=$12, banned=$13, ban_reason=$14, emoji=$18,
       bio=$19, fshr_rating=$20, fide_rating=$21, two_factor_enabled=$22, vip_until=$23,
-      shadow_banned=$24, shadow_ban_reason=$25
+      shadow_banned=$24, shadow_ban_reason=$25, badges=$26
   `, [u.id, u.username, u.username.toLowerCase(), u.email || null,
       u.passwordHash, u.rating, u.gamesPlayed, u.wins, u.losses, u.draws,
       u.avatar || null, u.role || 'user', u.banned || false, u.banReason || null,
       u.createdAt, u.createdFromIP || null, u.createdDeviceId || null, u.emoji || '',
       u.bio || '', u.fshrRating ?? null, u.fideRating ?? null, u.twoFactorEnabled || false,
-      u.vipUntil ?? null, u.shadowBanned || false, u.shadowBanReason || null]);
+      u.vipUntil ?? null, u.shadowBanned || false, u.shadowBanReason || null,
+      JSON.stringify(u.badges || [])]);
 }
 
 
@@ -2041,6 +2061,7 @@ function sanitizeUser(u, viewerIsSelf = false) {
     puzzle_attempted: u.puzzle_attempted ?? 0, emoji: u.emoji || '',
     bio: u.bio || '', fshrRating: u.fshrRating ?? null, fideRating: u.fideRating ?? null,
     vip: isVip(u), vipUntil: isVip(u) ? u.vipUntil : null,
+    badges: getUserBadges(u),
   };
 }
 
@@ -2772,6 +2793,9 @@ async function main() {
   // VIP-значок: временный статус (метка времени окончания в мс), выдаётся вручную
   // из админ-панели только chesshome и Marina64 (см. isVipGranter/requireVipGranter).
   await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS vip_until BIGINT`);
+  // Значки профиля (победитель сезона и т.п.): JSON-массив id из USER_BADGES,
+  // выдаются/снимаются вручную из админ-панели.
+  await db(`ALTER TABLE users ADD COLUMN IF NOT EXISTS badges JSONB DEFAULT '[]'`);
   // Теневой бан: в отличие от обычного banned (который блокирует ЛЮБОЕ
   // действие и виден самому юзеру), shadow_banned НИЧЕГО не блокирует —
   // человек продолжает пользоваться сайтом как обычно, но его сообщения
@@ -2998,6 +3022,8 @@ module.exports = {
   rowToUser,
   isVip,
   isVipGranter,
+  USER_BADGES,
+  getUserBadges,
   getUser,
   saveUser,
   globalChat,
