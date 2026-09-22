@@ -2522,7 +2522,7 @@ app.get('/api/follow/online-friends', authMiddleware, async (req, res) => {
 
 
 app.get('/api/blog', (req, res) => {
-  const { section, status, page: pQ, limit: lQ } = req.query;
+  const { section, status, sort, page: pQ, limit: lQ } = req.query;
   const page  = Math.max(0, parseInt(pQ) || 0);
   const limit = Math.min(50, parseInt(lQ) || 20);
 
@@ -2558,11 +2558,24 @@ app.get('/api/blog', (req, res) => {
     if (section === 'community') list = list.filter(p => !!p.community);
   }
 
-  if (status === 'drafts' || status === 'hidden') list.sort((a,b) => (b.updatedAt||b.createdAt) - (a.updatedAt||a.createdAt));
-  else list.sort((a,b) => ((b.views||0)+(b.likes||0)*3) - ((a.views||0)+(a.likes||0)*3));
+  // Раньше опубликованные статьи всегда сортировались только по
+  // популярности (просмотры + лайки×3). Из-за этого свежая статья с
+  // нулевыми просмотрами падала в самый низ и, если постов в разделе
+  // больше `limit`, вообще не попадала на первую страницу — выглядело
+  // так, будто она "удалилась" сразу после публикации. Теперь сортировка
+  // управляется параметром sort: 'recent' (по умолчанию, свежие сверху)
+  // или 'popular' (по просмотрам/лайкам, как раньше).
+  if (status === 'drafts' || status === 'hidden') {
+    list.sort((a,b) => (b.updatedAt||b.createdAt) - (a.updatedAt||a.createdAt));
+  } else if (sort === 'popular') {
+    list.sort((a,b) => ((b.views||0)+(b.likes||0)*3) - ((a.views||0)+(a.likes||0)*3));
+  } else {
+    list.sort((a,b) => b.createdAt - a.createdAt);
+  }
 
   res.json({ posts: list.slice(page*limit, page*limit+limit).map(p => blogSanitize(p,false)), total: list.length });
 });
+
 
 
 app.get('/api/blog/:id', async (req, res) => {

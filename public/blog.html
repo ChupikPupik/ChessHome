@@ -417,6 +417,12 @@ a{color:inherit;text-decoration:none}
       <button class="filter-tab" id="ftab-hidden" style="display:none" data-i18n="blog.filter_hidden" onclick="switchFilter('hidden')">🙈 Hidden</button>
     </div>
 
+    <!-- Sort: recent (default, newly published stays visible) vs popular -->
+    <div id="sort-tabs-wrap" class="filter-tabs">
+      <button class="filter-tab active" id="sort-recent" data-i18n="blog.sort_recent" onclick="switchSort('recent')">🆕 Newest</button>
+      <button class="filter-tab" id="sort-popular" data-i18n="blog.sort_popular" onclick="switchSort('popular')">🔥 Popular</button>
+    </div>
+
     <!-- Hint for guests in the community section -->
     <div id="community-login-hint" style="display:none" class="login-prompt" data-i18n-html="blog.community_login_hint">
       <a href="/">Sign in</a> to write articles in the community blog
@@ -603,6 +609,7 @@ let currentPost = null;
 let editingId = null;
 let currentSection = 'official';
 let currentFilter = 'published';
+let currentSort = 'recent'; // 'recent' | 'popular' — только для опубликованных
 
 function getDevId() {
   let id = localStorage.getItem('ch_device_id');
@@ -741,6 +748,10 @@ function showView(name) {
 function switchSection(sec) {
   currentSection = sec;
   currentFilter = 'published';
+  currentSort = 'recent';
+  document.getElementById('sort-recent').classList.add('active');
+  document.getElementById('sort-popular').classList.remove('active');
+  document.getElementById('sort-tabs-wrap').style.display = 'flex';
   document.getElementById('stab-official').classList.toggle('active', sec==='official');
   document.getElementById('stab-community').classList.toggle('active', sec==='community');
 
@@ -790,6 +801,14 @@ function switchFilter(filter) {
   document.getElementById('ftab-pub').classList.toggle('active', filter==='published');
   document.getElementById('ftab-draft').classList.toggle('active', filter==='drafts');
   document.getElementById('ftab-hidden').classList.toggle('active', filter==='hidden');
+  document.getElementById('sort-tabs-wrap').style.display = (filter==='published') ? 'flex' : 'none';
+  loadPosts();
+}
+
+function switchSort(sort) {
+  currentSort = sort;
+  document.getElementById('sort-recent').classList.toggle('active', sort==='recent');
+  document.getElementById('sort-popular').classList.toggle('active', sort==='popular');
   loadPosts();
 }
 
@@ -800,6 +819,7 @@ async function loadPosts() {
     let url = `/blog?section=${currentSection}&limit=50`;
     if (currentFilter === 'drafts') url += '&status=drafts';
     if (currentFilter === 'hidden') url += '&status=hidden';
+    if (currentFilter === 'published') url += `&sort=${currentSort}`;
     const res = await apiGet(url);
     allPosts = Array.isArray(res) ? res : (res.posts || []);
   } catch(e) {
