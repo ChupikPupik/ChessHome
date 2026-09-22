@@ -377,7 +377,14 @@ async function apiPost(path,body){
   return data;
 }
 async function apiDelete(path){
-  const res=await fetch(API+path,{method:'DELETE',credentials:'include'});
+  // DELETE как HTTP-метод режется на уровне nginx/WAF у части посетителей
+  // (см. тот же фикс в blog.html) — поэтому шлём POST на path+'/delete'.
+  const res=await fetch(API+path+'/delete',{
+    method:'POST',
+    credentials:'include',
+    headers:{'Content-Type':'application/json','X-Device-Id':DEVICE_ID},
+    body:'{}'
+  });
   const data=await res.json();
   if(!res.ok)throw new Error(data.error||CH_I18N.t('forum.error_status',{status:res.status}));
   return data;

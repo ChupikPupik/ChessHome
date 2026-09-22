@@ -2314,7 +2314,10 @@ app.get('/api/forum/threads/:slug', (req, res) => {
 });
 
 
-app.delete('/api/forum/threads/:id', authMiddleware, async (req, res) => {
+// Метод DELETE у части посетителей режется на уровне nginx/WAF (см. тот же
+// фикс для комментариев блога) — поэтому удаление темы форума теперь
+// доступно и через POST .../delete, а не только через DELETE.
+async function handleDeleteForumThread(req, res) {
   const user = await getUser(req.user.username.toLowerCase());
   if (!user) return res.status(401).json({ error: 'Не авторизован' });
   const idx = forumThreads.findIndex(t => t.id === req.params.id);
@@ -2325,7 +2328,9 @@ app.delete('/api/forum/threads/:id', authMiddleware, async (req, res) => {
   forumReplies.splice(0, forumReplies.length, ...forumReplies.filter(r => r.threadId !== thread.id));
   await deleteForumThread(thread.id);
   res.json({ ok: true });
-});
+}
+app.delete('/api/forum/threads/:id', authMiddleware, handleDeleteForumThread);
+app.post('/api/forum/threads/:id/delete', authMiddleware, handleDeleteForumThread);
 
 
 app.get('/api/forum/threads/:slug/search', (req, res) => {
@@ -2373,7 +2378,7 @@ app.post('/api/forum/threads/:id/replies', authMiddleware, rateLimit(limiterStri
 });
 
 
-app.delete('/api/forum/replies/:id', authMiddleware, async (req, res) => {
+async function handleDeleteForumReply(req, res) {
   const user = await getUser(req.user.username.toLowerCase());
   if (!user) return res.status(401).json({ error: 'Не авторизован' });
   const idx = forumReplies.findIndex(r => r.id === req.params.id);
@@ -2385,7 +2390,9 @@ app.delete('/api/forum/replies/:id', authMiddleware, async (req, res) => {
   forumReplies.splice(idx, 1);
   await deleteForumReply(reply.id);
   res.json({ ok: true });
-});
+}
+app.delete('/api/forum/replies/:id', authMiddleware, handleDeleteForumReply);
+app.post('/api/forum/replies/:id/delete', authMiddleware, handleDeleteForumReply);
 
 
 app.post('/api/forum/threads', authMiddleware, rateLimit(limiterStrict), async (req, res) => {
