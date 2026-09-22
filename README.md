@@ -102,7 +102,7 @@ platform still runs on Node.js.
 
 ---
 
-## Getting Started
+## Getting Started (for linux)
 
 Clone the repository.
 
@@ -129,6 +129,34 @@ Run the server.
 ```bash
 npm start
 ```
+---
+## Getting Started (for windows)
+
+Clone the repository.
+
+```bash
+git clone https://github.com/ChupikPupik/ChessHome.git
+cd ChessHome
+```
+
+Install dependencies.         
+
+```bash
+npm install
+```
+
+Rename the file `/server/env.example` to `.env` and move it to the project root.
+
+Run the migration script:
+
+```bash
+node migrations/migrate.js
+```
+
+Run the server.
+
+```bash
+npm start
 
 ---
 
