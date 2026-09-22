@@ -1247,6 +1247,9 @@
     .puzzle-lb-rating { font-size: 13px; font-weight: 700; color: var(--accent); }
     /* mobile puzzles */
     @media (max-width: 768px) {
+      .center{
+        padding:200px 24px 24px 24px ;max-width:1100px;margin:0 auto
+      }
       .puzzle-topics-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
       .puzzle-topic-card { padding: 14px 10px !important; }
       .puzzle-topic-icon { font-size: 22px !important; }
@@ -1263,9 +1266,9 @@
          поэтому общее мобильное правило [style*="max-width:1200px"] их не
          подхватывает и padding:24px остаётся как на десктопе. Уравниваем
          с остальными страницами (как #page-lobby > div выше). */
-      #page-puzzles > div,
+      /* #page-puzzles > div,
       #page-puzzle-topic > div,
-      #page-puzzle-leaderboard > div { padding: 16px !important; }
+      #page-puzzle-leaderboard > div { padding: 16px !important; } */
     }
 
     /* mobile puzzles — landscape:
@@ -2543,7 +2546,7 @@
 </div>
 
 <div id="page-puzzles" class="page">
-    <div style="padding:200px 24px 24px 24px ;max-width:1100px;margin:0 auto">
+    <div class="center" style="padding:200px 24px 24px 24px ;max-width:1100px;margin:0 auto">
       <div class="page-header">
         <h1>🧩 Задачи</h1>
         <p>Тренируй тактику — решай задачи по темам и улучшай рейтинг</p>
