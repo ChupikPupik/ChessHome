@@ -96,6 +96,46 @@ func ratingHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type puzzleRatingRequest struct {
+	PlayerRating float64 `json:"playerRating"`
+	PuzzleRating float64 `json:"puzzleRating"`
+	Solved       bool    `json:"solved"`
+}
+
+type puzzleRatingResponse struct {
+	PlayerRating int `json:"playerRating"`
+	Change       int `json:"change"`
+}
+
+func puzzleRatingHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req puzzleRatingRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad json", http.StatusBadRequest)
+		return
+	}
+
+	var res float64
+	if req.Solved {
+		res = 1
+	} else {
+		res = 0
+	}
+
+	newRating := ratingsystem.CalculatePuzzleRating(req.PlayerRating, req.PuzzleRating, res)
+	rounded := int(math.Round(newRating))
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(puzzleRatingResponse{
+		PlayerRating: rounded,
+		Change:       rounded - int(math.Round(req.PlayerRating)),
+	})
+}
+
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -118,7 +158,7 @@ func main() {
 
 	mux.HandleFunc("/test", testPageHandler)
 	mux.HandleFunc("/dbtest", dbTestHandler)
-	mux.HandleFunc("/api/rating/calculate", ratingHandler)
+	mux.HandleFunc("/api/rating/puzzle/calculate", puzzleRatingHandler)
 
 	nodeURL, _ := url.Parse("http://127.0.0.1:10000")
 	proxy := httputil.NewSingleHostReverseProxy(nodeURL)
