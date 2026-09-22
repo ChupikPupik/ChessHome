@@ -2951,12 +2951,10 @@ async function main() {
     const offClub = { id: 'chesshome-official', name: 'ChessHome', description: 'Официальный клуб шахматной платформы Chess Home.', createdAt: new Date().toISOString(), createdBy: 'ChessHome', admins: ['ChessHome'], members: ['ChessHome'], memberCount: 1, official: true };
     clubs.push(offClub); await saveClub(offClub);
   }
-
   for (const adminName of ['chesshome', 'marina64']) {
     const u = await getUser(adminName);
     if (u && u.role !== 'admin') { u.role = 'admin'; await saveUser(u); console.log(`[Admin] Подтверждён администратор: ${u.username}`); }
   }
-
   server.listen(PORT, () => {
     console.log(`♟️  Chess Home: http://localhost:${PORT}`);
 
