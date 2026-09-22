@@ -2,7 +2,7 @@
 
 <img src="public/img/logo/logo.png" alt="ChessHome" width="180">
 
-# ChessHome
+# ChessHome 
 
 **Modern open-source chess platform**
 
