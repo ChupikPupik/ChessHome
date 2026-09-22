@@ -2956,7 +2956,6 @@ async function main() {
     const u = await getUser(adminName);
     if (u && u.role !== 'admin') { u.role = 'admin'; await saveUser(u); console.log(`[Admin] Подтверждён администратор: ${u.username}`); }
   }
-
   server.listen(PORT, () => {
     console.log(`♟️  Chess Home: http://localhost:${PORT}`);
 
