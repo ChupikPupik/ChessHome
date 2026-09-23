@@ -960,7 +960,7 @@
             <span class="ch-di-icon">✉️</span>${esc(t('header.messages'))}
             ${_s.unreadCount > 0 ? `<span class="ch-di-badge" id="ch-unread-badge">${_s.unreadCount}</span>` : ''}
           </a>
-          <a href="/settings" onclick="event.preventDefault();(window.showPage?showPage('settings'):location.href='/settings')">
+          <a href="/settings.html">
             <span class="ch-di-icon">⚙️</span>${esc(t('header.nav_settings'))}
           </a>
           ${admin ? `<a href="/admin" onclick="event.preventDefault();(window.showPage?showPage('admin'):location.href='/admin')">
@@ -972,7 +972,9 @@
           </button>
         </div>
       </div>`;
-
+{/* <a href="/settings.html" onclick="event.preventDefault();(window.showPage?showPage('settings'):location.href='/settings')">
+            <span class="ch-di-icon">⚙️</span>${esc(t('header.nav_settings'))}
+          </a> */}
     document.getElementById('ch-user-btn').addEventListener('click', e => {
       e.stopPropagation();
       const drop = document.getElementById('ch-udrop');
