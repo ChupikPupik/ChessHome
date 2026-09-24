@@ -1,0 +1,202 @@
+<!-- ===== Блок доната ===== -->
+<div class="donate-section">
+  <h2>Поддержите проект и получите значок ★</h2>
+
+  <p class="donate-intro">
+    Поддержите наш шахматный сайт донатом — и получите золотую звезду
+    на свой профиль! Звезда видна всем игрокам и показывает вашу поддержку проекта.
+  </p>
+
+  <!-- Тарифы -->
+  <div class="donate-tiers">
+    <div class="tier-card">
+      <div class="tier-amount">100 ₽</div>
+      <div class="tier-duration">Звезда на 1 месяц</div>
+    </div>
+    <div class="tier-card tier-popular">
+      <div class="tier-badge-label">Популярный</div>
+      <div class="tier-amount">200 ₽</div>
+      <div class="tier-duration">Звезда на 3 месяца</div>
+    </div>
+    <div class="tier-card">
+      <div class="tier-amount">1000 ₽</div>
+      <div class="tier-duration">Звезда на 1 год</div>
+    </div>
+  </div>
+
+  <!-- Инструкция — ВАЖНО, чтобы пользователи не ошиблись -->
+  <div class="donate-instructions">
+    <h3>Как получить звезду — 3 простых шага:</h3>
+    <ol>
+      <li>Нажмите кнопку «Поддержать» ниже — откроется страница оплаты.</li>
+      <li>
+        <strong>В поле «Имя» обязательно введите ваш ник на нашем сайте:</strong>
+        <span class="user-nick" id="current-username"></span>
+        <br>
+        <small>Без этого мы не сможем привязать звезду к вашему аккаунту!</small>
+      </li>
+      <li>
+        Введите сумму доната: <strong>100 ₽</strong> (1 месяц),
+        <strong>200 ₽</strong> (3 месяца) или <strong>1000 ₽</strong> (1 год)
+        и оплатите картой.
+      </li>
+    </ol>
+    <p class="donate-warning">
+      ⚠️ Вводите сумму точно: 100, 200 или 1000 рублей.
+      Другие суммы не активируют звезду. Звезда появится на вашем профиле
+      автоматически в течение нескольких минут после оплаты.
+    </p>
+  </div>
+
+  <!-- Кнопка -->
+  <a href="https://pay.cloudtips.ru/p/b0c3a0aa" target="_blank" rel="noopener"
+     class="donate-button">
+    Поддержать на CloudTips →
+  </a>
+</div>
+
+<!-- ===== Значок звезды в профиле ===== -->
+<div id="star-badge" class="star-badge" style="display:none;">
+  <span class="star-icon">★</span>
+  <span class="star-label">Золотая звезда</span>
+  <span class="star-expiry" id="star-expiry-text"></span>
+</div>
+
+<style>
+  .donate-section {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 24px;
+    background: #f9f9f9;
+    border-radius: 12px;
+  }
+  .donate-intro { color: #555; margin-bottom: 20px; }
+
+  .donate-tiers {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .tier-card {
+    flex: 1;
+    text-align: center;
+    padding: 16px 8px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+    position: relative;
+  }
+  .tier-popular {
+    border-color: #ff9900;
+    background: #fffdf5;
+  }
+  .tier-badge-label {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff9900;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .tier-amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: #333;
+  }
+  .tier-duration {
+    font-size: 13px;
+    color: #777;
+    margin-top: 4px;
+  }
+
+  .donate-instructions {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e0e0e0;
+  }
+  .donate-instructions h3 { margin-top: 0; }
+  .donate-instructions ol { padding-left: 20px; line-height: 1.7; }
+  .user-nick {
+    display: inline-block;
+    background: #ff9900;
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+  .donate-warning {
+    background: #fff3cd;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    font-size: 14px;
+    margin-top: 16px;
+  }
+
+  .donate-button {
+    display: block;
+    text-align: center;
+    padding: 14px 24px;
+    background: #ff9900;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .donate-button:hover { background: #e68a00; }
+
+  /* Значок звезды в профиле */
+  .star-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #fffdf5, #fff8e0);
+    border: 2px solid #ffd700;
+    border-radius: 30px;
+  }
+  .star-icon {
+    font-size: 26px;
+    color: #ffd700;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
+  }
+  .star-label { font-weight: 600; color: #b8860b; }
+  .star-expiry { font-size: 13px; color: #999; }
+</style>
+
+<script>
+  // Подставляем ник текущего пользователя в инструкцию
+  // В реальном проекте берём из сессии / JWT / API
+  const currentUsername = window.CURRENT_USER?.username || 'ваш_ник';
+  document.getElementById('current-username').textContent = currentUsername;
+
+  // Проверяем, есть ли у пользователя активная звезда
+  async function checkStarBadge() {
+    try {
+      const res = await fetch('/api/user/star-status', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.active && data.expires_at) {
+        const expiryDate = new Date(data.expires_at);
+        const formatted = expiryDate.toLocaleDateString('ru-RU');
+
+        document.getElementById('star-badge').style.display = 'inline-flex';
+        document.getElementById('star-expiry-text').textContent =
+          `до ${formatted}`;
+      }
+    } catch (e) {
+      console.error('Не удалось проверить статус звезды', e);
+    }
+  }
+
+  checkStarBadge();
+</script>
