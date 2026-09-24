@@ -1,0 +1,47 @@
+<!-- Кнопка доната -->
+<button id="donate-btn" class="donate-button">Поддержать проект!</button>
+
+<!-- Значок звезды (показываем, если у пользователя уже есть) -->
+<div id="user-badge" style="display:none;">
+  <span class="badge-icon">★</span>
+  <span class="badge-text">Жёлтая звезда</span>
+</div>
+
+<style>
+  .donate-button {
+    padding: 12px 20px;
+    background: #ff9900;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .donate-button:hover { background: #e68a00; }
+  .badge-icon {
+    font-size: 24px;
+    color: #ffd700; /* жёлтая */
+  }
+  .badge-text {
+    margin-left: 8px;
+    font-weight: 500;
+  }
+</style>
+
+<script>
+  // Здесь будет логика: если у пользователя есть звезда — показываем значок
+  async function checkBadge() {
+    const res = await fetch('/api/user/badge', { credentials: 'include' });
+    const data = await res.json();
+    if (data.hasBadge) {
+      document.getElementById('user-badge').style.display = 'flex';
+    }
+  }
+
+  document.getElementById('donate-btn').addEventListener('click', () => {
+    // Замени на реальную ссылку от платёжной системы
+    window.location.href = 'https://your-payment-provider.com/checkout?amount=200&currency=RUB';
+  });
+
+  checkBadge();
+</script>
