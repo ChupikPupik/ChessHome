@@ -22,6 +22,8 @@ function toggleLoginPasswordVisibility(btn) {
 
 const STREAMERS = ['VLAD', 'Solo', 'aaa', 'GGbers'];
 
+
+
 // ─── ФИЛЬТР ЧАТА ───────────────────────────────────────────
 // Мат / реальные ругательства. Убрал сюда генерические оскорбления
 // ("дебил","идиот","тварь","урод","мразь","чмо","аутист","даун",
@@ -340,6 +342,7 @@ function cancelLoginTwoFactor() {
   const form = modal.querySelector('form');
   if (form) form.addEventListener('submit', handleLogin);
 }
+// --------------ВЫХОД----------------------------------------------
 
 async function logout() {
   try { await apiPost('/logout', {}); } catch {}
@@ -348,7 +351,7 @@ async function logout() {
   updateAuthUI(); showPage('home');
   toast('До свидания! 👋');
 }
-
+// -----------------------------------------------------------------
 async function tryAutoLogin() {
   // Токен хранится только в HttpOnly cookie — JS не может её прочитать,
   // поэтому просто спрашиваем сервер, есть ли валидная сессия.
@@ -606,6 +609,9 @@ async function fetchOnline() {
   } catch {}
 }
 
+
+
+
 // ─── LOBBY ────────────────────────────────────────────────────
 let selectedTC = '10+0';
 let selectedColor = 'random';
@@ -743,7 +749,7 @@ function showIncomingChallenge(from, socketId, rated = true) {
   if (accept) socket.emit('accept_direct_challenge', { fromSocketId: socketId, rated });
   else socket.emit('decline_challenge', socketId);
 }
-
+// -----------------------------------------------------------------------------------------------------------------
 // ─── ПОИСК И ПРОФИЛИ ИГРОКОВ ──────────────────────────────────
 let searchTimeout = null;
 
@@ -1711,7 +1717,7 @@ function applySettings() {
 function _profileShow(id) {
   ['profile-loading','profile-data','profile-auth-required','profile-notfound'].forEach(s => {
     const el = document.getElementById(s);
-    if (el) el.style.display = s === id ? '' : 'none';
+    if (el) el.style.display = s === id ? 'grid' : 'none';
   });
 }
 
@@ -1990,7 +1996,7 @@ async function renderProfileUI(username) {
     history.replaceState({}, '', isMe ? '/profile' : '/profile/' + encodeURIComponent(u.username));
 
     const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    set('profile-avatar', u.username[0].toUpperCase());
+    // set('profile-avatar', u.username[0].toUpperCase());
     set('profile-name',   u.username);
     set('profile-rating', '★ ' + u.rating);
     set('profile-joined', 'На сайте с ' + new Date(u.createdAt).toLocaleDateString('ru'));
@@ -2039,7 +2045,7 @@ async function renderProfileUI(username) {
     const btnU = document.getElementById('profile-btn-unban');
 
     if (btnM) { btnM.style.display = currentUser ? '' : 'none'; btnM.onclick = () => { window.location = '/inbox/' + encodeURIComponent(u.username); }; }
-    if (btnC) { btnC.style.display = (u.online && currentUser) ? '' : 'none'; btnC.onclick = () => { localStorage.setItem('ch_pending_challenge', u.username); showPage('lobby'); }; }
+    if (btnC) { btnC.style.display = (u.online && currentUser) ? 'block' : 'none'; btnC.onclick = () => { localStorage.setItem('ch_pending_challenge', u.username); showPage('lobby'); }; }
     const isAdmin = currentUser?.role === 'admin';
     if (btnB) { btnB.style.display = (isAdmin && !u.banned) ? '' : 'none'; btnB.onclick = async () => { const r = prompt('Причина бана:','Нарушение правил'); if (!r) return; await apiPost('/admin/ban',{username:u.username,reason:r}); toast('Заблокирован','success'); renderProfileUI(u.username); }; }
     if (btnU) { btnU.style.display = (isAdmin && u.banned)  ? '' : 'none'; btnU.onclick = async () => { await apiPost('/admin/unban',{username:u.username}); toast('Разблокирован','success'); renderProfileUI(u.username); }; }
