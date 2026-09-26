@@ -494,11 +494,12 @@
 
       <!-- Основной блок данных профиля (превратится в grid через JS) -->
       <div id="profile-data" style="display: none;">
-        <!-- НАШ НОВЫЙ НЕУБИВАЕМЫЙ КОНТЕЙНЕР ДЛЯ ДВУХ КОЛОНОК -->
+        
         <div class="profile-grid-layout"
           style="display: grid !important; grid-template-columns: 2fr 1fr !important; gap: 24px !important; align-items: start !important; width: 100% !important;">
 
-          <!-- ================= ЛЕВАЯ КОЛОНКА (ОСНОВНОЙ КОНТЕНТ) ================= -->
+        
+
           <div class="profile-main-column"
             style="display: flex !important; flex-direction: column !important; gap: 20px !important; min-width: 0 !important;">
             <div class="profile-hero" style="text-align: left; display: flex; align-items: center;">
@@ -519,7 +520,7 @@
 
 
             </div>
-            <!-- График динамики рейтинга -->
+          
             <div class="sparkline-wrap">
               <div class="rating-chart-toolbar">
                 <span>📈 Динамика рейтинга</span>
@@ -536,7 +537,7 @@
                 другой period · тяните края, чтобы изменить масштаб</div>
             </div>
 
-            <!-- Основная сетка краткой статистики -->
+            
             <div class="stat-grid">
               <div class="stat-card">
                 <div class="num" id="stat-games">0</div>
@@ -556,15 +557,15 @@
               </div>
             </div>
 
-            <!-- Табы переключения -->
+           
             <div class="profile-tabs">
-              <div class="profile-tab active" data-tab="overview">📊 Обзор</div>
-              <div class="profile-tab" data-tab="games">🕹 Партии</div>
-              <div class="profile-tab" data-tab="activity">📅 Активность</div>
+              <div class="profile-tab-btn active" data-tab="overview" onclick="switchProfileTab('overview')">📊 Обзор</div>
+              <div class="profile-tab-btn" data-tab="games" onclick="switchProfileTab('games')">🕹 Партии</div>
+              <div class="profile-tab-btn" data-tab="activity" onclick="switchProfileTab('activity')">📅 Активность</div>
             </div>
 
-            <!-- Вкладка 1: Обзор -->
-            <div class="tab-panel active" id="tab-overview"
+            
+            <div class="tab-panel active" id="ptab-overview"
               style="display: flex !important; flex-direction: column !important; gap: 20px !important;">
               <div class="section-card">
                 <div class="section-title">📉 Таблица колебаний рейтинга</div>
@@ -617,8 +618,8 @@
               </div>
             </div>
 
-            <!-- Вкладка 2: Список партий -->
-            <div class="tab-panel" id="tab-games" style="display:none;">
+            
+            <div class="tab-panel" id="ptab-games" style="display:none;">
               <div class="section-card" style="padding:0">
                 <div id="profile-games-list" style="padding:8px 16px">Загрузка...</div>
                 <div class="games-load-more" style="display:none">
@@ -627,7 +628,7 @@
               </div>
             </div>
 
-            <!-- Вкладка 3: Активность -->
+            
             <div class="tab-panel" id="tab-activity" style="display:none;">
               <div class="section-card">
                 <div class="section-title">📅 Активность за 7 дней</div>
@@ -639,18 +640,25 @@
 
           </div>
 
-          <!-- ================= ПРАВАЯ КОЛОНКА (КАРТОЧКА И AI) ================= -->
+          
+
+
+
+
+
+
+
           <div class="profile-side-column"
             style="display: flex !important; flex-direction: column !important; gap: 20px !important;">
 
-            <!-- Карточка пользователя -->
+       
             <div class="profile-hero" style="text-align: center;">
 
 
 
 
 
-              <!--  -->
+              
               <div class="profile-bio" id="profile-bio"></div>
 
               <div class="ext-ratings" id="ext-ratings"></div>
@@ -685,7 +693,7 @@
               </div>
             </div>
 
-            <!-- Обзор от AI -->
+            
             <div class="section-card ai-review-card">
               <div class="ai-review-header">
                 <span class="ai-review-logo-wrap" id="ai-review-logo-wrap">
@@ -921,7 +929,7 @@
 
             <!-- Вкладка 1: Обзор -->
             <div class="tab-panel active" id="tab-overview"
-              style="display: flex !important; flex-direction: column !important; gap: 20px !important;">
+              style="display: flex; flex-direction: column !important; gap: 20px !important;">
               <div class="section-card">
                 <div class="section-title">📉 Таблица колебаний рейтинга</div>
                 <div style="overflow-x:auto">
@@ -1091,15 +1099,17 @@
 
             <!-- Табы переключения -->
             <div class="profile-tabs">
-              <div class="profile-tab active" data-tab="overview">📊 Обзор</div>
-              <div class="profile-tab" data-tab="games">🕹 Партии</div>
-              <div class="profile-tab" data-tab="activity">📅 Активность</div>
+              <div class="profile-tab profile-tab-btn active" data-tab="overview" data-ptab="overview">📊 Обзор</div>
+              <div class="profile-tab profile-tab-btn" data-tab="games" data-ptab="games"  >🕹 Партии</div>
+              <div class="profile-tab profile-tab-btn" data-tab="activity" data-ptab="activity">📅 Активность</div>
             </div>
 
             <!-- Вкладка 1: Обзор -->
-            <div class="tab-panel active" id="tab-overview"
+            <div class="tab-panel active" id="ptab-overview"
               style="display: flex !important; flex-direction: column !important; gap: 20px !important;">
               <div class="section-card">
+
+          
                 <div class="section-title">📉 Таблица колебаний рейтинга</div>
                 <div style="overflow-x:auto">
                   <table class="data-table" id="rating-table">
@@ -1151,7 +1161,7 @@
             </div>
 
             <!-- Вкладка 2: Список партий -->
-            <div class="tab-panel" id="tab-games" style="display:none;">
+            <div class="tab-panel" id="ptab-games" style="display:none;">
               <div class="section-card" style="padding:0">
                 <div id="profile-games-list" style="padding:8px 16px">Загрузка...</div>
                 <div class="games-load-more" style="display:none">
@@ -1248,6 +1258,42 @@
 
     // Следим за изменением размера экрана
     window.addEventListener('resize', handleScreenChange);
+// function switchProfileTab(tabName) {
+//   const targetId = 'ptab-' + tabName;
+//   const tabIds = ['ptab-overview', 'ptab-games', 'ptab-activity'];
+  
+//   // 1. Скрываем все вкладки, показываем нужную
+//   tabIds.forEach(id => {
+//     const el = document.getElementById(id);
+//     if (el) {
+//       if (id === targetId) {
+//         el.style.display = tabName === 'overview' ? 'flex' : 'block';
+//       } else {
+//         el.style.display = 'none';
+//       }
+//     }
+//   });
+
+//   // 2. Обновляем визуальный стиль кнопок табов (как в renderProfileUI)
+//   document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+//     if (btn.id === `btn-ptab-${tabName}`) {
+//       btn.style.color = 'var(--accent)';
+//       btn.style.borderBottomColor = 'var(--accent)';
+//       btn.classList.add('active');
+//     } else {
+//       btn.style.color = 'var(--text-muted)';
+//       btn.style.borderBottomColor = 'transparent';
+//       btn.classList.remove('active');
+//     }
+//   });
+// }
+
+// // Заглушка, чтобы движок не ругался на отсутствие функции сброса вкладок
+// window._initProfileTabs = function() {
+//   switchProfileTab('overview');
+// };
+// window.switchProfileTab = switchProfileTab;
+
 
     async function apiPost(path, body) {
       const res = await fetch(API + path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
@@ -1284,14 +1330,41 @@
     }
 
     // вкладки
-    document.querySelectorAll('.profile-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-      });
+document.querySelectorAll('.profile-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabName = tab.dataset.tab;
+
+    // 1. Сбрасываем активный класс у ВСЕХ возможных классов кнопок
+    document.querySelectorAll('.profile-tab, .profile-tab-btn').forEach(t => {
+      t.classList.remove('active');
+      t.style.color = 'var(--text-muted)';
+      t.style.borderBottomColor = 'transparent';
     });
+
+    // 2. Скрываем все три панели
+    ['ptab-overview', 'ptab-games', 'ptab-activity'].forEach(id => {
+      const p = document.getElementById(id);
+      if (p) {
+        p.classList.remove('active');
+        p.style.display = 'none';
+      }
+    });
+
+    // 3. Подсвечиваем текущую нажатую вкладку
+    tab.classList.add('active');
+    tab.style.color = 'var(--accent)';
+    tab.style.borderBottomColor = 'var(--accent)';
+
+    // 4. Физически показываем нужную панель в зависимости от её типа
+    const panel = document.getElementById('ptab-' + tabName);
+    if (panel) {
+      panel.classList.add('active');
+      // Для overview возвращаем flex (чтобы сетка не ломалась), для остальных — block
+      panel.style.display = tabName === 'overview' ? 'flex' : 'block';
+    }
+  });
+});
+
 
     function show(id) { document.getElementById(id).style.display = ''; }
     function hide(id) { document.getElementById(id).style.display = 'none'; }
