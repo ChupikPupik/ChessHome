@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support / Question
+    url: https://github.com/nesstyx/ChessHome/discussions
+    about: Ask a question or discuss an idea - not for bugs or feature requests.
+  - name: Website
+    url: https://chesshome.pro/
+    about: Visit the ChessHome website.
